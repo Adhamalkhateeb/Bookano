@@ -1,0 +1,40 @@
+﻿@model IEnumerable<Category>
+@{
+    ViewData["Title"] = "Categories";
+}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h2 class="card-title">
+            <div class="symbol symbol-50px me-4 " >
+                <div class="symbol-label fs-2 fw-semibold text-success">
+                    <i class="fa-solid fa-layer-group fa-lg text-dark "></i>
+                </div>
+            </div>
+            Categories
+        </h2>
+        <div class="card-toolbar">
+            <a asp-controller="Categories" asp-action="Create" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-square-dotted"></i>
+                Add
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (!Model.Any())
+        {
+            <div class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10 align-items-center">
+                <!--begin::Icon-->
+                <i class="bi bi-exclamation-triangle-fill text-warning fs-1 me-4"></i>
+                <!--begin::Content-->
+                <div class="d-flex flex-column pe-0 pe-sm-10 align-self-center">
+                    <h3 class="mt-2">No categories found!</h3>
+                </div>
+                <!--end::Content-->
+            </div>
+        }
+        else
+        {
+            
+        }
+    </div>
+</div>
