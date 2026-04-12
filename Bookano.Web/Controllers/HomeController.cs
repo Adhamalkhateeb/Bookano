@@ -1,4 +1,4 @@
-using Bookano.Web.Models;
+using Bookano.Web.Core.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 

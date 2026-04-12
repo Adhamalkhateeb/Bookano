@@ -1,4 +1,4 @@
-namespace Bookano.Web.Models
+namespace Bookano.Web.Core.ViewModels
 {
     public class ErrorViewModel
     {
