@@ -1,11 +1,13 @@
 ﻿@model IEnumerable<Category>
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery
 @{
     ViewData["Title"] = "Categories";
 }
+
 <div class="card shadow-sm">
     <div class="card-header">
         <h2 class="card-title">
-            <div class="symbol symbol-50px me-4 " >
+            <div class="symbol symbol-50px me-4 ">
                 <div class="symbol-label fs-2 fw-semibold text-success">
                     <i class="fa-solid fa-layer-group fa-lg text-dark "></i>
                 </div>
@@ -13,7 +15,7 @@
             Categories
         </h2>
         <div class="card-toolbar">
-            <a asp-controller="Categories" asp-action="Create" class="btn btn-sm btn-primary">
+            <a href="javascript:;" class="btn btn-sm btn-primary js-render-modal" data-title="Add Category" data-url="/Categories/Create">
                 <i class="bi bi-plus-square-dotted"></i>
                 Add
             </a>
@@ -34,7 +36,85 @@
         }
         else
         {
+           
+            <div class="table-responsive">
+                <table class="table table-row-dashed table-row-gray-300 gy-7">
+                    <thead>
+                        <tr class="fw-bold fs-6 text-gray-800">
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Created on</th>
+                            <th>Last updated on</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var category in Model)
+                        {
+                            <partial name="_categoryRow" model="@category" />
+                        }
+                    </tbody>
+                </table>
+            </div>
             
+           
         }
     </div>
 </div>
+
+<input type="hidden" name="__RequestVerificationToken" value="@antiforgery.GetAndStoreTokens(Context).RequestToken" />
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+
+        $(document).ready(function(){
+            $('body').delegate('js-toggle-status','click',function(){
+                const btn = $(this);
+
+                bootbox.confirm({
+                    message: 'Are you sure you want to toggle this item status?',
+                    buttons: {
+                        confirm: {
+                            label: 'Yes',
+                            className: 'btn-danger'
+                        },
+                        cancel: {
+                            label: 'No',
+                            className: 'btn-secondary'
+                        }
+                    },
+                    callback: async function (result)
+                    {
+                        if(!result) return;
+
+                        btn.disabled = true;
+
+                        $.post(
+                            {
+                                url:'/Categories/ToggleStatus/' + btn.data('id'),
+                                data:{
+                                    '__RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                success:function(lastUpdatedOn) {
+                                    const row = $("tr");
+                                    const status = row.find('.js-status');
+                                    const newStatus = status.text().trim() === 'Deleted' ? 'Available' : 'Deleted';
+                                    status.text(newStatus).toggleClass('badge-light-success badge-light-danger');
+                                    row.find('.js-updated-on').html(lastUpdatedOn);
+                                    animate(status,'animate__flipInX');
+
+                                    showSuccessMessage();
+                                },
+                                error: function(){
+                                    showErrorMessage();
+                                }
+                            })
+                    }
+                })
+            })
+        })
+
+    </script>
+}
