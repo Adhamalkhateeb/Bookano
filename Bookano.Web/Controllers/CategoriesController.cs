@@ -84,7 +84,7 @@ namespace Bookano.Web.Controllers
 
         }
 
-        [HttpPut]
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ToggleStatus(int id)
         {
@@ -99,12 +99,7 @@ namespace Bookano.Web.Controllers
 
             _context.SaveChanges();
 
-            return Ok(new
-            {
-                success = true,
-                isDeleted = category.IsDeleted,
-                lastUpdatedOn = category.LastUpdatedOnUtc.GetValueOrDefault().ToLocalTime().ToString("yyyy/MM/dd hh:mm tt")
-            });
+            return Ok(category.LastUpdatedOnUtc.GetValueOrDefault().ToLocalTime().ToString("yyyy/MM/dd hh:mm tt"));
         }
     }
 }

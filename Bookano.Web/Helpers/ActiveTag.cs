@@ -20,13 +20,13 @@ namespace Bookano.Web.Helpers
                 return;
 
             var currentController = ViewContextData?.RouteData.Values["controller"]?.ToString();
-            if (currentController!.Equals(ActiveWhen))
-            {
-                if (output.Attributes.ContainsName("class"))
-                    output.Attributes.SetAttribute("class", $"{output.Attributes["class"].Value} active");
-                else
-                    output.Attributes.SetAttribute("class", "active");
-            }
+            if (currentController is null || !currentController.Equals(ActiveWhen))
+                return;
+
+            if (output.Attributes.ContainsName("class"))
+                output.Attributes.SetAttribute("class", $"{output.Attributes["class"].Value} active");
+            else
+                output.Attributes.SetAttribute("class", "active");
         }
     }
 }

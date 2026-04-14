@@ -4,117 +4,110 @@
     ViewData["Title"] = "Categories";
 }
 
-<div class="card shadow-sm">
-    <div class="card-header">
-        <h2 class="card-title">
-            <div class="symbol symbol-50px me-4 ">
-                <div class="symbol-label fs-2 fw-semibold text-success">
-                    <i class="fa-solid fa-layer-group fa-lg text-dark "></i>
-                </div>
+@section Styles {
+    <link rel="stylesheet" href="~/assets/plugins/datatables/datatables.bundle.css" />
+}
+
+<div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
+    <div class="d-flex align-items-center">
+        <!--begin::Icon-->
+        <div class="symbol symbol-50px me-4 ">
+            <div class="symbol-label fs-2 fw-semibold text-success">
+                <i class="fa-solid fa-layer-group fa-lg text-dark "></i>
             </div>
-            Categories
-        </h2>
-        <div class="card-toolbar">
-            <a href="javascript:;" class="btn btn-sm btn-primary js-render-modal" data-title="Add Category" data-url="/Categories/Create">
-                <i class="bi bi-plus-square-dotted"></i>
-                Add
-            </a>
+        </div>
+        <!--end::Icon-->
+        <!--begin::Content-->
+        <div class="d-flex flex-column  justify-content-center pe-0 pe-sm-10">
+            <h3 class="mb-1">Categories</h3>
         </div>
     </div>
-    <div class="card-body">
-        @if (!Model.Any())
-        {
-            <div class="alert alert-dismissible bg-light-warning border border-warning border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10 align-items-center">
-                <!--begin::Icon-->
-                <i class="bi bi-exclamation-triangle-fill text-warning fs-1 me-4"></i>
-                <!--begin::Content-->
-                <div class="d-flex flex-column pe-0 pe-sm-10 align-self-center">
-                    <h3 class="mt-2">No categories found!</h3>
+    <!--end::Content-->
+    <!--begin::Add-->
+    <div>
+        <a href="javascript:;" class="btn btn-md btn-primary js-render-modal fs-5" data-title="Add Category" data-url="/Categories/Create">
+            <i class="bi bi-plus-square-dotted fs-3"></i>
+            Add
+        </a>
+    </div>
+    <!--end::Add-->
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+        <div class="card-title">
+            <div class="d-flex align-items-center position-relative my-1">
+                <span class="svg-icon fs-1 position-absolute ms-4">
+                    <i class="fa-solid fa-magnifying-glass fs-2"></i>
+                </span>
+                <input type="text" data-kt-filter="search" class="form-control form-control-solid w-250px ps-14" placeholder="Search..." />
+            </div>
+           
+            <div id="kt_datatable_example_1_export" class="d-none"></div>
+        </div>
+        <div class="card-toolbar flex-row-fluid justify-content-end gap-5">
+            <button type="button" class="btn btn-light-primary" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
+                <i class="fa-solid fa-file-arrow-up fs-3"></i>
+                Export
+            </button>
+            <div id="kt_datatable_example_export_menu" class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-600 menu-state-bg-light-primary fw-semibold fs-7 w-200px py-4" data-kt-menu="true">
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="copy">
+                        Copy to clipboard
+                    </a>
                 </div>
-                <!--end::Content-->
+
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="excel">
+                        Export as Excel
+                    </a>
+                </div>
+                
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="csv">
+                        Export as CSV
+                    </a>
+                </div>
+              
+                <div class="menu-item px-3">
+                    <a href="#" class="menu-link px-3" data-kt-export="pdf">
+                        Export as PDF
+                    </a>
+                </div>
             </div>
-        }
-        else
-        {
-           
-            <div class="table-responsive">
-                <table class="table table-row-dashed table-row-gray-300 gy-7">
-                    <thead>
-                        <tr class="fw-bold fs-6 text-gray-800">
-                            <th>Name</th>
-                            <th>Status</th>
-                            <th>Created on</th>
-                            <th>Last updated on</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var category in Model)
-                        {
-                            <partial name="_categoryRow" model="@category" />
-                        }
-                    </tbody>
-                </table>
-            </div>
-            
-           
-        }
+
+            <div id="kt_datatable_example_buttons" class="d-none"></div>
+        </div>
+    </div>
+    <div class="card-body pt-0">
+        <div class="table-responsive">
+            <table class="table table-row-dashed table-row-gray-300 gy-7 js-datatable" data-export-title="Categories">
+                <thead>
+                    <tr class="fw-bold fs-6 text-gray-800">
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Created on</th>
+                        <th>Last updated on</th>
+                        <th class="js-no-export">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var category in Model)
+                    {
+                        <partial name="_categoryRow" model="@category" />
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <input type="hidden" name="__RequestVerificationToken" value="@antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
+@section Plugins {
+    <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-
-        $(document).ready(function(){
-            $('body').delegate('js-toggle-status','click',function(){
-                const btn = $(this);
-
-                bootbox.confirm({
-                    message: 'Are you sure you want to toggle this item status?',
-                    buttons: {
-                        confirm: {
-                            label: 'Yes',
-                            className: 'btn-danger'
-                        },
-                        cancel: {
-                            label: 'No',
-                            className: 'btn-secondary'
-                        }
-                    },
-                    callback: async function (result)
-                    {
-                        if(!result) return;
-
-                        btn.disabled = true;
-
-                        $.post(
-                            {
-                                url:'/Categories/ToggleStatus/' + btn.data('id'),
-                                data:{
-                                    '__RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                                },
-                                success:function(lastUpdatedOn) {
-                                    const row = $("tr");
-                                    const status = row.find('.js-status');
-                                    const newStatus = status.text().trim() === 'Deleted' ? 'Available' : 'Deleted';
-                                    status.text(newStatus).toggleClass('badge-light-success badge-light-danger');
-                                    row.find('.js-updated-on').html(lastUpdatedOn);
-                                    animate(status,'animate__flipInX');
-
-                                    showSuccessMessage();
-                                },
-                                error: function(){
-                                    showErrorMessage();
-                                }
-                            })
-                    }
-                })
-            })
-        })
-
-    </script>
 }
