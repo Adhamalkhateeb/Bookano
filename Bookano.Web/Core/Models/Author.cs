@@ -1,9 +1,8 @@
 ﻿
 namespace Bookano.Web.Core.Models
 {
-
-    [Index(nameof(Name),IsUnique = true)]
-    public sealed class Category
+    [Index(nameof(Name), IsUnique = true)]
+    public sealed class Author
     {
         public int Id { get; set; }
 

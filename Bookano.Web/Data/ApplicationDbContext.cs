@@ -7,5 +7,7 @@ namespace Bookano.Web.Data
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext(options)
     {
         public DbSet<Category>  Categories => Set<Category>();
+
+        public DbSet<Author> Authors => Set<Author>();
     }
 }

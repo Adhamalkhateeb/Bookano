@@ -1,255 +1,240 @@
-﻿
-var table;
-var datatable;
-let updatedRow;
-let exportedCols = [];
+﻿let datatable;
+let pendingRow = null;
 
-//Sweet Alert
-function showSuccessMessage(message = 'Saved successfully!') {
-    return Swal.fire({
-        icon: 'success',
-        title: 'Success',
-        text: message,
-        customClass: {
-            confirmButton: "btn btn-primary"
-        }
+let modal;
+let modalEl;
+
+// ============================================================
+// DataTable
+// ============================================================
+function initTable() {
+    const tableEl = document.querySelector('.js-datatable');
+    if (!tableEl) return;
+
+
+    datatable = new DataTable(tableEl, {
+        pageLength: 10,
+        info: false,
+        drawCallback: () => KTMenu.createInstances()
     });
-}
 
-function showErrorMessage(message = 'Something went wrong!') {
-    return Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: message,
-        customClass: {
-            confirmButton: "btn btn-primary"
-        }
-    });
-}
 
-//Modal
-function onModalSuccess(row) {
-
-    showSuccessMessage();
-    $("#Modal").modal('hide');
-
-    const newRow = $(row);
-
-    const rowData = newRow.find('td').map(function () {
-        return $(this).html();
-    }).get();
-
-    if (updatedRow) {
-        datatable.row(updatedRow).data(rowData).draw(false);
-        const rowNode = datatable.row(updatedRow).node();
-        updatedRow = undefined;
-
-    } else {
-        const addedRow = datatable.row.add(rowData).draw(false);
+    const search = document.querySelector('[data-kt-filter="search"]');
+    if (search) {
+        search.addEventListener('input', () => {
+            datatable.search(search.value).draw();
+        });
     }
 }
 
+function upsertRow(html, oldRow = null) {
+    if (!datatable) return;
 
-//DataTables
-let headers = $('th');
-$.each(headers, function (idx) {
-    let col = $(this);
-    if (!col.hasClass("js-no-export")) exportedCols.push(idx);
-})
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    const newRow = template.content.firstElementChild;
 
-var KTDatatables = function () {
+    if (oldRow) datatable.row(oldRow).remove();
 
-    var initDatatable = function () {
+    const node = datatable.row.add(newRow).draw(false).node();
+    animate(node, 'animate__flash');
+}
 
-        // Init datatable --- more info on datatables: https://datatables.net/manual/
-        datatable = $(table).DataTable({
-            "info": false,
-            'order': [],
-            'pageLength': 10,
-            drawCallback: function () {
-                KTMenu.createInstances();
-            }
-        });
+// ============================================================
+// Modal
+// ============================================================
+function getModal() {
+    if (!modal) {
+        modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    }
+    return modal;
+}
+
+async function openModal(btn) {
+    if (!modalEl) return;
+
+    const titleEl = modalEl.querySelector('#ModalLabel');
+    const bodyEl = modalEl.querySelector('.modal-body');
+
+    if (titleEl) {
+        titleEl.textContent = btn.dataset.title ?? '';
     }
 
-    // Hook export buttons
-    var exportButtons = () => {
-        const documentTitle = $('.js-datatable').data('export-title');
-        var buttons = new $.fn.dataTable.Buttons(table, {
-            buttons: [
-                {
-                    extend: 'copyHtml5',
-                    title: documentTitle,
-                    exportOptions: {
-                        columns: exportedCols
-                    }
-                },
-                {
-                    extend: 'excelHtml5',
-                    title: documentTitle,
-                    exportOptions: {
-                        columns: exportedCols
-                    }
-                },
-                {
-                    extend: 'csvHtml5',
-                    title: documentTitle,
-                    exportOptions: {
-                        columns: exportedCols
-                    }
-                },
-                {
-                    extend: 'pdfHtml5',
-                    title: documentTitle,
-                    exportOptions: {
-                        columns: exportedCols
-                    }
-                }
-            ]
-        }).container().appendTo($('#kt_datatable_example_buttons'));
+    pendingRow = btn.dataset.mode ? btn.closest('tr') : null;
 
-        // Hook dropdown menu click event to datatable export buttons
-        const exportButtons = document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]');
-        exportButtons.forEach(exportButton => {
-            exportButton.addEventListener('click', e => {
-                e.preventDefault();
+    try {
+        const html = await fetchHtml(btn.dataset.url);
 
-                // Get clicked export value
-                const exportValue = e.target.getAttribute('data-kt-export');
-                const target = document.querySelector('.dt-buttons .buttons-' + exportValue);
-
-                // Trigger click event on hidden datatable export buttons
-                target.click();
-            });
-        });
+        if (bodyEl) bodyEl.innerHTML = html;
+        
+        if (window.$?.validator) $.validator.unobtrusive.parse(modalEl);
+        
+        getModal().show();
+    } catch {
+        showError();
     }
+}
 
-    // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
-    var handleSearchDatatable = () => {
-        const filterSearch = document.querySelector('[data-kt-filter="search"]');
-        filterSearch.addEventListener('keyup', function (e) {
-            datatable.search(e.target.value).draw();
-        });
-    }
+// called from Razor
+function onModalBegin() {
+    modalEl?.querySelectorAll('[type="submit"]')
+        .forEach(b => (b.disabled = true));
+}
 
-    // Public methods
-    return {
-        init: function () {
-            table = document.querySelector('.js-datatable');
+function onModalSuccess(rowHtml) {
+    showSuccess();
+    getModal().hide();
+    upsertRow(rowHtml, pendingRow);
+    pendingRow = null;
+}
 
-            if (!table) {
-                return;
-            }
+function onModalComplete() {
+    modalEl?.querySelectorAll('[type="submit"]')
+        .forEach(b => (b.disabled = false));
+}
 
-            initDatatable();
-            exportButtons();
-            handleSearchDatatable();
-        }
-    };
-}();
-
-
-
-$(document).ready(function () {
-
-
-
-
-    //SweetAlters
-    const message = $('#Message').text().trim();
-    if (message !== '') {
-        showSuccessMessage(message);
-    }
-
-
-
-    //DataTables
-    KTUtil.onDOMContentLoaded(function () {
-        KTDatatables.init();
-    });
-
-
-
-
-    //Bootstrap Modal
-    $('body').delegate('.js-render-modal', 'click', function () {
-        var btn = $(this);
-        var modal = $("#Modal");
-
-        modal.find('#ModalLabel').text(btn.data("title"));
-
-        if (btn.data('mode')) {
-            updatedRow = btn.parents('tr');
-        }
-
-
-        $.get({
-            url: btn.data('url'),
-            success: function (form) {
-                modal.find('.modal-body').html(form);
-                $.validator.unobtrusive.parse(modal);
-            },
-            error: function () {
-                showErrorMessage();
-            }
-        });
-
-        modal.modal('show');
-
-    });
-
-    //Toggle Status 
-
-
-    $('body').delegate('.js-toggle-status', 'click', function () {
-        var btn = $(this);
-
+// ============================================================
+// Toggle Status
+// ============================================================
+async function toggleStatus(btn) {
+    const confirmed = await new Promise(resolve => {
         bootbox.confirm({
             message: 'Are you sure you want to toggle this item status?',
             buttons: {
-                confirm: {
-                    label: 'Yes',
-                    className: 'btn-danger'
-                },
-                cancel: {
-                    label: 'No',
-                    className: 'btn-secondary'
-                }
+                confirm: { label: 'Yes', className: 'btn-danger' },
+                cancel: { label: 'No', className: 'btn-secondary' }
             },
-            callback: function (result) {
-                if (!result) return;
+            callback: resolve
+        });
+    });
 
-                btn.disabled = true;
+    if (!confirmed) return;
 
-                $.post(
-                    {
-                        url: btn.data('url'),
-                        data: {
-                            '__RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function (lastUpdatedOn) {
-                            var row = btn.parents("tr"); 
-                            var status = row.find('.js-status');
-                            const newStatus = status.text().trim() === 'Deleted' ? 'Available' : 'Deleted';
-                            status.text(newStatus).toggleClass('badge-light-success badge-light-danger');
-                            row.find('.js-updated-on').html(lastUpdatedOn);
-                            status.addClass('animate__animated animate__flipInX');
+    btn.disabled = true;
+
+    try {
+        const updatedOn = await postForm(btn.dataset.url);
+
+        const row = btn.closest('tr');
+        const statusEl = row.querySelector('.js-status');
+        const updatedEl = row.querySelector('.js-updated-on');
+
+        if (!statusEl) return;
+
+        const isDeleted = statusEl.textContent.trim() === 'Deleted';
+
+        statusEl.textContent = isDeleted ? 'Available' : 'Deleted';
+
+        statusEl.classList.toggle('badge-light-danger', !isDeleted);
+        statusEl.classList.toggle('badge-light-success', isDeleted);
+
+        if (updatedEl) {
+            updatedEl.textContent = updatedOn;
+        }
+
+        animate(statusEl, 'animate__flipInX');
+        showSuccess();
+
+    } catch {
+        showError();
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+// ============================================================
+// Events
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+
+    modalEl = document.querySelector('#Modal');
+
+    if (modalEl) {
+        modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    }
+
+    KTUtil.onDOMContentLoaded(initTable);
+
+    document.body.addEventListener('click', e => {
+        const modalBtn = e.target.closest('.js-render-modal');
+        if (modalBtn) openModal(modalBtn);
+
+        const toggleBtn = e.target.closest('.js-toggle-status');
+        if (toggleBtn) toggleStatus(toggleBtn);
+    });
+});
 
 
-                            showSuccessMessage();
-                        },
-                        error: function () {
-                            showErrorMessage();
-                        }
-                    })
-            }
-        })
-    })
-})
+
+// ============================================================
+// Start Helpers
+// ============================================================
+const getCsrfToken = () =>
+    document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
+
+const animate = (el, animation) => {
+    if (!el) return;
+
+    el.classList.remove('animate__animated', animation);
+    void el.offsetWidth;
+    el.classList.add('animate__animated', animation);
+
+    const handleAnimationEnd = () => {
+        el.classList.remove('animate__animated', animation);
+        el.removeEventListener('animationend', handleAnimationEnd);
+    };
+
+    el.addEventListener('animationend', handleAnimationEnd);
+};
+
+
+const showSuccess = (msg = 'Saved successfully!') =>
+    Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: msg,
+        customClass: { confirmButton: 'btn btn-primary' }
+    });
+
+const showError = (msg = 'Something went wrong!') =>
+    Swal.fire({
+        icon: 'error',
+        title: 'Oops.. 😟',
+        text: msg,
+        customClass: { confirmButton: 'btn btn-primary' }
+    });
+
+
+async function fetchHtml(url) {
+    const res = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    if (!res.ok) {
+        showError();
+        throw new Error(`HTTP ${res.status}`);
+    }
+
+    return res.text();
+}
 
 
 
+async function postForm(url) {
+    const body = new URLSearchParams({
+        __RequestVerificationToken: getCsrfToken()
+    });
 
+    const res = await fetch(url, {
+        method: 'POST',
+        body
+    });
 
+    if (!res.ok) {
+        showError();
+        throw new Error(`HTTP ${res.status}`);
+    }
 
-
+    return res.text();
+}

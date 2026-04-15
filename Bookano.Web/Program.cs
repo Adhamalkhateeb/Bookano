@@ -1,7 +1,6 @@
-using Bookano.Web.Data;
+using Bookano.Web.Core.Mapping;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +17,7 @@ builder.Services.AddControllersWithViews(options =>
     //options.Filters.Add(new ValidateAntiForgeryTokenAttribute());
 });
 
+builder.Services.AddAutoMapper(cfg => { },Assembly.GetAssembly(typeof(MappingProfile)));
 
 
 var app = builder.Build();
