@@ -1,16 +1,13 @@
-﻿
-namespace Bookano.Web.Core.Models
+﻿namespace Bookano.Web.Core.Models
 {
-
-    [Index(nameof(Name),IsUnique = true)]
-    public sealed class Category
+    [Index(nameof(Name), IsUnique = true)]
+    public sealed class Category : BaseModel
     {
         public int Id { get; set; }
 
         [MaxLength(100)]
         public string Name { get; set; } = null!;
-        public bool IsDeleted { get; set; }
-        public DateTimeOffset CreatedOnUtc { get; set; } = DateTime.UtcNow;
-        public DateTimeOffset? LastUpdatedOnUtc { get; set; }
+
+        public ICollection<BookCategory> Books { get; set; } = [];
     }
 }

@@ -9,6 +9,8 @@ namespace Bookano.Web.Core.Mapping
         {
             CreateMap<Category, CategoryViewModel>();
             CreateMap<CategoryFormViewModel, Category>().ReverseMap();
+            CreateMap<Author, AuthorViewModel>();
+            CreateMap<AuthorFormViewModel, Author>().ReverseMap();
         }
     }
 

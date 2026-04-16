@@ -11,7 +11,6 @@ namespace Bookano.Web.Filters
             var isAjax = request.Headers["x-requested-with"] == "XMLHttpRequest";
 
             return isAjax;
-
         }
     }
 }
