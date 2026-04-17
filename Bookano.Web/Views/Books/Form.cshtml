@@ -1,0 +1,154 @@
+﻿@model BookFormViewModel
+@* @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery *@
+@{
+    ViewData["Title"] = $" {(Model?.Id > 0 ? "Edit" : "Create")} Book";
+}
+
+<div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
+    <div class="d-flex align-items-center">
+        <!--begin::Icon-->
+        <div class="symbol symbol-50px me-4 ">
+            <div class="symbol-label fs-2 fw-semibold text-success">
+                <i class="fa-solid fa-book fa-lg text-dark"></i>
+            </div>
+        </div>
+        <!--end::Icon-->
+        <!--begin::Content-->
+        <div class="d-flex flex-column  justify-content-center pe-0 pe-sm-10">
+            <h3 class="mb-1">@(Model?.Id > 0 ? "Edit" : "Add") Book</h3>
+        </div>
+    </div>
+    <!--end::Content-->
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" asp-controller="Books" enctype="multipart/form-data">
+            @if(Model?.Id > 0)
+                {
+                    <input type="hidden" asp-for="Id"/>
+                }
+                <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div class="form-floating mb-2">
+                            <input asp-for="Title" type="text" class="form-control" placeholder=" " />
+                            <label asp-for="Title" class="form-label"></label>
+                        </div>
+                        <span asp-validation-for="Title" class="text-danger d-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div class="form-floating mb-2">
+                            <select asp-for="AuthorId" class="form-select" asp-items="Model?.Authors">
+                                <option value="">Select author</option>
+                            </select>
+                            <label asp-for="AuthorId" class="form-label"></label>
+                        </div>
+                        <span asp-validation-for="AuthorId" class="text-danger d-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div class=" mb-2">
+                            <label asp-for="SelectedCategories" class="form-label"></label>
+                            <select asp-for="SelectedCategories" class="form-select" asp-items="Model?.Categories" multiple>
+                                <option value="">Select Categories</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="SelectedCategories" class="text-danger d-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div class="form-floating mb-2">
+                            <input asp-for="Publisher" type="text" class="form-control" placeholder=" " />
+                            <label asp-for="Publisher" class="form-label"></label>
+                        </div>
+                        <span asp-validation-for="Publisher" class="text-danger d-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div class=" mb-2">
+                            <label asp-for="PublishingDate" class="form-label"></label>
+                            <input asp-for="PublishingDate" type="date" class="form-control" placeholder="Publishing Date" />
+                        </div>
+                        <span asp-validation-for="PublishingDate" class="text-danger d-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div>
+                            <img id="ImagePreview" src="~/images/books/@(Model?.ImageUrl ?? "no-image-cover.png")" class="img-thumbnail" alt="book image" />
+                        </div>
+                        <div class="mb-2">
+                            <input asp-for="Image" type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control" placeholder=" "
+                                   onchange="document.getElementById('ImagePreview').src = window.URL.createObjectURL(this.files[0])" />
+                        </div>
+                        <span asp-validation-for="Image" class="text-danger d-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div class="form-floating mb-2">
+                            <input asp-for="Hall" type="text" class="form-control" placeholder=" " />
+                            <label asp-for="Hall"></label>
+                        </div>
+                        <span asp-validation-for="Hall" class="text-danger d-block"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-4">
+                    <div class="mb-5">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" asp-for="IsAvailableForRental">
+                                <label class="form-check-label" asp-for="IsAvailableForRental"></label>
+                            </div>
+                            <span asp-validation-for="IsAvailableForRental" class="text-danger d-block"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="mb-5">
+                            <div class="form-floating mb-2">
+                                <textarea class="form-control" placeholder=" " asp-for="Description"></textarea>
+                                <label asp-for="Description">Comments</label>
+                                <span asp-validation-for="Description" class="text-danger d-block"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">
+                    <span class="indicator-label">
+                        Save
+                    </span>
+                    <span class="indicator-progress">
+                        Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+
+    @section Scripts{
+        <partial name="_ValidationScriptsPartial" />
+    }
+       
