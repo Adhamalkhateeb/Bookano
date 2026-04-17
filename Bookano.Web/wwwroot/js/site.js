@@ -7,6 +7,44 @@ let modalEl;
 // ============================================================
 // DataTable
 // ============================================================
+
+function attachExportButtons(tableEl) {
+
+
+
+    const documentTitle = tableEl.dataset.exportTitle ?? '';
+
+    const exportedCols = Array.from(
+        tableEl.querySelectorAll('th'))
+        .map((th, idx) => ({ th, idx }))
+        .filter(({ th }) => !th.classList.contains('js-no-export'))
+        .map(({ idx }) => idx
+    );
+
+    const exportTypes = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'];
+
+    const buttons = exportTypes.map(extend =>
+    (
+        {
+            extend,
+            title: documentTitle,
+            exportOptions: { columns: exportedCols },
+        }
+    ));
+
+    new DataTable.Buttons(datatable, { buttons }).container()
+        .appendTo(document.querySelector('#kt_datatable_example_buttons'));
+
+    document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]')
+        .forEach(btn => {
+            btn.addEventListener('click',
+                e => {
+                    e.preventDefault();
+                    const exportValue = e.currentTarget.dataset.ktExport; document.querySelector(`.dt-buttons .buttons-${exportValue}`)?.click();
+                });
+        });
+}
+
 function initTable() {
     const tableEl = document.querySelector('.js-datatable');
     if (!tableEl) return;
@@ -25,6 +63,9 @@ function initTable() {
             datatable.search(search.value).draw();
         });
     }
+
+    attachExportButtons(tableEl);
+
 }
 
 function upsertRow(html, oldRow = null) {
@@ -66,9 +107,9 @@ async function openModal(btn) {
         const html = await fetchHtml(btn.dataset.url);
 
         if (bodyEl) bodyEl.innerHTML = html;
-        
+
         if (window.$?.validator) $.validator.unobtrusive.parse(modalEl);
-        
+
         getModal().show();
     } catch {
         showError();
