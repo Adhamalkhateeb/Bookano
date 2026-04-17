@@ -1,4 +1,6 @@
-﻿namespace Bookano.Web.Core.Models
+﻿using Microsoft.IdentityModel.Tokens;
+
+namespace Bookano.Web.Core.Models
 {
     [Index(nameof(Title), nameof(AuthorId), IsUnique = true)]
     public class Book : BaseModel
@@ -21,5 +23,7 @@
         public string Description { get; set; } = null!;
 
         public ICollection<BookCategory> Categories { get; set; } = [];
+
+    
     }
 }
