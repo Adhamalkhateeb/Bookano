@@ -11,9 +11,8 @@ namespace Bookano.Web.Core.Models
         public string Title { get; set; } = null!;
         public int AuthorId { get; set; }
         public Author? Author { get; set; }
-
-        [MaxLength(200)]
-        public string Publisher { get; set; } = null!;
+        public int PublisherId { get; set; }
+        public Publisher? Publisher { get; set; }
         public DateTime PublishingDate { get; set; }
         public string? ImageUrl { get; set; }
 
@@ -23,7 +22,5 @@ namespace Bookano.Web.Core.Models
         public string Description { get; set; } = null!;
 
         public ICollection<BookCategory> Categories { get; set; } = [];
-
-    
     }
 }

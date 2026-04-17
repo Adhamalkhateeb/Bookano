@@ -39,13 +39,10 @@
             _context.Authors.Add(author);
             _context.SaveChanges();
 
-
-
             var authorViewModel = _mapper.Map<AuthorViewModel>(author);
 
             return PartialView("_AuthorRow", authorViewModel);
         }
-
 
         [HttpGet]
         [AjaxOnly]
@@ -80,14 +77,12 @@
             var authorViewModel = _mapper.Map<AuthorViewModel>(author);
 
             return PartialView("_AuthorRow", authorViewModel);
-
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult ToggleStatus(int id)
         {
-
             var author = _context.Authors.Find(id);
 
             if (author is null)
@@ -98,7 +93,12 @@
 
             _context.SaveChanges();
 
-            return Ok(author.LastUpdatedOnUtc.GetValueOrDefault().ToLocalTime().ToString("yyyy/MM/dd hh:mm tt"));
+            return Ok(
+                author
+                    .LastUpdatedOnUtc.GetValueOrDefault()
+                    .ToLocalTime()
+                    .ToString("yyyy/MM/dd hh:mm tt")
+            );
         }
 
         public IActionResult AllowItem(AuthorFormViewModel model)
