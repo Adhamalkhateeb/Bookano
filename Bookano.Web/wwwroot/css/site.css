@@ -39,4 +39,10 @@ body {
     padding-bottom: 0.300rem;
 }
 
+.image-input {
+    background-size: cover !important;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
 /* End   Override theme  */

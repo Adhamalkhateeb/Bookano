@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         singleDatePicker: true,
         autoApply: true,
         drops: 'up',
-        //maxDate: new Date(),
+        maxDate: new Date(),
     });
 
     //tinymce
