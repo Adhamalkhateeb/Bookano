@@ -136,6 +136,16 @@ namespace Bookano.Web.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        public IActionResult AllowItem(BookFormViewModel model)
+        {
+            var book = _context.Books.SingleOrDefault(b =>
+                b.Title == model.Title && b.AuthorId == model.AuthorId
+            );
+            var isAllowed = book is null || book.Id.Equals(model.Id);
+
+            return Json(isAllowed);
+        }
+
         private async Task<BookFormViewModel> PopulateViewModelAsync(
             BookFormViewModel? model = null
         )
@@ -154,8 +164,14 @@ namespace Bookano.Web.Controllers
                 .OrderBy(c => c.Name)
                 .ToListAsync();
 
+            var publishers = await _context
+                .Publishers.Where(p => !p.IsDeleted)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
             viewModel.Authors = _mapper.Map<IEnumerable<SelectListItem>>(authors);
             viewModel.Categories = _mapper.Map<IEnumerable<SelectListItem>>(categories);
+            viewModel.Publishers = _mapper.Map<IEnumerable<SelectListItem>>(publishers);
 
             return viewModel;
         }

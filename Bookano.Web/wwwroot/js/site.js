@@ -203,6 +203,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const toggleBtn = e.target.closest('.js-toggle-status');
         if (toggleBtn) toggleStatus(toggleBtn);
     });
+
+
+    //select2
+    $('.js-select2').select2();
+
+    //datepicker
+    $(".js-datepicker").daterangepicker({
+        singleDatePicker: true,
+        autoApply: true,
+        drops: 'up',
+        //maxDate: new Date(),
+    });
+
+    //tinymce
+    var options = { selector: ".js-tinymce", height: "456" };
+
+    if (KTThemeMode.getMode() === "dark") {
+        options["skin"] = "oxide-dark";
+        options["content_css"] = "dark";
+    }
+
+    tinymce.init(options);
 });
 
 
