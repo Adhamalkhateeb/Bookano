@@ -8,6 +8,7 @@ namespace Bookano.Web.Data
         : IdentityDbContext(options)
     {
         public DbSet<Author> Authors => Set<Author>();
+        public DbSet<BookAuthor> BookAuthors => Set<BookAuthor>();
         public DbSet<Book> Books => Set<Book>();
         public DbSet<BookCategory> BookCategories => Set<BookCategory>();
         public DbSet<Category> Categories => Set<Category>();
@@ -16,6 +17,8 @@ namespace Bookano.Web.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             builder.Entity<BookCategory>().HasKey(x => new { x.BookId, x.CategoryId });
+            builder.Entity<BookAuthor>().HasKey(x => new { x.BookId, x.AuthorId });
+            builder.Entity<Book>().HasIndex(b => b.Isbn).IsUnique().HasFilter("[Isbn] IS NOT NULL");
             base.OnModelCreating(builder);
         }
     }

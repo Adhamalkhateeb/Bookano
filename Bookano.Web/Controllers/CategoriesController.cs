@@ -12,16 +12,14 @@ public class CategoriesController : Controller
     }
 
     [HttpGet]
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var categories = _context.Categories
-            .AsNoTracking().ToList();
+        var categories = await _context.Categories.AsNoTracking().ToListAsync();
 
         var viewModel = _mapper.Map<IEnumerable<CategoryViewModel>>(categories);
 
         return View(viewModel);
     }
-
 
     [HttpGet]
     [AjaxOnly]
@@ -32,7 +30,7 @@ public class CategoriesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Create(CategoryFormViewModel model)
+    public async Task<IActionResult> Create(CategoryFormViewModel model)
     {
         if (!ModelState.IsValid)
             return BadRequest();
@@ -40,21 +38,18 @@ public class CategoriesController : Controller
         var category = _mapper.Map<Category>(model);
 
         _context.Categories.Add(category);
-        _context.SaveChanges();
-
-
+        await _context.SaveChangesAsync();
 
         var categoryViewModel = _mapper.Map<CategoryViewModel>(category);
 
         return PartialView("_CategoryRow", categoryViewModel);
     }
 
-
     [HttpGet]
     [AjaxOnly]
-    public IActionResult Edit(int id)
+    public async Task<IActionResult> Edit(int id)
     {
-        var category = _context.Categories.Find(id);
+        var category = await _context.Categories.FindAsync(id);
 
         if (category is null)
             return NotFound();
@@ -66,32 +61,30 @@ public class CategoriesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(CategoryFormViewModel model)
+    public async Task<IActionResult> Edit(CategoryFormViewModel model)
     {
         if (!ModelState.IsValid)
             return BadRequest();
 
-        var category = _context.Categories.Find(model.Id);
+        var category = await _context.Categories.FindAsync(model.Id);
 
         if (category is null)
             return NotFound();
 
         category = _mapper.Map(model, category);
         category.LastUpdatedOnUtc = DateTime.UtcNow;
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
         var categoryViewModel = _mapper.Map<CategoryViewModel>(category);
 
         return PartialView("_CategoryRow", categoryViewModel);
-
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult ToggleStatus(int id)
+    public async Task<IActionResult> ToggleStatus(int id)
     {
-
-        var category = _context.Categories.Find(id);
+        var category = await _context.Categories.FindAsync(id);
 
         if (category is null)
             return NotFound();
@@ -99,17 +92,21 @@ public class CategoriesController : Controller
         category.IsDeleted = !category.IsDeleted;
         category.LastUpdatedOnUtc = DateTime.UtcNow;
 
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
-        return Ok(category.LastUpdatedOnUtc.GetValueOrDefault().ToLocalTime().ToString("yyyy/MM/dd hh:mm tt"));
+        return Ok(
+            category
+                .LastUpdatedOnUtc.GetValueOrDefault()
+                .ToLocalTime()
+                .ToString("yyyy/MM/dd hh:mm tt")
+        );
     }
 
-    public IActionResult AllowItem(CategoryFormViewModel model)
+    public async Task<IActionResult> AllowItem(CategoryFormViewModel model)
     {
-        var category = _context.Categories.SingleOrDefault(c => c.Name == model.Name);
+        var category = await _context.Categories.SingleOrDefaultAsync(c => c.Name == model.Name);
         var isAllowed = category is null || category.Id.Equals(model.Id);
 
         return Json(isAllowed);
     }
 }
-

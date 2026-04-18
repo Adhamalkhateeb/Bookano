@@ -1,5 +1,4 @@
-﻿
-namespace Bookano.Web.Core.Models
+﻿namespace Bookano.Web.Core.Models
 {
     [Index(nameof(Name), IsUnique = true)]
     public sealed class Author : BaseModel
@@ -8,5 +7,7 @@ namespace Bookano.Web.Core.Models
 
         [MaxLength(100)]
         public string Name { get; set; } = null!;
+
+        public ICollection<BookAuthor> Books { get; set; } = [];
     }
 }

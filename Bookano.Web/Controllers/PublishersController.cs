@@ -11,9 +11,9 @@
             _mapper = mapper;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var publishers = _context.Publishers.AsNoTracking().ToList();
+            var publishers = await _context.Publishers.AsNoTracking().ToListAsync();
 
             var viewModel = _mapper.Map<IEnumerable<PublisherViewModel>>(publishers);
 
@@ -29,7 +29,7 @@
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(PublisherFormViewModel model)
+        public async Task<IActionResult> Create(PublisherFormViewModel model)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
@@ -37,7 +37,7 @@
             var publisher = _mapper.Map<Publisher>(model);
 
             _context.Publishers.Add(publisher);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             var PublisherViewModel = _mapper.Map<PublisherViewModel>(publisher);
 
@@ -46,9 +46,9 @@
 
         [HttpGet]
         [AjaxOnly]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var Publisher = _context.Publishers.Find(id);
+            var Publisher = await _context.Publishers.FindAsync(id);
 
             if (Publisher is null)
                 return NotFound();
@@ -60,19 +60,19 @@
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(PublisherFormViewModel model)
+        public async Task<IActionResult> Edit(PublisherFormViewModel model)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var Publisher = _context.Publishers.Find(model.Id);
+            var Publisher = await _context.Publishers.FindAsync(model.Id);
 
             if (Publisher is null)
                 return NotFound();
 
             Publisher = _mapper.Map(model, Publisher);
             Publisher.LastUpdatedOnUtc = DateTime.UtcNow;
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             var PublisherViewModel = _mapper.Map<PublisherViewModel>(Publisher);
 
@@ -81,9 +81,9 @@
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ToggleStatus(int id)
+        public async Task<IActionResult> ToggleStatus(int id)
         {
-            var Publisher = _context.Publishers.Find(id);
+            var Publisher = await _context.Publishers.FindAsync(id);
 
             if (Publisher is null)
                 return NotFound();
@@ -91,7 +91,7 @@
             Publisher.IsDeleted = !Publisher.IsDeleted;
             Publisher.LastUpdatedOnUtc = DateTime.UtcNow;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return Ok(
                 Publisher
@@ -101,9 +101,11 @@
             );
         }
 
-        public IActionResult AllowItem(PublisherFormViewModel model)
+        public async Task<IActionResult> AllowItem(PublisherFormViewModel model)
         {
-            var Publisher = _context.Publishers.SingleOrDefault(c => c.Name == model.Name);
+            var Publisher = await _context.Publishers.SingleOrDefaultAsync(c =>
+                c.Name == model.Name
+            );
             var isAllowed = Publisher is null || Publisher.Id.Equals(model.Id);
 
             return Json(isAllowed);

@@ -21,7 +21,7 @@
     <!--end::Content-->
 </div>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm ">
     <div class="card-body">
         <form method="post" asp-controller="Books" enctype="multipart/form-data">
             @if (Model?.Id > 0)
@@ -31,7 +31,7 @@
             <!--begin::Image input-->
             <div class="image-input image-input-empty mb-10" 
             data-kt-image-input="true" 
-            style="background: url(/images/@(string.IsNullOrEmpty(Model?.ImageUrl) ? "no-image-placeholder-125x200.svg" : $"books/{Model.ImageUrl}"))">
+                 style="background: url(@(string.IsNullOrEmpty(Model?.ImageUrl) ? "/images/no-image-placeholder-125x200.svg" : Model.ImageUrl))">
                 <!--begin::Image preview wrapper-->
                 <div class="image-input-wrapper w-125px h-200px"></div>
                 <!--end::Image preview wrapper-->
@@ -70,6 +70,17 @@
                         <div class="col">
                             <div class="mb-5">
                                 <div class="form-floating mb-2">
+                                    <input asp-for="Isbn" type="text" class="form-control" placeholder=" " />
+                                    <label asp-for="Isbn" class="form-label"></label>
+                                </div>
+                                <span asp-validation-for="Isbn" class="text-danger d-block"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="mb-5">
+                                <div class="form-floating mb-2">
                                     <input asp-for="Title" type="text" class="form-control" placeholder=" " />
                                     <label asp-for="Title" class="form-label"></label>
                                 </div>
@@ -80,13 +91,12 @@
                     <div class="row">
                         <div class="col">
                             <div class="mb-5">
-                                <div class="form-floating mb-2">
-                                    <select asp-for="AuthorId" class="form-select js-select2" asp-items="Model?.Authors" data-placeholder="Select an author">
+                                <div class=" mb-2">
+                                    <select asp-for="SelectedAuthors" class="form-select js-select2" asp-items="Model?.Authors" data-placeholder="Select authors">
                                         <option></option>
                                     </select>
-                                    <label asp-for="AuthorId" class="form-label"></label>
                                 </div>
-                                <span asp-validation-for="AuthorId" class="text-danger d-block"></span>
+                                <span asp-validation-for="SelectedAuthors" class="text-danger d-block"></span>
                             </div>
                         </div>
                     </div>

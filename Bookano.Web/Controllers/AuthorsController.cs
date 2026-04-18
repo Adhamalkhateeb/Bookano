@@ -11,9 +11,9 @@
             _mapper = mapper;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var authors = _context.Authors.AsNoTracking().ToList();
+            var authors = await _context.Authors.AsNoTracking().ToListAsync();
 
             var viewModel = _mapper.Map<IEnumerable<AuthorViewModel>>(authors);
 
@@ -29,7 +29,7 @@
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(AuthorFormViewModel model)
+        public async Task<IActionResult> Create(AuthorFormViewModel model)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
@@ -37,7 +37,7 @@
             var author = _mapper.Map<Author>(model);
 
             _context.Authors.Add(author);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             var authorViewModel = _mapper.Map<AuthorViewModel>(author);
 
@@ -46,9 +46,9 @@
 
         [HttpGet]
         [AjaxOnly]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
-            var author = _context.Authors.Find(id);
+            var author = await _context.Authors.FindAsync(id);
 
             if (author is null)
                 return NotFound();
@@ -60,19 +60,19 @@
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(AuthorFormViewModel model)
+        public async Task<IActionResult> Edit(AuthorFormViewModel model)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var author = _context.Authors.Find(model.Id);
+            var author = await _context.Authors.FindAsync(model.Id);
 
             if (author is null)
                 return NotFound();
 
             author = _mapper.Map(model, author);
             author.LastUpdatedOnUtc = DateTime.UtcNow;
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             var authorViewModel = _mapper.Map<AuthorViewModel>(author);
 
@@ -81,9 +81,9 @@
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult ToggleStatus(int id)
+        public async Task<IActionResult> ToggleStatus(int id)
         {
-            var author = _context.Authors.Find(id);
+            var author = await _context.Authors.FindAsync(id);
 
             if (author is null)
                 return NotFound();
@@ -91,7 +91,7 @@
             author.IsDeleted = !author.IsDeleted;
             author.LastUpdatedOnUtc = DateTime.UtcNow;
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return Ok(
                 author
@@ -101,9 +101,9 @@
             );
         }
 
-        public IActionResult AllowItem(AuthorFormViewModel model)
+        public async Task<IActionResult> AllowItem(AuthorFormViewModel model)
         {
-            var author = _context.Authors.SingleOrDefault(c => c.Name == model.Name);
+            var author = await _context.Authors.SingleOrDefaultAsync(c => c.Name == model.Name);
             var isAllowed = author is null || author.Id.Equals(model.Id);
 
             return Json(isAllowed);

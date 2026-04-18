@@ -1,10 +1,10 @@
 ﻿namespace Bookano.Web.Core.Models
 {
-    public class BookCategory
+    public class BookAuthor
     {
         public int BookId { get; set; }
         public Book? Book { get; set; }
-        public int CategoryId { get; set; }
-        public Category? Category { get; set; }
+        public int AuthorId { get; set; }
+        public Author? Author { get; set; }
     }
 }

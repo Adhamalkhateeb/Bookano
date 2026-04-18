@@ -4,6 +4,7 @@ using Bookano.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookano.Web.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260418171412_AddedImagePublicIdToBooksTable")]
+    partial class AddedImagePublicIdToBooksTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,6 +63,9 @@ namespace Bookano.Web.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("CreatedOnUtc")
                         .HasColumnType("datetimeoffset");
 
@@ -75,9 +81,6 @@ namespace Bookano.Web.Data.Migrations
                     b.Property<string>("ImagePublicId")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ImageThumbnailUrl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
 
@@ -86,10 +89,6 @@ namespace Bookano.Web.Data.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<string>("Isbn")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTimeOffset?>("LastUpdatedOnUtc")
                         .HasColumnType("datetimeoffset");
@@ -107,28 +106,14 @@ namespace Bookano.Web.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Isbn")
-                        .IsUnique()
-                        .HasFilter("[Isbn] IS NOT NULL");
+                    b.HasIndex("AuthorId");
 
                     b.HasIndex("PublisherId");
 
+                    b.HasIndex("Title", "AuthorId")
+                        .IsUnique();
+
                     b.ToTable("Books");
-                });
-
-            modelBuilder.Entity("Bookano.Web.Core.Models.BookAuthor", b =>
-                {
-                    b.Property<int>("BookId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("AuthorId")
-                        .HasColumnType("int");
-
-                    b.HasKey("BookId", "AuthorId");
-
-                    b.HasIndex("AuthorId");
-
-                    b.ToTable("BookAuthors");
                 });
 
             modelBuilder.Entity("Bookano.Web.Core.Models.BookCategory", b =>
@@ -410,32 +395,21 @@ namespace Bookano.Web.Data.Migrations
 
             modelBuilder.Entity("Bookano.Web.Core.Models.Book", b =>
                 {
+                    b.HasOne("Bookano.Web.Core.Models.Author", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Bookano.Web.Core.Models.Publisher", "Publisher")
                         .WithMany("Books")
                         .HasForeignKey("PublisherId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Publisher");
-                });
-
-            modelBuilder.Entity("Bookano.Web.Core.Models.BookAuthor", b =>
-                {
-                    b.HasOne("Bookano.Web.Core.Models.Author", "Author")
-                        .WithMany("Books")
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Bookano.Web.Core.Models.Book", "Book")
-                        .WithMany("Authors")
-                        .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Author");
 
-                    b.Navigation("Book");
+                    b.Navigation("Publisher");
                 });
 
             modelBuilder.Entity("Bookano.Web.Core.Models.BookCategory", b =>
@@ -508,15 +482,8 @@ namespace Bookano.Web.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Bookano.Web.Core.Models.Author", b =>
-                {
-                    b.Navigation("Books");
-                });
-
             modelBuilder.Entity("Bookano.Web.Core.Models.Book", b =>
                 {
-                    b.Navigation("Authors");
-
                     b.Navigation("Categories");
                 });
 

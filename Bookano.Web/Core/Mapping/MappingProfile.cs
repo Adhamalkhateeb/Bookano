@@ -16,8 +16,14 @@ public class MappingProfile : Profile
 
         //Books
         CreateMap<BookFormViewModel, Book>()
-            .ReverseMap()
-            .ForMember(dest => dest.Categories, opt => opt.Ignore());
+            .ForMember(dest => dest.Categories, opt => opt.Ignore())
+            .ForMember(dest => dest.Authors, opt => opt.Ignore());
+
+        CreateMap<Book, BookFormViewModel>()
+            .ForMember(dest => dest.Categories, opt => opt.Ignore())
+            .ForMember(dest => dest.Authors, opt => opt.Ignore())
+            .ForMember(dest => dest.SelectedCategories, opt => opt.Ignore())
+            .ForMember(dest => dest.SelectedAuthors, opt => opt.Ignore());
 
         //Categories
         CreateMap<Category, CategoryViewModel>();

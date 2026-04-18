@@ -214,10 +214,11 @@ document.addEventListener('DOMContentLoaded', () => {
         autoApply: true,
         drops: 'up',
         maxDate: new Date(),
+        showDropdowns: true,
     });
 
     //tinymce
-    var options = { selector: ".js-tinymce", height: "456" };
+    var options = { selector: ".js-tinymce", height: "504" };
 
     if (KTThemeMode.getMode() === "dark") {
         options["skin"] = "oxide-dark";
