@@ -16,14 +16,26 @@ public class MappingProfile : Profile
 
         //Books
         CreateMap<BookFormViewModel, Book>()
+            .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImageThumbnailUrl, opt => opt.Ignore())
             .ForMember(dest => dest.Categories, opt => opt.Ignore())
             .ForMember(dest => dest.Authors, opt => opt.Ignore());
 
         CreateMap<Book, BookFormViewModel>()
             .ForMember(dest => dest.Categories, opt => opt.Ignore())
-            .ForMember(dest => dest.Authors, opt => opt.Ignore())
-            .ForMember(dest => dest.SelectedCategories, opt => opt.Ignore())
-            .ForMember(dest => dest.SelectedAuthors, opt => opt.Ignore());
+            .ForMember(dest => dest.Authors, opt => opt.Ignore());
+
+        CreateMap<Book, BookViewModel>()
+            .ForMember(
+                dest => dest.Authors,
+                opt => opt.MapFrom(b => b.Authors.Select(a => a.Author!.Name).ToList())
+            )
+            .ForMember(
+                dest => dest.Categories,
+                opt => opt.MapFrom(b => b.Categories.Select(a => a.Category!.Name).ToList())
+            )
+            .ForMember(dest => dest.Publisher, opt => opt.MapFrom(b => b.Publisher!.Name));
+        ;
 
         //Categories
         CreateMap<Category, CategoryViewModel>();

@@ -4,58 +4,76 @@ let pendingRow = null;
 let modal;
 let modalEl;
 
+
+// ============================================================
+// GLOBAL FORM HANDLER
+// ============================================================
+
+
+
+document.addEventListener('submit', handleFormSubmit);
+
+function handleFormSubmit(e) {
+    const form = e.target;
+
+    if (form.dataset.submitted === 'true') {
+        e.preventDefault();
+        return;
+    }
+
+    if (window.$ && $(form).data('validator')) {
+        if (!$(form).valid()) return;
+    }
+
+    form.dataset.submitting = 'true';
+
+    lockForm(form);
+}
+
+function lockForm(container) {
+    if (!container) return;
+
+    const form = container.tagName === 'FORM'
+        ? container
+        : container.querySelector('form');
+
+    form.dataset.submitted = 'true';
+
+    form.querySelectorAll('[type="submit"]').forEach(btn => {
+        btn.disabled = true;
+        btn.setAttribute('data-kt-indicator', 'on');
+    });
+}
+
+function resetFormState(container) {
+    const form = container.tagName === 'FORM'
+        ? container
+        : container.querySelector('form');
+
+    if (!form) return;
+
+    form.dataset.submitting = 'false';
+
+
+    form.querySelectorAll('[type="submit"]').forEach(btn => {
+        btn.disabled = false;
+        btn.setAttribute('data-kt-indicator', 'off');
+    });
+}
+
 // ============================================================
 // DataTable
 // ============================================================
 
-function attachExportButtons(tableEl) {
-
-
-
-    const documentTitle = tableEl.dataset.exportTitle ?? '';
-
-    const exportedCols = Array.from(
-        tableEl.querySelectorAll('th'))
-        .map((th, idx) => ({ th, idx }))
-        .filter(({ th }) => !th.classList.contains('js-no-export'))
-        .map(({ idx }) => idx
-    );
-
-    const exportTypes = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'];
-
-    const buttons = exportTypes.map(extend =>
-    (
-        {
-            extend,
-            title: documentTitle,
-            exportOptions: { columns: exportedCols },
-        }
-    ));
-
-    new DataTable.Buttons(datatable, { buttons }).container()
-        .appendTo(document.querySelector('#kt_datatable_example_buttons'));
-
-    document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]')
-        .forEach(btn => {
-            btn.addEventListener('click',
-                e => {
-                    e.preventDefault();
-                    const exportValue = e.currentTarget.dataset.ktExport; document.querySelector(`.dt-buttons .buttons-${exportValue}`)?.click();
-                });
-        });
-}
-
 function initTable() {
     const tableEl = document.querySelector('.js-datatable');
     if (!tableEl) return;
-
 
     datatable = new DataTable(tableEl, {
         pageLength: 10,
         info: false,
         drawCallback: () => KTMenu.createInstances()
     });
-
 
     const search = document.querySelector('[data-kt-filter="search"]');
     if (search) {
@@ -65,16 +83,46 @@ function initTable() {
     }
 
     attachExportButtons(tableEl);
-
 }
+
+function attachExportButtons(tableEl) {
+    const title = tableEl.dataset.exportTitle ?? '';
+
+    const cols = Array.from(tableEl.querySelectorAll('th'))
+        .map((th, i) => ({ th, i }))
+        .filter(x => !x.th.classList.contains('js-no-export'))
+        .map(x => x.i);
+
+    const exportTypes = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'];
+
+    const buttons = exportTypes.map(t => ({
+        extend: t,
+        title,
+        exportOptions: { columns: cols }
+    }));
+
+    new DataTable.Buttons(datatable, { buttons }).container()
+        .appendTo(document.querySelector('#kt_datatable_example_buttons'));
+
+    document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]')
+        .forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                const exportValue = e.currentTarget.dataset.ktExport;
+                document.querySelector(`.dt-buttons .buttons-${exportValue}`)?.click();
+            });
+        });
+}
+
+
 
 function upsertRow(html, oldRow = null) {
     if (!datatable) return;
 
     const template = document.createElement('template');
     template.innerHTML = html.trim();
-    const newRow = template.content.firstElementChild;
 
+    const newRow = template.content.firstElementChild;
     if (oldRow) datatable.row(oldRow).remove();
 
     const node = datatable.row.add(newRow).draw(false).node();
@@ -84,6 +132,7 @@ function upsertRow(html, oldRow = null) {
 // ============================================================
 // Modal
 // ============================================================
+
 function getModal() {
     if (!modal) {
         modal = bootstrap.Modal.getOrCreateInstance(modalEl);
@@ -97,11 +146,10 @@ async function openModal(btn) {
     const titleEl = modalEl.querySelector('#ModalLabel');
     const bodyEl = modalEl.querySelector('.modal-body');
 
-    if (titleEl) {
-        titleEl.textContent = btn.dataset.title ?? '';
-    }
+    if (titleEl) titleEl.textContent = btn.dataset.title ?? '';
 
     pendingRow = btn.dataset.mode ? btn.closest('tr') : null;
+
 
     try {
         const html = await fetchHtml(btn.dataset.url);
@@ -116,27 +164,31 @@ async function openModal(btn) {
     }
 }
 
-// called from Razor
-function onModalBegin() {
-    modalEl?.querySelectorAll('[type="submit"]')
-        .forEach(b => (b.disabled = true));
-}
+// ============================================================
+// Modal callbacks (AJAX)
+// ============================================================
 
 function onModalSuccess(rowHtml) {
     showSuccess();
     getModal().hide();
     upsertRow(rowHtml, pendingRow);
     pendingRow = null;
+
+    resetFormState(modalEl);
 }
 
+
 function onModalComplete() {
-    modalEl?.querySelectorAll('[type="submit"]')
-        .forEach(b => (b.disabled = false));
+    const form = modalEl?.querySelector('form');
+    if (form && form.dataset.submitted === 'true') {
+        resetFormState(modalEl);
+    }
 }
 
 // ============================================================
 // Toggle Status
 // ============================================================
+
 async function toggleStatus(btn) {
     const confirmed = await new Promise(resolve => {
         bootbox.confirm({
@@ -165,13 +217,10 @@ async function toggleStatus(btn) {
         const isDeleted = statusEl.textContent.trim() === 'Deleted';
 
         statusEl.textContent = isDeleted ? 'Available' : 'Deleted';
-
         statusEl.classList.toggle('badge-light-danger', !isDeleted);
         statusEl.classList.toggle('badge-light-success', isDeleted);
 
-        if (updatedEl) {
-            updatedEl.textContent = updatedOn;
-        }
+        if (updatedEl) updatedEl.textContent = updatedOn;
 
         animate(statusEl, 'animate__flipInX');
         showSuccess();
@@ -184,14 +233,96 @@ async function toggleStatus(btn) {
 }
 
 // ============================================================
-// Events
+// TinyMCE
 // ============================================================
+
+function initTinyMCE() {
+    if (!document.querySelector('.js-tinymce')) return;
+
+    const options = {
+        selector: '.js-tinymce',
+        height: 513,
+        setup: function (editor) {
+
+            editor.on('input', function () {
+                const textarea = document.getElementById(editor.id);
+                if (!textarea) return;
+
+                textarea.value = editor.getContent();
+
+                if (window.$ && $(textarea).closest('form').data('validator')) {
+                    $(textarea).valid();
+                }
+            });
+
+        }
+    };
+
+    if (KTThemeMode.getMode() === 'dark') {
+        options.skin = 'oxide-dark';
+        options.content_css = 'dark';
+    }
+
+    tinymce.remove();
+    tinymce.init(options);
+}
+
+
+// ============================================================
+// Metronic Image Input — RemoveImage
+// ============================================================
+
+function initImageInputSync(container = document) {
+
+    const el = container.querySelector('#book_image_input');
+    if (!el) return;
+
+    const instance = KTImageInput.getInstance(el) || new KTImageInput(el);
+    const wrapper = el.querySelector('.image-input-wrapper');
+    const removeInput = container.querySelector('[name="RemoveImage"]');
+
+    if (!wrapper || !removeInput) return;
+
+    instance.on("kt.imageinput.changed", function () {
+        removeInput.value = "false";
+    });
+
+    instance.on("kt.imageinput.canceled", function () {
+        wrapper.style.backgroundImage = `none`;
+        el.classList.add('image-input-empty');       
+        el.classList.remove('image-input-filled');       
+        removeInput.value = "false";
+    });
+
+    instance.on("kt.imageinput.removed", function () {
+        wrapper.style.backgroundImage = `none`;
+        el.classList.remove('image-input-filled');       
+        removeInput.value = "true";
+    });
+}
+// ============================================================
+// Init
+// ============================================================
+
 document.addEventListener('DOMContentLoaded', () => {
 
+
+    document.querySelectorAll('form[data-submitted="true"]').forEach(f => {
+        resetFormState(f.parentElement ?? document.body);
+    });
+
+    // ----------------------------------------------------------
+    // Modal
+    // ----------------------------------------------------------
     modalEl = document.querySelector('#Modal');
 
     if (modalEl) {
         modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            pendingRow = null;
+            resetFormState(modalEl);
+        });
     }
 
     KTUtil.onDOMContentLoaded(initTable);
@@ -204,12 +335,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (toggleBtn) toggleStatus(toggleBtn);
     });
 
+    // ----------------------------------------------------------
+    // Select2
+    // ----------------------------------------------------------
+    $('.js-select2').select2().on('change', function () {
+        $(this).valid();
+    });
 
-    //select2
-    $('.js-select2').select2();
-
-    //datepicker
-    $(".js-datepicker").daterangepicker({
+    // ----------------------------------------------------------
+    // Datepicker
+    // ----------------------------------------------------------
+    $('.js-datepicker').daterangepicker({
         singleDatePicker: true,
         autoApply: true,
         drops: 'up',
@@ -217,31 +353,39 @@ document.addEventListener('DOMContentLoaded', () => {
         showDropdowns: true,
     });
 
-    //tinymce
-    var options = { selector: ".js-tinymce", height: "504" };
+    // ----------------------------------------------------------
+    // TinyMCE
+    // ----------------------------------------------------------
+    KTUtil.onDOMContentLoaded(function () {
+        initTinyMCE();
 
-    if (KTThemeMode.getMode() === "dark") {
-        options["skin"] = "oxide-dark";
-        options["content_css"] = "dark";
-    }
+        KTThemeMode.on('kt.thememode.change', function () {
+            initTinyMCE();
+        });
+    });
 
-    tinymce.init(options);
+
+    initImageInputSync();
+
+
+
+    
+
 });
 
 
+// ============================================================
+// Helpers
+// ============================================================
 
-// ============================================================
-// Start Helpers
-// ============================================================
 const getCsrfToken = () =>
     document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
-
 
 const animate = (el, animation) => {
     if (!el) return;
 
     el.classList.remove('animate__animated', animation);
-    void el.offsetWidth;
+    void el.offsetWidth; // reflow to restart animation
     el.classList.add('animate__animated', animation);
 
     const handleAnimationEnd = () => {
@@ -251,7 +395,6 @@ const animate = (el, animation) => {
 
     el.addEventListener('animationend', handleAnimationEnd);
 };
-
 
 const showSuccess = (msg = 'Saved successfully!') =>
     Swal.fire({
@@ -282,8 +425,6 @@ async function fetchHtml(url) {
 
     return res.text();
 }
-
-
 
 async function postForm(url) {
     const body = new URLSearchParams({

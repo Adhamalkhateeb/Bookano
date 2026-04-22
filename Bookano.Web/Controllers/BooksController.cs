@@ -1,9 +1,8 @@
-﻿using AspNetCoreGeneratedDocument;
+﻿using System.Collections.Immutable;
+using System.Linq.Dynamic.Core;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.Options;
 
 namespace Bookano.Web.Controllers
@@ -40,6 +39,96 @@ namespace Bookano.Web.Controllers
             return View();
         }
 
+        [HttpPost]
+        public async Task<IActionResult> GetBooks()
+        {
+            int skip = Convert.ToInt32(Request.Form["start"]);
+            int pageSize = Convert.ToInt32(Request.Form["length"]);
+            var searchValue = Request.Form["search[value]"].ToString();
+
+            var sortColumnIndex = Convert.ToInt32(Request.Form["order[0][column]"]);
+            var sortDirection = Request.Form["order[0][dir]"].ToString();
+            var sortColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();
+
+            if (string.IsNullOrWhiteSpace(sortColumn))
+                sortColumn = "Id";
+
+            if (sortDirection != "asc" && sortDirection != "desc")
+                sortDirection = "asc";
+
+            IQueryable<Book> books = _context
+                .Books.Include(b => b.Authors)
+                    .ThenInclude(ba => ba.Author)
+                .Include(b => b.Categories)
+                    .ThenInclude(bc => bc.Category)
+                .Include(b => b.Publisher)
+                .AsNoTracking();
+
+            var totalRecords = await _context.Books.CountAsync();
+
+            if (!string.IsNullOrWhiteSpace(searchValue))
+            {
+                books = books.Where(b =>
+                    b.Title.Contains(searchValue)
+                    || b.Authors.Any(ba => ba.Author!.Name.Contains(searchValue))
+                );
+            }
+
+            var filteredRecords = await books.CountAsync();
+
+            books = sortColumn switch
+            {
+                "Title" => sortDirection == "asc"
+                    ? books.OrderBy(b => b.Title)
+                    : books.OrderByDescending(b => b.Title),
+
+                "Id" => sortDirection == "asc"
+                    ? books.OrderBy(b => b.Id)
+                    : books.OrderByDescending(b => b.Id),
+
+                "Publisher" => sortDirection == "asc"
+                    ? books.OrderBy(b => b.Publisher!.Name)
+                    : books.OrderByDescending(b => b.Publisher!.Name),
+                "PublishingDate" => sortDirection == "asc"
+                    ? books.OrderBy(b => b.PublishingDate)
+                    : books.OrderByDescending(b => b.PublishingDate),
+
+                _ => books.OrderBy(b => b.Id),
+            };
+
+            var rawData = await books.Skip(skip).Take(pageSize).ToListAsync();
+
+            var mappedData = _mapper.Map<IEnumerable<BookViewModel>>(rawData);
+
+            return Ok(
+                new
+                {
+                    recordsTotal = totalRecords,
+                    recordsFiltered = filteredRecords,
+                    data = mappedData,
+                }
+            );
+        }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var book = await _context
+                .Books.AsNoTracking()
+                .Include(b => b.Authors)
+                    .ThenInclude(a => a.Author)
+                .Include(b => b.Categories)
+                    .ThenInclude(c => c.Category)
+                .Include(b => b.Publisher)
+                .SingleOrDefaultAsync(b => b.Id == id);
+
+            if (book is null)
+                return NotFound();
+
+            var viewModel = _mapper.Map<BookViewModel>(book);
+
+            return View(viewModel);
+        }
+
         [HttpGet]
         public async Task<IActionResult> Create()
         {
@@ -71,7 +160,7 @@ namespace Bookano.Web.Controllers
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { book.Id });
         }
 
         [HttpGet]
@@ -124,6 +213,15 @@ namespace Bookano.Web.Controllers
 
                 ApplyImage(book, upload.url, upload.publicId!);
             }
+            else if (model.RemoveImage)
+            {
+                if (!string.IsNullOrEmpty(book.ImagePublicId))
+                    await DeleteImageAsync(book.ImagePublicId);
+
+                book.ImageUrl = null;
+                book.ImageThumbnailUrl = null;
+                book.ImagePublicId = null;
+            }
 
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
@@ -131,7 +229,28 @@ namespace Bookano.Web.Controllers
 
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(Details), new { book.Id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+
+            if (book is null)
+                return NotFound();
+
+            book.IsDeleted = !book.IsDeleted;
+            book.LastUpdatedOnUtc = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(
+                book.LastUpdatedOnUtc.GetValueOrDefault()
+                    .ToLocalTime()
+                    .ToString("yyyy/MM/dd hh:mm tt")
+            );
         }
 
         public async Task<IActionResult> AllowItem(BookFormViewModel model)
@@ -202,10 +321,13 @@ namespace Bookano.Web.Controllers
         {
             book.ImageUrl = url;
             book.ImagePublicId = publicId;
-
             book.ImageThumbnailUrl = _cloudinary
                 .Api.UrlImgUp.Transform(
-                    new Transformation().Width(150).Height(220).Crop("fill").Gravity("auto")
+                    new Transformation()
+                        .Width(125)
+                        .Crop("scale")
+                        .Quality("auto:good")
+                        .FetchFormat("auto")
                 )
                 .BuildUrl(publicId);
         }

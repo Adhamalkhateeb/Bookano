@@ -23,6 +23,9 @@ namespace Bookano.Web.Core.ViewModels
         public DateTime PublishingDate { get; set; } = DateTime.Now;
         public IFormFile? Image { get; set; }
         public string? ImageUrl { get; set; }
+        public string? ImageThumbnailUrl { get; set; }
+
+        public bool RemoveImage { get; set; }
 
         [MaxLength(50, ErrorMessage = Error.MaxLength)]
         public string Hall { get; set; } = null!;

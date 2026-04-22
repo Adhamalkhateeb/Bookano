@@ -8,10 +8,11 @@
     </td>
     <td>@Model.CreatedOnUtc.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt")</td>
     <td class="js-updated-on">@(Model.LastUpdatedOnUtc.HasValue? Model.LastUpdatedOnUtc.Value.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt") : "")</td>
-    <td>
-        <button type="button" class="btn btn-sm btn-icon btn-color-primary btn-active-light-primary" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
-            <i class="fa-regular fa-pen-to-square fs-xl-2 "></i>
-        </button>
+    <td class="text-end">
+        <a href="#" class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
+            Actions
+            <i class="fa-solid fa-angle-down fs-5 ms-2 fa-sm"></i>
+        </a>
         <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px py-3" data-kt-menu="true" style="">
             <!--begin::Menu item-->
             <div class="menu-item px-3">
