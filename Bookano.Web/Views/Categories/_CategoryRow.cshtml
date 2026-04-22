@@ -6,8 +6,8 @@
             @(Model.IsDeleted ? "Deleted" : "Available")
         </span>
     </td>
-    <td>@Model.CreatedOnUtc.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt")</td>
-    <td class="js-updated-on">@(Model.LastUpdatedOnUtc.HasValue? Model.LastUpdatedOnUtc.Value.ToLocalTime().ToString("yyyy/MM/dd hh:mm tt") : "")</td>
+    <td class="js-created-on" data-utc="@Model.CreatedOnUtc.ToString("o")"></td>
+    <td class="js-updated-on" data-utc="@(Model.LastUpdatedOnUtc?.ToString("o"))"></td>
     <td class="text-end">
         <a href="#" class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
             Actions

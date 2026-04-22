@@ -39,17 +39,21 @@
                                             </div>
 
                                             <div class="d-flex flex-column">
-                                                <a href="/Books/Details/${row.id}"
-                                                   class="text-primary fw-bolder mb-1">
+                                            <a href="/Books/Details/${row.id}"
+                                                   class="text-primary fs-3 fw-bolder my-0">
                                                    ${row.title}
                                                 </a>
-                                                <span>${row.authors}</span>
+                                                <span class="fs-5">
+                                                ${row.authors}
+                                                </span>
+                                                <span class="text-dark fs-9">${row.isbn}</span>
+
                                             </div>
                                         </div>
                                     `;
                 }
             },
-            { "data": "publisher", "name": "Publisher" },
+            { "data": "publisher", "name": "Publisher.Name" },
             {
                 "name": "PublishingDate",
                 "render": function (data, type, row) {
@@ -64,7 +68,7 @@
                 }
             },
             { "data": "hall", "name": "Hall" },
-            { "data": "categories", "name": "Categories", "orderable": false },
+            //{ "data": "categories", "name": "Categories", "orderable": false },
             {
                 "name": "IsAvailableForRental",
                 "render": function (data, type, row) {

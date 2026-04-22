@@ -35,7 +35,12 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(b => b.Categories.Select(a => a.Category!.Name).ToList())
             )
             .ForMember(dest => dest.Publisher, opt => opt.MapFrom(b => b.Publisher!.Name));
-        ;
+
+        //BookCopies
+        CreateMap<BookCopy, BookCopyViewModel>()
+            .ForMember(dest => dest.BookTitle, opt => opt.MapFrom(bc => bc.Book!.Title));
+
+        CreateMap<BookCopy, BookCopyFormViewModel>();
 
         //Categories
         CreateMap<Category, CategoryViewModel>();

@@ -16,5 +16,6 @@
         public IEnumerable<string> Authors { get; set; } = null!;
         public bool IsDeleted { get; set; }
         public DateTimeOffset CreatedOnUtc { get; set; }
+        public IEnumerable<BookCopyViewModel> Copies { get; set; } = [];
     }
 }
