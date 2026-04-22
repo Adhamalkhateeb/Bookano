@@ -93,12 +93,7 @@
 
             await _context.SaveChangesAsync();
 
-            return Ok(
-                author
-                    .LastUpdatedOnUtc.GetValueOrDefault()
-                    .ToLocalTime()
-                    .ToString("yyyy/MM/dd hh:mm tt")
-            );
+            return Ok(author.LastUpdatedOnUtc.ToLocalFormat());
         }
 
         public async Task<IActionResult> AllowItem(AuthorFormViewModel model)

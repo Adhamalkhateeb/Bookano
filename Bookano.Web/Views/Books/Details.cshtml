@@ -1,7 +1,12 @@
 ﻿@model BookViewModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery
 
 @{
     ViewData["Title"] = Model.Title;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/assets/plugins/datatables/datatables.bundle.css" />
 }
 
 
@@ -13,7 +18,7 @@
             <!--begin::Details-->
             <div class="d-flex flex-wrap flex-sm-nowrap mb-6">
                 <!--begin::Image-->
-                <div class="d-flex flex-center flex-shrink-0 bg-light rounded w-100px h-100px w-lg-150px h-lg-175px me-7 mb-4">
+                <div class="d-flex flex-center flex-shrink-0 bg-light rounded w-100px h-100px w-lg-150px h-lg-200px me-7 mb-4">
                     <a class="d-block overlay" data-fslightbox href="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/books/no-image-cover.png" : Model.ImageUrl)">
                         <!--begin::Image-->
                         <img class=" overlay-wrapper w-100px h-150px " src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/books/no-image-cover.png" : Model.ImageUrl)" alt="@Model.Title" />
@@ -106,9 +111,9 @@
                                 <!--begin::Number-->
                                 <div class="d-flex align-items-center">
                                     <i class="fa-regular fa-copy text-primary me-2"></i>
-                                    <div class="fs-7 fw-bold" data-kt-countup="true"
-                                         data-kt-countup-value="7">
-                                        0
+                                    <div id="CopiesCount" class="fs-7 fw-bold" data-kt-countup="true"
+                                         data-kt-countup-value="@Model.Copies.Count()">
+                                        @Model.Copies.Count()
                                     </div>
                                 </div>
                                 <!--end::Number-->
@@ -118,16 +123,26 @@
                             </div>
                             <!--end::Stat-->
                         </div>
-                        <!--begin::categories-->
-                        <div class="align-self-end pb-3">
-                            @foreach (var category in Model.Categories)
-                            {
-                                <span class="badge badge-light-info me-2">@category</span>
-                            }
-                        </div>
-                        <!--end::categories-->
                     </div>
+                    <!--begin::categories-->
+                    <div class="align-self-end pb-2">
+                        <span class="text-dark">Categories: </span>
+                        @foreach (var category in Model.Categories)
+                        {
+                            <span class="badge badge-light-info me-2">@category</span>
+                        }
+                    </div>
+                    <!--end::categories-->
                     <!--end::Info-->
+                    <div class=" d-flex align-items-end gap-2">
+                        <span>ISBN:</span>
+                        <span id="isbnValue"
+                              class="text-primary fw-bolder cursor-pointer"
+                              onclick="copyISBN(this)"
+                              title="Click to copy">
+                            @Model.Isbn
+                        </span>
+                    </div>
                 </div>
                 <!--end::Wrapper-->
             </div>
@@ -183,17 +198,67 @@
                 <!--begin::Card title-->
                 <div class="card-title fs-3 fw-bold">Copies</div>
                 <!--end::Card title-->
+                <div class="card-toolbar">
+                    <a href="javascript:;" class=" btn btn-sm btn-primary js-render-modal fs-5" data-title="Add Copy" data-url="/BookCopies/Create?bookId=@Model.Id">
+                        <i class="bi bi-plus-square-dotted fs-6"></i>
+                        Add
+                    </a>
+                </div>
             </div>
             <!--end::Card header-->
             <!--begin::Card body-->
             <div class="card-body ">
-                Copies
+             
+                <div class="@(!Model.Copies.Any() ? "d-none" : string.Empty) table-responsive">
+                    <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-datatable">
+                        <thead>
+                            <tr class="fw-bold fs-6 text-gray-600 text-uppercase">
+                                <th>Serial Number</th>
+                                <th>Edition</th>
+                                <th>Rental</th>
+                                <th>Status</th>
+                                <th>Created on</th>
+                                <th class=" text-center ">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var copy in Model.Copies)
+                            {
+                                <partial name="_BookCopyRow" model="copy" />
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+                <div class="@(Model.Copies.Any() ? "d-none" : string.Empty) alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10 js-alert">
+                    <!--begin::Icon-->
+                    <i class="bi bi-exclamation-octagon-fill me-5  text-warning align-self-center fs-1"></i>
+                    <!--end::Icon-->
+                    <!--begin::Content-->
+                    <div class="d-flex flex-column pe-0 pe-sm-10">
+                        <h5 class="mt-2">No copies available for this Book</h5>
+                    </div>
+                    <!--end::Content-->
+                </div>
             </div>
             <!--end::Card body-->
         </div>
     </div>
     <!--end::Card-->
 </div>
+
+<input type="hidden" name="__RequestVerificationToken" value="@antiforgery.GetAndStoreTokens(Context).RequestToken" />
+
 @section Plugins {
     <script src="~/assets/plugins/fslightbox/fslightbox.bundle.js"></script>
+    <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
 }
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/book-details.js"  asp-append-version="true"></script>
+}
+
+
+
+

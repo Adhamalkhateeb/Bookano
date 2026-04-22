@@ -50,55 +50,39 @@ namespace Bookano.Web.Controllers
             var sortDirection = Request.Form["order[0][dir]"].ToString();
             var sortColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();
 
-            if (string.IsNullOrWhiteSpace(sortColumn))
-                sortColumn = "Id";
+            sortColumn = string.IsNullOrWhiteSpace(sortColumn) ? "Id" : sortColumn;
+            sortDirection = (sortDirection == "desc") ? "desc" : "asc";
 
-            if (sortDirection != "asc" && sortDirection != "desc")
-                sortDirection = "asc";
-
-            IQueryable<Book> books = _context
-                .Books.Include(b => b.Authors)
-                    .ThenInclude(ba => ba.Author)
+            var query = _context
+                .Books.AsNoTracking()
+                .Include(b => b.Authors)
+                    .ThenInclude(a => a.Author)
                 .Include(b => b.Categories)
-                    .ThenInclude(bc => bc.Category)
+                    .ThenInclude(c => c.Category)
+                .Include(b => b.Copies)
                 .Include(b => b.Publisher)
-                .AsNoTracking();
+                .AsQueryable();
 
             var totalRecords = await _context.Books.CountAsync();
 
             if (!string.IsNullOrWhiteSpace(searchValue))
             {
-                books = books.Where(b =>
+                query = query.Where(b =>
                     b.Title.Contains(searchValue)
-                    || b.Authors.Any(ba => ba.Author!.Name.Contains(searchValue))
+                    || (b.Isbn != null && b.Isbn.Contains(searchValue))
+                    || b.Authors.Any(a => a.Author!.Name.Contains(searchValue))
                 );
             }
 
-            var filteredRecords = await books.CountAsync();
+            var filteredRecords = await query.CountAsync();
 
-            books = sortColumn switch
-            {
-                "Title" => sortDirection == "asc"
-                    ? books.OrderBy(b => b.Title)
-                    : books.OrderByDescending(b => b.Title),
+            var orderBy = $"{sortColumn} {sortDirection}";
 
-                "Id" => sortDirection == "asc"
-                    ? books.OrderBy(b => b.Id)
-                    : books.OrderByDescending(b => b.Id),
+            query = query.OrderBy(orderBy);
 
-                "Publisher" => sortDirection == "asc"
-                    ? books.OrderBy(b => b.Publisher!.Name)
-                    : books.OrderByDescending(b => b.Publisher!.Name),
-                "PublishingDate" => sortDirection == "asc"
-                    ? books.OrderBy(b => b.PublishingDate)
-                    : books.OrderByDescending(b => b.PublishingDate),
+            var result = await query.Skip(skip).Take(pageSize).ToListAsync();
 
-                _ => books.OrderBy(b => b.Id),
-            };
-
-            var rawData = await books.Skip(skip).Take(pageSize).ToListAsync();
-
-            var mappedData = _mapper.Map<IEnumerable<BookViewModel>>(rawData);
+            var mappedData = _mapper.Map<IEnumerable<BookViewModel>>(result);
 
             return Ok(
                 new
@@ -114,11 +98,12 @@ namespace Bookano.Web.Controllers
         {
             var book = await _context
                 .Books.AsNoTracking()
+                .Include(b => b.Copies)
+                .Include(b => b.Publisher)
                 .Include(b => b.Authors)
                     .ThenInclude(a => a.Author)
                 .Include(b => b.Categories)
                     .ThenInclude(c => c.Category)
-                .Include(b => b.Publisher)
                 .SingleOrDefaultAsync(b => b.Id == id);
 
             if (book is null)
@@ -246,11 +231,7 @@ namespace Bookano.Web.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Ok(
-                book.LastUpdatedOnUtc.GetValueOrDefault()
-                    .ToLocalTime()
-                    .ToString("yyyy/MM/dd hh:mm tt")
-            );
+            return Ok(book.LastUpdatedOnUtc.ToLocalFormat());
         }
 
         public async Task<IActionResult> AllowItem(BookFormViewModel model)

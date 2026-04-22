@@ -94,12 +94,7 @@ public class CategoriesController : Controller
 
         await _context.SaveChangesAsync();
 
-        return Ok(
-            category
-                .LastUpdatedOnUtc.GetValueOrDefault()
-                .ToLocalTime()
-                .ToString("yyyy/MM/dd hh:mm tt")
-        );
+        return Ok(category.LastUpdatedOnUtc.ToLocalFormat());
     }
 
     public async Task<IActionResult> AllowItem(CategoryFormViewModel model)

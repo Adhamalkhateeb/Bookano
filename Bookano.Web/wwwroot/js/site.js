@@ -22,22 +22,21 @@ function handleFormSubmit(e) {
     }
 
     if (window.$ && $(form).data('validator')) {
-        if (!$(form).valid()) return;
+        if (!$(form).valid()) {
+            return;
+        }
     }
 
-    form.dataset.submitting = 'true';
-
     lockForm(form);
+
 }
 
 function lockForm(container) {
-    if (!container) return;
-
     const form = container.tagName === 'FORM'
         ? container
         : container.querySelector('form');
 
-    form.dataset.submitted = 'true';
+    if (!form) return;
 
     form.querySelectorAll('[type="submit"]').forEach(btn => {
         btn.disabled = true;
@@ -69,10 +68,23 @@ function initTable() {
     const tableEl = document.querySelector('.js-datatable');
     if (!tableEl) return;
 
+    formatDates(tableEl);
+
     datatable = new DataTable(tableEl, {
         pageLength: 10,
         info: false,
-        drawCallback: () => KTMenu.createInstances()
+        stateSave: true,
+        "columnDefs": [
+            {
+                "targets": -1,       
+                "orderable": false   
+            },
+        ],
+
+        drawCallback: function () {
+            KTMenu.createInstances();
+            formatDates(this.api().table().node());
+        }
     });
 
     const search = document.querySelector('[data-kt-filter="search"]');
@@ -123,10 +135,18 @@ function upsertRow(html, oldRow = null) {
     template.innerHTML = html.trim();
 
     const newRow = template.content.firstElementChild;
+    if (!newRow) return;
+
+    formatDates(newRow);
+
     if (oldRow) datatable.row(oldRow).remove();
 
-    const node = datatable.row.add(newRow).draw(false).node();
+    const row = datatable.row.add(newRow);
+    datatable.draw(false);
+
+    const node = row.node();
     animate(node, 'animate__flash');
+
 }
 
 // ============================================================
@@ -172,8 +192,15 @@ function onModalSuccess(rowHtml) {
     showSuccess();
     getModal().hide();
     upsertRow(rowHtml, pendingRow);
-    pendingRow = null;
 
+    if (typeof onRowAdded === 'function' && !pendingRow) {
+        onRowAdded(); 
+    }
+
+    
+
+
+    pendingRow = null;
     resetFormState(modalEl);
 }
 
@@ -220,7 +247,23 @@ async function toggleStatus(btn) {
         statusEl.classList.toggle('badge-light-danger', !isDeleted);
         statusEl.classList.toggle('badge-light-success', isDeleted);
 
-        if (updatedEl) updatedEl.textContent = updatedOn;
+        if (updatedEl) {
+            const updatedDate = new Date(updatedOn);
+
+            if (!isNaN(updatedDate)) {
+                const sortValue = updatedDate.toISOString();
+                updatedEl.setAttribute('data-utc', sortValue);
+                updatedEl.setAttribute('data-order', sortValue);
+                updatedEl.textContent = updatedDate.toLocaleString();
+            } else {
+                updatedEl.textContent = updatedOn;
+            }
+
+            if (datatable) {
+                datatable.row(row).invalidate();
+                datatable.draw(false);
+            }
+        }
 
         animate(statusEl, 'animate__flipInX');
         showSuccess();
@@ -325,7 +368,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    KTUtil.onDOMContentLoaded(initTable);
+    KTUtil.onDOMContentLoaded(() => {
+        initTable();
+        formatDates();
+    });
 
     document.body.addEventListener('click', e => {
         const modalBtn = e.target.closest('.js-render-modal');
@@ -363,6 +409,9 @@ document.addEventListener('DOMContentLoaded', () => {
             initTinyMCE();
         });
     });
+
+    
+  
 
 
     initImageInputSync();
@@ -442,4 +491,22 @@ async function postForm(url) {
     }
 
     return res.text();
+}
+
+
+function formatDates(root = document) {
+    const scope = root instanceof HTMLElement ? root : document;
+
+    scope.querySelectorAll("[data-utc]").forEach(el => {
+        const utc = el.getAttribute("data-utc");
+        if (!utc) return;
+
+        const date = new Date(utc);
+        if (isNaN(date)) return;
+
+        const sortValue = date.toISOString();
+
+        el.setAttribute("data-order", sortValue); 
+        el.textContent = date.toLocaleString();
+    });
 }

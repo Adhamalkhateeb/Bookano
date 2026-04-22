@@ -28,5 +28,6 @@ namespace Bookano.Web.Core.Models
 
         public ICollection<BookCategory> Categories { get; set; } = [];
         public ICollection<BookAuthor> Authors { get; set; } = [];
+        public ICollection<BookCopy> Copies { get; set; } = [];
     }
 }
