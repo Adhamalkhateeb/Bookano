@@ -197,9 +197,6 @@ function onModalSuccess(rowHtml) {
         onRowAdded(); 
     }
 
-    
-
-
     pendingRow = null;
     resetFormState(modalEl);
 }
