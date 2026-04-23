@@ -38,6 +38,8 @@ function lockForm(container) {
 
     if (!form) return;
 
+    form.dataset.submitted = 'true';
+
     form.querySelectorAll('[type="submit"]').forEach(btn => {
         btn.disabled = true;
         btn.setAttribute('data-kt-indicator', 'on');
@@ -51,7 +53,7 @@ function resetFormState(container) {
 
     if (!form) return;
 
-    form.dataset.submitting = 'false';
+    delete form.dataset.submitted;
 
 
     form.querySelectorAll('[type="submit"]').forEach(btn => {
@@ -245,16 +247,9 @@ async function toggleStatus(btn) {
         statusEl.classList.toggle('badge-light-success', isDeleted);
 
         if (updatedEl) {
-            const updatedDate = new Date(updatedOn);
-
-            if (!isNaN(updatedDate)) {
-                const sortValue = updatedDate.toISOString();
-                updatedEl.setAttribute('data-utc', sortValue);
-                updatedEl.setAttribute('data-order', sortValue);
-                updatedEl.textContent = updatedDate.toLocaleString();
-            } else {
-                updatedEl.textContent = updatedOn;
-            }
+            updatedEl.setAttribute('data-utc', updatedOn);
+            updatedEl.setAttribute('data-order', updatedOn);
+            formatDates(row);
 
             if (datatable) {
                 datatable.row(row).invalidate();

@@ -84,8 +84,7 @@
                 return PartialView("_Form", model);
 
             var copy = await _context
-                .BookCopies.AsNoTracking()
-                .Include(c => c.Book)
+                .BookCopies.Include(c => c.Book)
                 .SingleOrDefaultAsync(c => c.Id == model.Id);
 
             if (copy is null)
@@ -113,11 +112,12 @@
                 return NotFound();
 
             copy.IsDeleted = !copy.IsDeleted;
-            copy.LastUpdatedOnUtc = DateTime.UtcNow;
+            var updatedOn = DateTimeOffset.UtcNow;
+            copy.LastUpdatedOnUtc = updatedOn;
 
             await _context.SaveChangesAsync();
 
-            return Ok(copy.LastUpdatedOnUtc.ToLocalFormat());
+            return Ok(updatedOn.ToString("o"));
         }
     }
 }

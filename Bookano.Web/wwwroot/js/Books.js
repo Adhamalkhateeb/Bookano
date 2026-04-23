@@ -28,25 +28,25 @@
                 "render": function (data, type, row) {
                     return `
                                         <div class="d-flex align-items-center">
-                                            <div class="symbol symbol-50px  overflow-hidden me-3">
+                                            <div class="symbol symbol-40px overflow-hidden me-3">
                                                 <a href="/Books/Details/${row.id}">
-                                                    <div class="symbol-label h-75px">
+                                                    <div class="symbol-label h-60px">
                                                         <img src="${row.imageThumbnailUrl ?? '/images/books/no-image-cover.png'}"
                                                              alt="${row.title}"
-                                                             class="object-fit-contain w-60px h-75px rounded">
+                                                             class="object-fit-contain w-45px h-60px rounded">
                                                     </div>
                                                 </a>
                                             </div>
 
                                             <div class="d-flex flex-column">
                                             <a href="/Books/Details/${row.id}"
-                                                   class="text-primary fs-3 fw-bolder my-0">
+                                                   class="text-primary fs-6 fw-bold my-0">
                                                    ${row.title}
                                                 </a>
-                                                <span class="fs-5">
+                                                <span class="fs-7">
                                                 ${row.authors}
                                                 </span>
-                                                <span class="text-dark fs-9">${row.isbn}</span>
+                                                <span class="text-dark fs-8">${row.isbn}</span>
 
                                             </div>
                                         </div>
