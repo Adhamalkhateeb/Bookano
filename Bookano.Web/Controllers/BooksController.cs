@@ -54,14 +54,22 @@ namespace Bookano.Web.Controllers
             )
                 ? parsedSortColumnIndex
                 : 0;
-            var sortDirection = Request.Form["order[0][dir]"].ToString();
-            var sortColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();
+
+            var allowedSortColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Id", "Title", "Publisher.Name", "PublishingDate", "Hall",
+                "IsAvailableForRental", "IsDeleted"
+            };
+
+            var requestedColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();
+            var sortColumn = allowedSortColumns.Contains(requestedColumn) ? requestedColumn : "Id";
 
             var isDescending = string.Equals(
-                sortDirection,
+                Request.Form["order[0][dir]"].ToString(),
                 "desc",
                 StringComparison.OrdinalIgnoreCase
             );
+            var sortDirection = isDescending ? "desc" : "asc";
 
             var booksQuery = _context.Books.AsNoTracking().AsQueryable();
 
