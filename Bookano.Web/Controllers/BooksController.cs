@@ -1,5 +1,4 @@
-﻿using System.Collections.Immutable;
-using System.Linq.Dynamic.Core;
+﻿using System.Linq.Dynamic.Core;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -42,45 +41,52 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> GetBooks()
         {
-            int skip = Convert.ToInt32(Request.Form["start"]);
-            int pageSize = Convert.ToInt32(Request.Form["length"]);
+            int skip = int.TryParse(Request.Form["start"], out var parsedSkip) ? parsedSkip : 0;
+            int pageSize =
+                int.TryParse(Request.Form["length"], out var parsedPageSize) && parsedPageSize > 0
+                    ? parsedPageSize
+                    : 10;
             var searchValue = Request.Form["search[value]"].ToString();
 
-            var sortColumnIndex = Convert.ToInt32(Request.Form["order[0][column]"]);
+            var sortColumnIndex = int.TryParse(
+                Request.Form["order[0][column]"],
+                out var parsedSortColumnIndex
+            )
+                ? parsedSortColumnIndex
+                : 0;
             var sortDirection = Request.Form["order[0][dir]"].ToString();
             var sortColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();
 
-            sortColumn = string.IsNullOrWhiteSpace(sortColumn) ? "Id" : sortColumn;
-            sortDirection = (sortDirection == "desc") ? "desc" : "asc";
+            var isDescending = string.Equals(
+                sortDirection,
+                "desc",
+                StringComparison.OrdinalIgnoreCase
+            );
 
-            var query = _context
-                .Books.AsNoTracking()
-                .Include(b => b.Authors)
-                    .ThenInclude(a => a.Author)
-                .Include(b => b.Categories)
-                    .ThenInclude(c => c.Category)
-                .Include(b => b.Copies)
-                .Include(b => b.Publisher)
-                .AsQueryable();
+            var booksQuery = _context.Books.AsNoTracking().AsQueryable();
 
-            var totalRecords = await _context.Books.CountAsync();
+            var totalRecords = await booksQuery.CountAsync();
 
             if (!string.IsNullOrWhiteSpace(searchValue))
             {
-                query = query.Where(b =>
+                booksQuery = booksQuery.Where(b =>
                     b.Title.Contains(searchValue)
                     || (b.Isbn != null && b.Isbn.Contains(searchValue))
-                    || b.Authors.Any(a => a.Author!.Name.Contains(searchValue))
+                    || b.Authors.Any(a => a.Author != null && a.Author.Name.Contains(searchValue))
                 );
             }
 
-            var filteredRecords = await query.CountAsync();
+            booksQuery = booksQuery.OrderBy($"{sortColumn} {sortDirection}");
 
-            var orderBy = $"{sortColumn} {sortDirection}";
+            var filteredRecords = await booksQuery.CountAsync();
 
-            query = query.OrderBy(orderBy);
-
-            var result = await query.Skip(skip).Take(pageSize).ToListAsync();
+            var result = await booksQuery
+                .Include(b => b.Publisher)
+                .Include(b => b.Authors)
+                    .ThenInclude(a => a.Author)
+                .Skip(skip)
+                .Take(pageSize)
+                .ToListAsync();
 
             var mappedData = _mapper.Map<IEnumerable<BookViewModel>>(result);
 
@@ -227,11 +233,12 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             book.IsDeleted = !book.IsDeleted;
-            book.LastUpdatedOnUtc = DateTime.UtcNow;
+            var updatedOn = DateTimeOffset.UtcNow;
+            book.LastUpdatedOnUtc = updatedOn;
 
             await _context.SaveChangesAsync();
 
-            return Ok(book.LastUpdatedOnUtc.ToLocalFormat());
+            return Ok(updatedOn.ToString("o"));
         }
 
         public async Task<IActionResult> AllowItem(BookFormViewModel model)

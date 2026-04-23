@@ -89,11 +89,12 @@
                 return NotFound();
 
             Publisher.IsDeleted = !Publisher.IsDeleted;
-            Publisher.LastUpdatedOnUtc = DateTime.UtcNow;
+            var updatedOn = DateTimeOffset.UtcNow;
+            Publisher.LastUpdatedOnUtc = updatedOn;
 
             await _context.SaveChangesAsync();
 
-            return Ok(Publisher.LastUpdatedOnUtc.ToLocalFormat());
+            return Ok(updatedOn.ToString("o"));
         }
 
         public async Task<IActionResult> AllowItem(PublisherFormViewModel model)

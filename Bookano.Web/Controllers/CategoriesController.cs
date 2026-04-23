@@ -90,11 +90,12 @@ public class CategoriesController : Controller
             return NotFound();
 
         category.IsDeleted = !category.IsDeleted;
-        category.LastUpdatedOnUtc = DateTime.UtcNow;
+        var updatedOn = DateTimeOffset.UtcNow;
+        category.LastUpdatedOnUtc = updatedOn;
 
         await _context.SaveChangesAsync();
 
-        return Ok(category.LastUpdatedOnUtc.ToLocalFormat());
+        return Ok(updatedOn.ToString("o"));
     }
 
     public async Task<IActionResult> AllowItem(CategoryFormViewModel model)

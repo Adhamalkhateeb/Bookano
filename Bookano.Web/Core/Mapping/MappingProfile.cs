@@ -38,7 +38,10 @@ public class MappingProfile : Profile
 
         //BookCopies
         CreateMap<BookCopy, BookCopyViewModel>()
-            .ForMember(dest => dest.BookTitle, opt => opt.MapFrom(bc => bc.Book!.Title));
+            .ForMember(
+                dest => dest.BookTitle,
+                opt => opt.MapFrom(bc => bc.Book != null ? bc.Book.Title : string.Empty)
+            );
 
         CreateMap<BookCopy, BookCopyFormViewModel>();
 

@@ -135,6 +135,34 @@ body {
         object-fit: cover;
     }
 
+.layout-page-padding {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+@media (min-width: 992px) {
+    .layout-page-padding {
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+}
+
+#kt_header .layout-page-padding,
+#kt_content_container.layout-page-padding,
+#kt_aside .layout-page-padding {
+    padding-left: 1.5rem !important;
+    padding-right: 1.5rem !important;
+}
+
+@media (min-width: 992px) {
+    #kt_header .layout-page-padding,
+    #kt_content_container.layout-page-padding,
+    #kt_aside .layout-page-padding {
+        padding-left: 2rem !important;
+        padding-right: 2rem !important;
+    }
+}
+
 
 /* End   Override theme  */
 

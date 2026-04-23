@@ -89,11 +89,12 @@
                 return NotFound();
 
             author.IsDeleted = !author.IsDeleted;
-            author.LastUpdatedOnUtc = DateTime.UtcNow;
+            var updatedOn = DateTimeOffset.UtcNow;
+            author.LastUpdatedOnUtc = updatedOn;
 
             await _context.SaveChangesAsync();
 
-            return Ok(author.LastUpdatedOnUtc.ToLocalFormat());
+            return Ok(updatedOn.ToString("o"));
         }
 
         public async Task<IActionResult> AllowItem(AuthorFormViewModel model)

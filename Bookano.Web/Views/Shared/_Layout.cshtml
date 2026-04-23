@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="~/lib/animate.css/animate.min.css" />
     @await RenderSectionAsync("Styles", required: false);
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/mobile.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Bookano.Web.styles.css" asp-append-version="true" />
 </head>
 <body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed page-loading">
@@ -34,15 +35,17 @@
             <div class="wrapper d-flex flex-column flex-row-fluid" id="kt_wrapper">
                 <partial name="_Header" />
                 <!--begin::Content wrapper-->
-                <div class="d-flex flex-column-fluid pb-11">
+                <div class="d-flex flex-row flex-column-fluid pb-12">
                     <partial name="_Aside" />
-                    <!--begin::Container-->
-                    <div class="d-flex flex-column-fluid container-fluid " >
-                        <div class="content flex-column-fluid" id="kt_content">
+                    <!--begin::Content-->
+                    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+                        <!--begin::Container-->
+                        <div class="container-fluid layout-page-padding" id="kt_content_container">
                             @RenderBody()
                         </div>
+                        <!--end::Container-->
                     </div>
-                    <!--end::Container-->
+                    <!--end::Content-->
                 </div>
                 <!--end::Content wrapper-->
             </div>
