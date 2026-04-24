@@ -57,8 +57,13 @@ namespace Bookano.Web.Controllers
 
             var allowedSortColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "Id", "Title", "Publisher.Name", "PublishingDate", "Hall",
-                "IsAvailableForRental", "IsDeleted"
+                "Id",
+                "Title",
+                "Publisher.Name",
+                "PublishingDate",
+                "Hall",
+                "IsAvailableForRental",
+                "IsDeleted",
             };
 
             var requestedColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();

@@ -58,5 +58,10 @@ public class MappingProfile : Profile
         CreateMap<Publisher, SelectListItem>()
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
+
+        //Publishers
+        CreateMap<ApplicationUser, UserViewModel>()
+            .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(u => u.CreatedOnUtc))
+            .ForMember(dest => dest.LastUpdatedOn, opt => opt.MapFrom(u => u.LastUpdatedOnUtc));
     }
 }

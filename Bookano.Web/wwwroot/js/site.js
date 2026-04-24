@@ -10,8 +10,12 @@ let modalEl;
 // ============================================================
 
 
+document.addEventListener('submit', function (e) {
+    const form = e.target;
+    if (form.id === "SignOut") return;
 
-document.addEventListener('submit', handleFormSubmit);
+    handleFormSubmit(e);
+});
 
 function handleFormSubmit(e) {
     const form = e.target;
@@ -23,6 +27,7 @@ function handleFormSubmit(e) {
 
     if (window.$ && $(form).data('validator')) {
         if (!$(form).valid()) {
+            e.preventDefault(); 
             return;
         }
     }
@@ -324,95 +329,17 @@ function initImageInputSync(container = document) {
 
     instance.on("kt.imageinput.canceled", function () {
         wrapper.style.backgroundImage = `none`;
-        el.classList.add('image-input-empty');       
-        el.classList.remove('image-input-filled');       
+        el.classList.add('image-input-empty');
+        el.classList.remove('image-input-filled');
         removeInput.value = "false";
     });
 
     instance.on("kt.imageinput.removed", function () {
         wrapper.style.backgroundImage = `none`;
-        el.classList.remove('image-input-filled');       
+        el.classList.remove('image-input-filled');
         removeInput.value = "true";
     });
 }
-// ============================================================
-// Init
-// ============================================================
-
-document.addEventListener('DOMContentLoaded', () => {
-
-
-    document.querySelectorAll('form[data-submitted="true"]').forEach(f => {
-        resetFormState(f.parentElement ?? document.body);
-    });
-
-    // ----------------------------------------------------------
-    // Modal
-    // ----------------------------------------------------------
-    modalEl = document.querySelector('#Modal');
-
-    if (modalEl) {
-        modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
-        modalEl.addEventListener('hidden.bs.modal', () => {
-            pendingRow = null;
-            resetFormState(modalEl);
-        });
-    }
-
-    KTUtil.onDOMContentLoaded(() => {
-        initTable();
-        formatDates();
-    });
-
-    document.body.addEventListener('click', e => {
-        const modalBtn = e.target.closest('.js-render-modal');
-        if (modalBtn) openModal(modalBtn);
-
-        const toggleBtn = e.target.closest('.js-toggle-status');
-        if (toggleBtn) toggleStatus(toggleBtn);
-    });
-
-    // ----------------------------------------------------------
-    // Select2
-    // ----------------------------------------------------------
-    $('.js-select2').select2().on('change', function () {
-        $(this).valid();
-    });
-
-    // ----------------------------------------------------------
-    // Datepicker
-    // ----------------------------------------------------------
-    $('.js-datepicker').daterangepicker({
-        singleDatePicker: true,
-        autoApply: true,
-        drops: 'up',
-        maxDate: new Date(),
-        showDropdowns: true,
-    });
-
-    // ----------------------------------------------------------
-    // TinyMCE
-    // ----------------------------------------------------------
-    KTUtil.onDOMContentLoaded(function () {
-        initTinyMCE();
-
-        KTThemeMode.on('kt.thememode.change', function () {
-            initTinyMCE();
-        });
-    });
-
-    
-  
-
-
-    initImageInputSync();
-
-
-
-    
-
-});
 
 
 // ============================================================
@@ -502,3 +429,86 @@ function formatDates(root = document) {
         el.textContent = date.toLocaleString();
     });
 }
+
+
+
+
+
+// ============================================================
+// Init
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+
+
+    document.querySelectorAll('form[data-submitted="true"]').forEach(f => {
+        resetFormState(f.parentElement ?? document.body);
+    });
+
+    // ----------------------------------------------------------
+    // Modal
+    // ----------------------------------------------------------
+    modalEl = document.querySelector('#Modal');
+
+    if (modalEl) {
+        modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        modalEl.addEventListener('hidden.bs.modal', () => {
+            pendingRow = null;
+            resetFormState(modalEl);
+        });
+    }
+
+    KTUtil.onDOMContentLoaded(() => {
+        initTable();
+        formatDates();
+    });
+
+    document.body.addEventListener('click', e => {
+        const modalBtn = e.target.closest('.js-render-modal');
+        if (modalBtn) openModal(modalBtn);
+
+        const toggleBtn = e.target.closest('.js-toggle-status');
+        if (toggleBtn) toggleStatus(toggleBtn);
+    });
+
+    // ----------------------------------------------------------
+    // Select2
+    // ----------------------------------------------------------
+    $('.js-select2').select2().on('change', function () {
+        $(this).valid();
+    });
+
+    // ----------------------------------------------------------
+    // Datepicker
+    // ----------------------------------------------------------
+    $('.js-datepicker').daterangepicker({
+        singleDatePicker: true,
+        autoApply: true,
+        drops: 'up',
+        maxDate: new Date(),
+        showDropdowns: true,
+    });
+
+    // ----------------------------------------------------------
+    // TinyMCE
+    // ----------------------------------------------------------
+    KTUtil.onDOMContentLoaded(function () {
+        initTinyMCE();
+
+        KTThemeMode.on('kt.thememode.change', function () {
+            initTinyMCE();
+        });
+    });
+
+    initImageInputSync();
+
+
+    // ----------------------------------------------------------
+    // Sign out
+    // ----------------------------------------------------------
+    document.querySelector(".js-signout").addEventListener('click', function () {
+        document.getElementById("SignOut").submit();
+    });
+
+});

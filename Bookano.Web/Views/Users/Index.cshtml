@@ -1,0 +1,83 @@
+﻿@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery
+@{
+    ViewData["Title"] = "Users";
+}
+
+
+@section Styles {
+    <link rel="stylesheet" href="~/assets/plugins/datatables/datatables.bundle.css" />
+}
+
+<div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
+    <div class="d-flex align-items-center">
+        <!--begin::Icon-->
+        <div class="symbol symbol-50px me-4 ">
+            <div class="symbol-label fs-2 fw-semibold text-success">
+                <i class="fa-solid fa-user-lock fa-lg text-dark"></i>
+            </div>
+        </div>
+        <!--end::Icon-->
+        <!--begin::Content-->
+        <div class="d-flex flex-column  justify-content-center pe-0 pe-sm-10">
+            <h3 class="mb-1">Users</h3>
+        </div>
+    </div>
+    <!--end::Content-->
+    <!--begin::Add-->
+    <div>
+        <a asp-action="Create" class="btn btn-md btn-primary fs-5">
+            <i class="bi bi-plus-square-dotted fs-3"></i>
+            Add
+        </a>
+    </div>
+    <!--end::Add-->
+</div>
+<div class="card shadow-sm">
+    <div class="card-header align-items-center py-5 gap-2 gap-md-5">
+        <div class="card-title">
+            <div class="d-flex align-items-center position-relative my-1">
+                <span class="svg-icon fs-1 position-absolute ms-4">
+                    <i class="fa-solid fa-magnifying-glass fs-2"></i>
+                </span>
+                <input type="text" data-kt-filter="search" class="form-control form-control-solid w-300px ps-14" placeholder="Search by username or email..." />
+            </div>
+        </div>
+    </div>
+    <div class="card-body pt-0 processing-host">
+        <div id="UsersProcessing" class="processing-overlay d-none">
+            <span class="loader"></span>
+        </div>
+        <div class="table-responsive">
+            <table id="Users" class="table table-row-dashed table-row-gray-300 gy-2 align-middle">
+                <thead>
+                    <tr class="fw-bold fs-6 text-gray-800">
+                        <th class="d-none"></th>
+                        <th>Full Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Created on</th>
+                        <th>Last updated on</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" name="__RequestVerificationToken" value="@antiforgery.GetAndStoreTokens(Context).RequestToken" />
+
+@section Plugins {
+    <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/datatable-helper.js"></script>
+    <script src="~/js/users.js"></script>
+   
+}
+

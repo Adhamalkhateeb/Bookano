@@ -6,8 +6,8 @@
 
 @section Styles {
     <link rel="stylesheet" href="~/assets/plugins/datatables/datatables.bundle.css" />
-}
 
+}
 
 <div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
     <div class="d-flex align-items-center">
@@ -44,7 +44,10 @@
             </div>
         </div>
     </div>
-    <div class="card-body pt-0">
+    <div class="card-body pt-0 processing-host">
+        <div id="BooksProcessing" class="processing-overlay d-none">
+            <span class="loader"></span>
+        </div>
         <div class="table-responsive">
             <table id="Books" class="table table-row-dashed table-row-gray-300 gy-2 align-middle">
                 <thead>
@@ -75,6 +78,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/datatable-helper.js"></script>
     <script src="~/js/books.js"></script>
    
 }

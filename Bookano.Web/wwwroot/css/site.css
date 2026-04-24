@@ -70,7 +70,7 @@ body {
     border-bottom: 4px solid var(--c1);
     background: linear-gradient(90deg, var(--c1) 2px, var(--c2) 0 5px,var(--c1) 0) 50%/7px 8px no-repeat;
     display: grid;
-    overflow: hidden;
+    overflow: visible;
     animation: l5-0 2s infinite linear;
 }
 
@@ -122,46 +122,25 @@ body {
 }
 
 
-.book-cover {
-    width: 60px;
-    aspect-ratio: 2 / 3;
-    overflow: hidden;
-    border-radius: 6px;
+.dataTables_processing,
+.dt-processing {
+    display: none !important;
 }
 
-    .book-cover img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-.layout-page-padding {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+.processing-host {
+    position: relative;
 }
 
-@media (min-width: 992px) {
-    .layout-page-padding {
-        padding-left: 2rem;
-        padding-right: 2rem;
-    }
+.processing-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background-color: rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-#kt_header .layout-page-padding,
-#kt_content_container.layout-page-padding,
-#kt_aside .layout-page-padding {
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
-}
-
-@media (min-width: 992px) {
-    #kt_header .layout-page-padding,
-    #kt_content_container.layout-page-padding,
-    #kt_aside .layout-page-padding {
-        padding-left: 2rem !important;
-        padding-right: 2rem !important;
-    }
-}
 
 
 /* End   Override theme  */
