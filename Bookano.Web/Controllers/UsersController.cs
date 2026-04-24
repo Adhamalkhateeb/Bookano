@@ -20,6 +20,8 @@ namespace Bookano.Web.Controllers
             return View();
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> GetUsers()
         {
             int skip = int.TryParse(Request.Form["start"], out var parsedSkip) ? parsedSkip : 0;
@@ -43,8 +45,8 @@ namespace Bookano.Web.Controllers
                 "UserName",
                 "Email",
                 "IsDeleted",
-                "CreatedOn",
-                "LastUpdatedOn",
+                "CreatedOnUtc",
+                "LastUpdatedOnUtc",
             };
 
             var requestedColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();
@@ -63,7 +65,9 @@ namespace Bookano.Web.Controllers
 
             if (!string.IsNullOrWhiteSpace(searchValue))
             {
-                usersQuery = usersQuery.Where(b => b.UserName!.Contains(searchValue));
+                usersQuery = usersQuery.Where(b =>
+                    b.UserName!.Contains(searchValue) || b.Email!.Contains(searchValue)
+                );
             }
 
             usersQuery = usersQuery.OrderBy($"{sortColumn} {sortDirection}");

@@ -1,6 +1,4 @@
-﻿using NuGet.Protocol.Plugins;
-
-namespace Bookano.Web.Core.ViewModels
+﻿namespace Bookano.Web.Core.ViewModels
 {
     public class UserViewModel
     {

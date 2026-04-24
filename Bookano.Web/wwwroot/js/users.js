@@ -18,7 +18,7 @@
 
             {
                 data: "createdOn",
-                name: "LastUpdatedOnUtc",
+                name: "CreatedOnUtc",
                 render: renderDateTime
             },
 
@@ -41,7 +41,7 @@
                                 <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px py-3" data-kt-menu="true" style="">
                                     <!--begin::Menu item-->
                                     <div class="menu-item px-3">
-                                        <a href="/Books/Edit/${row.id}"
+                                        <a href="/Users/Edit/${row.id}"
                                         class="menu-link flex-stack px-3 ">
                                             Edit
                                         </a>
@@ -50,7 +50,7 @@
                                     <!--begin::Menu item-->
                                     <div class="menu-item px-3">
                                         <a href="javascript:;" class="menu-link px-3 js-toggle-status"
-                                               data-url="/Books/ToggleStatus/${row.id}">
+                                               data-url="/Users/ToggleStatus/${row.id}">
                                             Toggle status
                                         </a>
                                     </div>

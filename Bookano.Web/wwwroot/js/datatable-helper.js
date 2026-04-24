@@ -26,7 +26,10 @@
         },
         ajax: {
             url: ajaxUrl,
-            type: "POST"
+            type: "POST",
+            headers: {
+                "RequestVerificationToken": getCsrfToken()
+            },
         },
         drawCallback: function () {
             if (window.KTMenu) {
