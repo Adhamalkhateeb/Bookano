@@ -1,5 +1,6 @@
 using System.Reflection;
 using Bookano.Web.Core.Mapping;
+using Bookano.Web.Seeds;
 using Microsoft.AspNetCore.Identity;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 
@@ -12,17 +13,18 @@ var connectionString =
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder
-    .Services.AddDefaultIdentity<IdentityUser>(options =>
+    .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
         options.SignIn.RequireConfirmedAccount = true
     )
-    .AddEntityFrameworkStores<ApplicationDbContext>();
-builder.Services.AddControllersWithViews(options =>
-{
-    //options.Filters.Add(new ValidateAntiForgeryTokenAttribute());
-});
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultUI()
+    .AddDefaultTokenProviders();
+
+builder.Services.AddControllersWithViews();
 
 builder.Services.AddAutoMapper(cfg => { }, Assembly.GetAssembly(typeof(MappingProfile)));
 
@@ -49,13 +51,24 @@ else
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
+
+using (var scope = app.Services.CreateScope())
+{
+    await DefaultRoles.SeedAsync(
+        scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>()
+    );
+
+    await DefaultUsers.SeedAdminUserAsync(
+        scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>()
+    );
+}
 
 app.MapStaticAssets();
 
-app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
+app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
-app.MapRazorPages().WithStaticAssets();
+app.MapRazorPages();
 
 app.Run();

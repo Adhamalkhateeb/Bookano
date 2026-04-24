@@ -1,74 +1,47 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
 
-    const tableEl = document.getElementById("Books");
-    const datatable = new DataTable(tableEl, {
-        processing: true,
-        serverSide: true,
-        stateSave: true,
-        language: {
-            processing: '<span class="loader"></span>'
-        },
-        ajax: {
-            url: "/Books/GetBooks",
-            type: "POST"
-        },
-        drawCallback: function () {
-            KTMenu.createInstances();
-        },
-        order: [[1, 'asc']],
-        columnDefs: [{
-            targets: [0],
-            visible: false,
-            searchable: false
-        }],
+    initDataTable({
+        tableId: "Books",
+        ajaxUrl: "/Books/GetBooks",
+        processingId: "BooksProcessing",
         columns: [
-            { "data": "id", "name": "Id", "className": "d-none", "searchable": true },
+            { data: "id", name: "Id", className: "d-none" },
             {
-                "name": "Title",
-                "render": function (data, type, row) {
-                    return `
-                                        <div class="d-flex align-items-center">
-                                            <div class="symbol symbol-40px overflow-hidden me-3">
-                                                <a href="/Books/Details/${row.id}">
-                                                    <div class="symbol-label h-60px">
-                                                        <img src="${row.imageThumbnailUrl ?? '/images/books/no-image-cover.png'}"
-                                                             alt="${row.title}"
-                                                             class="object-fit-contain w-45px h-60px rounded">
-                                                    </div>
-                                                </a>
-                                            </div>
+                name: "Title",
+                render: (data, type, row) =>
+                    `
+                       <div class="d-flex align-items-center">
+                           <div class="symbol symbol-40px overflow-hidden me-3">
+                               <a href="/Books/Details/${row.id}">
+                                   <div class="symbol-label h-60px">
+                                       <img src="${row.imageThumbnailUrl ?? '/images/books/no-image-cover.png'}"
+                                            alt="${row.title}"
+                                            class="object-fit-contain w-45px h-60px rounded">
+                                   </div>
+                               </a>
+                           </div>
 
-                                            <div class="d-flex flex-column">
-                                            <a href="/Books/Details/${row.id}"
-                                                   class="text-primary fs-6 fw-bold my-0">
-                                                   ${row.title}
-                                                </a>
-                                                <span class="fs-7">
-                                                ${row.authors}
-                                                </span>
-                                                <span class="text-dark fs-8">${row.isbn}</span>
+                           <div class="d-flex flex-column">
+                           <a href="/Books/Details/${row.id}"
+                                  class="text-primary fs-6 fw-bold my-0">
+                                  ${row.title}
+                               </a>
+                               <span class="fs-7">
+                               ${row.authors}
+                               </span>
+                               <span class="text-dark fs-8">${row.isbn}</span>
 
-                                            </div>
-                                        </div>
-                                    `;
-                }
+                           </div>
+                       </div>
+                      `
             },
             { "data": "publisher", "name": "Publisher.Name" },
             {
-                "name": "PublishingDate",
-                "render": function (data, type, row) {
-
-                    const date = new Date(row.publishingDate);
-
-                    return date.toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric"
-                    });
-                }
+                data: "publishingDate",
+                name: "PublishingDate",
+                render: renderDate
             },
             { "data": "hall", "name": "Hall" },
-            //{ "data": "categories", "name": "Categories", "orderable": false },
             {
                 "name": "IsAvailableForRental",
                 "render": function (data, type, row) {
@@ -78,12 +51,9 @@
                 }
             },
             {
-                "name": "IsDeleted",
-                "render": function (data, type, row) {
-                    return `<span class="badge badge-light-${row.isDeleted ? "danger" : "success"} js-status">
-                                    ${row.isDeleted ? "Deleted" : "Available"}
-                               </span>`
-                }
+                name: "IsDeleted",
+                render: (data, type, row) =>
+                    renderStatusBadge(row.isDeleted, "Deleted", "Available")
             },
             {
 
@@ -116,15 +86,7 @@
                                 </div>`;
                 }
             },
-
-
         ]
     });
 
-    const search = document.querySelector('[data-kt-filter="search"]');
-    if (search) {
-        search.addEventListener('input', (e) => {
-            datatable.search(e.target.value).draw();
-        });
-    }
 });
