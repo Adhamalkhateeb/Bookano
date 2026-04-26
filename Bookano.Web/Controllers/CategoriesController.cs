@@ -1,5 +1,6 @@
 ﻿namespace Bookano.Web.Controllers;
 
+[Authorize(Roles = AppRoles.Archive)]
 public class CategoriesController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -36,7 +37,7 @@ public class CategoriesController : Controller
             return BadRequest();
 
         var category = _mapper.Map<Category>(model);
-
+        category.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
 
@@ -73,6 +74,8 @@ public class CategoriesController : Controller
 
         category = _mapper.Map(model, category);
         category.LastUpdatedOnUtc = DateTime.UtcNow;
+        category.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
         await _context.SaveChangesAsync();
 
         var categoryViewModel = _mapper.Map<CategoryViewModel>(category);
@@ -92,6 +95,7 @@ public class CategoriesController : Controller
         category.IsDeleted = !category.IsDeleted;
         var updatedOn = DateTimeOffset.UtcNow;
         category.LastUpdatedOnUtc = updatedOn;
+        category.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         await _context.SaveChangesAsync();
 

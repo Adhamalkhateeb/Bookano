@@ -1,5 +1,6 @@
 ﻿namespace Bookano.Web.Controllers
 {
+    [Authorize(Roles = AppRoles.Archive)]
     public class AuthorsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -35,6 +36,7 @@
                 return BadRequest();
 
             var author = _mapper.Map<Author>(model);
+            author.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
@@ -71,6 +73,7 @@
                 return NotFound();
 
             author = _mapper.Map(model, author);
+            author.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
             author.LastUpdatedOnUtc = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
@@ -91,6 +94,7 @@
             author.IsDeleted = !author.IsDeleted;
             var updatedOn = DateTimeOffset.UtcNow;
             author.LastUpdatedOnUtc = updatedOn;
+            author.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _context.SaveChangesAsync();
 

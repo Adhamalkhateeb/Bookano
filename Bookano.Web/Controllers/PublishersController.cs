@@ -1,5 +1,6 @@
 ﻿namespace Bookano.Web.Controllers
 {
+    [Authorize(Roles = AppRoles.Archive)]
     public class PublishersController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -35,6 +36,7 @@
                 return BadRequest();
 
             var publisher = _mapper.Map<Publisher>(model);
+            publisher.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Publishers.Add(publisher);
             await _context.SaveChangesAsync();
@@ -65,16 +67,18 @@
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var Publisher = await _context.Publishers.FindAsync(model.Id);
+            var publisher = await _context.Publishers.FindAsync(model.Id);
 
-            if (Publisher is null)
+            if (publisher is null)
                 return NotFound();
 
-            Publisher = _mapper.Map(model, Publisher);
-            Publisher.LastUpdatedOnUtc = DateTime.UtcNow;
+            publisher = _mapper.Map(model, publisher);
+            publisher.LastUpdatedOnUtc = DateTime.UtcNow;
+            publisher.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
             await _context.SaveChangesAsync();
 
-            var PublisherViewModel = _mapper.Map<PublisherViewModel>(Publisher);
+            var PublisherViewModel = _mapper.Map<PublisherViewModel>(publisher);
 
             return PartialView("_PublisherRow", PublisherViewModel);
         }
@@ -83,14 +87,15 @@
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
-            var Publisher = await _context.Publishers.FindAsync(id);
+            var publisher = await _context.Publishers.FindAsync(id);
 
-            if (Publisher is null)
+            if (publisher is null)
                 return NotFound();
 
-            Publisher.IsDeleted = !Publisher.IsDeleted;
+            publisher.IsDeleted = !publisher.IsDeleted;
             var updatedOn = DateTimeOffset.UtcNow;
-            Publisher.LastUpdatedOnUtc = updatedOn;
+            publisher.LastUpdatedOnUtc = updatedOn;
+            publisher.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _context.SaveChangesAsync();
 

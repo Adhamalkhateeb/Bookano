@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Bookano.Web.Controllers
 {
+    [Authorize(Roles = AppRoles.Archive)]
     public class BooksController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -160,6 +161,7 @@ namespace Bookano.Web.Controllers
 
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
+            book.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
@@ -198,12 +200,13 @@ namespace Bookano.Web.Controllers
             var book = await _context
                 .Books.Include(b => b.Categories)
                 .Include(b => b.Authors)
+                .Include(b => b.Copies)
                 .SingleOrDefaultAsync(b => b.Id == model.Id);
 
             if (book is null)
                 return NotFound();
 
-            _mapper.Map(model, book);
+            book = _mapper.Map(model, book);
 
             if (model.Image is not null)
             {
@@ -230,6 +233,13 @@ namespace Bookano.Web.Controllers
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
             book.LastUpdatedOnUtc = DateTime.UtcNow;
+            book.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
+
+            if (!book.IsAvailableForRental)
+            {
+                foreach (var copy in book.Copies)
+                    copy.IsAvailableForRental = false;
+            }
 
             await _context.SaveChangesAsync();
 
@@ -248,6 +258,7 @@ namespace Bookano.Web.Controllers
             book.IsDeleted = !book.IsDeleted;
             var updatedOn = DateTimeOffset.UtcNow;
             book.LastUpdatedOnUtc = updatedOn;
+            book.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _context.SaveChangesAsync();
 
