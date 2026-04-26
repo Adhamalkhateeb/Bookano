@@ -59,9 +59,17 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
-        //Publishers
+        //Users
         CreateMap<ApplicationUser, UserViewModel>()
             .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(u => u.CreatedOnUtc))
             .ForMember(dest => dest.LastUpdatedOn, opt => opt.MapFrom(u => u.LastUpdatedOnUtc));
+
+        CreateMap<UserFormViewModel, ApplicationUser>()
+            .ForMember(dest => dest.NormalizedEmail, opt => opt.MapFrom(u => u.Email.ToUpper()))
+            .ForMember(
+                dest => dest.NormalizedUserName,
+                opt => opt.MapFrom(u => u.UserName.ToUpper())
+            )
+            .ReverseMap();
     }
 }

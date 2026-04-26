@@ -1,8 +1,111 @@
-﻿let datatable;
-let pendingRow = null;
+﻿let pendingRow = null;
+let modal = null;
+let modalEl = null;
 
-let modal;
-let modalEl;
+
+// ============================================================
+// DataTable — accessor & helpers
+// ============================================================
+
+function getAppDatatable() {
+    return window.appDatatable ?? null;
+}
+
+function isServerSideDatatable(dt) {
+    return !!dt?.settings?.()[0]?.oFeatures?.bServerSide;
+}
+
+function reloadDatatable() {
+    const dt = getAppDatatable();
+    if (!dt) return;
+    dt.ajax?.reload(null, false);
+}
+
+// ============================================================
+// DataTable (Client-Side)
+// ============================================================
+
+function initTable() {
+    const tableEl = document.querySelector('.js-datatable');
+    if (!tableEl) return;
+
+    formatDates(tableEl);
+
+    const datatable = new DataTable(tableEl, {
+        pageLength: 10,
+        info: false,
+        stateSave: true,
+        columnDefs: [{ targets: -1, orderable: false }],
+        drawCallback: function () {
+            KTMenu?.createInstances();
+            formatDates(this.api().table().node());
+        },
+    });
+
+    window.appDatatable = datatable;
+
+    const search = document.querySelector('[data-kt-filter="search"]');
+    search?.addEventListener('input', () => datatable.search(search.value).draw());
+
+    attachExportButtons(tableEl);
+}
+
+function attachExportButtons(tableEl) {
+    const title = tableEl.dataset.exportTitle ?? '';
+
+    const cols = Array.from(tableEl.querySelectorAll('th'))
+        .map((th, i) => ({ th, i }))
+        .filter(({ th }) => !th.classList.contains('js-no-export'))
+        .map(({ i }) => i);
+
+    const buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'].map(t => ({
+        extend: t,
+        title,
+        exportOptions: { columns: cols },
+    }));
+
+    new DataTable.Buttons(window.appDatatable, { buttons })
+        .container()
+        .appendTo(document.querySelector('#kt_datatable_example_buttons'));
+
+    document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]')
+        .forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                const val = e.currentTarget.dataset.ktExport;
+                document.querySelector(`.dt-buttons .buttons-${val}`)?.click();
+            });
+        });
+}
+
+// ============================================================
+// Row upsert 
+// ============================================================
+function upsertRow(html, oldRow = null) {
+    const dt = getAppDatatable();
+    if (!dt) return;
+
+    if (isServerSideDatatable(dt)) {
+        dt.ajax.reload(null, false);
+        return;
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    const newRow = template.content.firstElementChild;
+    if (!newRow) return;
+
+    formatDates(newRow);
+
+    if (oldRow) dt.row(oldRow).remove();
+
+    const row = dt.row.add(newRow);
+    dt.draw(false);
+
+    const node = row.node();
+    animate(node, 'animate__flash');
+}
+
 
 
 // ============================================================
@@ -11,9 +114,7 @@ let modalEl;
 
 
 document.addEventListener('submit', function (e) {
-    const form = e.target;
-    if (form.id === "SignOut") return;
-
+    if (e.target.id === 'SignOut') return;
     handleFormSubmit(e);
 });
 
@@ -25,15 +126,12 @@ function handleFormSubmit(e) {
         return;
     }
 
-    if (window.$ && $(form).data('validator')) {
-        if (!$(form).valid()) {
-            e.preventDefault(); 
-            return;
-        }
+    if (window.$ && $(form).data('validator') && !$(form).valid()) {
+        e.preventDefault();
+        return;
     }
 
     lockForm(form);
-
 }
 
 function lockForm(container) {
@@ -44,7 +142,6 @@ function lockForm(container) {
     if (!form) return;
 
     form.dataset.submitted = 'true';
-
     form.querySelectorAll('[type="submit"]').forEach(btn => {
         btn.disabled = true;
         btn.setAttribute('data-kt-indicator', 'on');
@@ -59,111 +156,20 @@ function resetFormState(container) {
     if (!form) return;
 
     delete form.dataset.submitted;
-
-
     form.querySelectorAll('[type="submit"]').forEach(btn => {
         btn.disabled = false;
         btn.setAttribute('data-kt-indicator', 'off');
     });
 }
 
-// ============================================================
-// DataTable
-// ============================================================
-
-function initTable() {
-    const tableEl = document.querySelector('.js-datatable');
-    if (!tableEl) return;
-
-    formatDates(tableEl);
-
-    datatable = new DataTable(tableEl, {
-        pageLength: 10,
-        info: false,
-        stateSave: true,
-        "columnDefs": [
-            {
-                "targets": -1,       
-                "orderable": false   
-            },
-        ],
-
-        drawCallback: function () {
-            KTMenu.createInstances();
-            formatDates(this.api().table().node());
-        }
-    });
-
-    const search = document.querySelector('[data-kt-filter="search"]');
-    if (search) {
-        search.addEventListener('input', () => {
-            datatable.search(search.value).draw();
-        });
-    }
-
-    attachExportButtons(tableEl);
-}
-
-function attachExportButtons(tableEl) {
-    const title = tableEl.dataset.exportTitle ?? '';
-
-    const cols = Array.from(tableEl.querySelectorAll('th'))
-        .map((th, i) => ({ th, i }))
-        .filter(x => !x.th.classList.contains('js-no-export'))
-        .map(x => x.i);
-
-    const exportTypes = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'];
-
-    const buttons = exportTypes.map(t => ({
-        extend: t,
-        title,
-        exportOptions: { columns: cols }
-    }));
-
-    new DataTable.Buttons(datatable, { buttons }).container()
-        .appendTo(document.querySelector('#kt_datatable_example_buttons'));
-
-    document.querySelectorAll('#kt_datatable_example_export_menu [data-kt-export]')
-        .forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.preventDefault();
-                const exportValue = e.currentTarget.dataset.ktExport;
-                document.querySelector(`.dt-buttons .buttons-${exportValue}`)?.click();
-            });
-        });
-}
-
-
-
-function upsertRow(html, oldRow = null) {
-    if (!datatable) return;
-
-    const template = document.createElement('template');
-    template.innerHTML = html.trim();
-
-    const newRow = template.content.firstElementChild;
-    if (!newRow) return;
-
-    formatDates(newRow);
-
-    if (oldRow) datatable.row(oldRow).remove();
-
-    const row = datatable.row.add(newRow);
-    datatable.draw(false);
-
-    const node = row.node();
-    animate(node, 'animate__flash');
-
-}
 
 // ============================================================
 // Modal
 // ============================================================
 
 function getModal() {
-    if (!modal) {
-        modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-    }
+    if (!modalEl) return null;
+    if (!modal) modal = bootstrap.Modal.getOrCreateInstance(modalEl);
     return modal;
 }
 
@@ -177,43 +183,48 @@ async function openModal(btn) {
 
     pendingRow = btn.dataset.mode ? btn.closest('tr') : null;
 
-
     try {
         const html = await fetchHtml(btn.dataset.url);
-
         if (bodyEl) bodyEl.innerHTML = html;
+
+        applySelect2();
 
         if (window.$?.validator) $.validator.unobtrusive.parse(modalEl);
 
-        getModal().show();
+        getModal()?.show();
     } catch {
         showError();
     }
 }
 
 // ============================================================
-// Modal callbacks (AJAX)
+// Modal AJAX callbacks
 // ============================================================
 
 function onModalSuccess(rowHtml) {
     showSuccess();
-    getModal().hide();
-    upsertRow(rowHtml, pendingRow);
+    getModal()?.hide();
 
-    if (typeof onRowAdded === 'function' && !pendingRow) {
-        onRowAdded(); 
+    const dt = getAppDatatable();
+    if (dt && isServerSideDatatable(dt)) {
+        dt.ajax.reload(null, false);
+    } else {
+        upsertRow(rowHtml, pendingRow);
+        if (typeof onRowAdded === 'function' && !pendingRow) onRowAdded();
     }
 
     pendingRow = null;
     resetFormState(modalEl);
 }
 
-
 function onModalComplete() {
-    const form = modalEl?.querySelector('form');
-    if (form && form.dataset.submitted === 'true') {
-        resetFormState(modalEl);
-    }
+    resetFormState(modalEl);
+}
+
+function showErrorMessage(xhr) {
+    resetFormState(modalEl);
+    const message = xhr?.responseText?.trim() || 'Something went wrong!';
+    showError(message);
 }
 
 // ============================================================
@@ -238,31 +249,41 @@ async function toggleStatus(btn) {
 
     try {
         const updatedOn = await postForm(btn.dataset.url);
+        const dt = getAppDatatable();
+
+        if (dt && isServerSideDatatable(dt)) {
+            // Server-side table Just reload
+            dt.ajax.reload(null, false);
+            showSuccess();
+            return;
+        }
 
         const row = btn.closest('tr');
-        const statusEl = row.querySelector('.js-status');
-        const updatedEl = row.querySelector('.js-updated-on');
+        const statusEl = row?.querySelector('.js-status');
+        const updatedEl = row?.querySelector('.js-updated-on');
 
-        if (!statusEl) return;
+        if (!statusEl) {
+            showSuccess();
+            return;
+        }
 
-        const isDeleted = statusEl.textContent.trim() === 'Deleted';
+        const wasDeleted = statusEl.textContent.trim() === 'Deleted';
 
-        statusEl.textContent = isDeleted ? 'Available' : 'Deleted';
-        statusEl.classList.toggle('badge-light-danger', !isDeleted);
-        statusEl.classList.toggle('badge-light-success', isDeleted);
+        statusEl.textContent = wasDeleted ? 'Available' : 'Deleted';
+        statusEl.classList.toggle('badge-light-danger', !wasDeleted);
+        statusEl.classList.toggle('badge-light-success', wasDeleted);
 
-        if (updatedEl) {
+        if (updatedEl && updatedOn) {
             updatedEl.setAttribute('data-utc', updatedOn);
             updatedEl.setAttribute('data-order', updatedOn);
             formatDates(row);
-
-            if (datatable) {
-                datatable.row(row).invalidate();
-                datatable.draw(false);
-            }
         }
 
-        animate(statusEl, 'animate__flipInX');
+        if (dt && row) {
+            dt.row(row).invalidate().draw(false);
+        }
+
+        animate(row, 'animate__flash');
         showSuccess();
 
     } catch {
@@ -282,20 +303,16 @@ function initTinyMCE() {
     const options = {
         selector: '.js-tinymce',
         height: 513,
-        setup: function (editor) {
-
-            editor.on('input', function () {
+        setup(editor) {
+            editor.on('input', () => {
                 const textarea = document.getElementById(editor.id);
                 if (!textarea) return;
-
                 textarea.value = editor.getContent();
-
                 if (window.$ && $(textarea).closest('form').data('validator')) {
                     $(textarea).valid();
                 }
             });
-
-        }
+        },
     };
 
     if (KTThemeMode.getMode() === 'dark') {
@@ -323,31 +340,42 @@ function initImageInputSync(container = document) {
 
     if (!wrapper || !removeInput) return;
 
-    instance.on("kt.imageinput.changed", function () {
-        removeInput.value = "false";
-    });
+    instance.on('kt.imageinput.changed', () => { removeInput.value = 'false'; });
 
-    instance.on("kt.imageinput.canceled", function () {
-        wrapper.style.backgroundImage = `none`;
+    instance.on('kt.imageinput.canceled', () => {
+        wrapper.style.backgroundImage = 'none';
         el.classList.add('image-input-empty');
         el.classList.remove('image-input-filled');
-        removeInput.value = "false";
+        removeInput.value = 'false';
     });
 
-    instance.on("kt.imageinput.removed", function () {
-        wrapper.style.backgroundImage = `none`;
+    instance.on('kt.imageinput.removed', () => {
+        wrapper.style.backgroundImage = 'none';
         el.classList.remove('image-input-filled');
-        removeInput.value = "true";
+        removeInput.value = 'true';
     });
 }
+
+
+// ============================================================
+// Select2
+// ============================================================
+
+function applySelect2() {
+    $('.js-select2').select2().on('change', function () { $(this).valid(); });
+}
+
 
 
 // ============================================================
 // Helpers
 // ============================================================
 
+
+
 const getCsrfToken = () =>
     document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+
 
 const animate = (el, animation) => {
     if (!el) return;
@@ -356,12 +384,11 @@ const animate = (el, animation) => {
     void el.offsetWidth; // reflow to restart animation
     el.classList.add('animate__animated', animation);
 
-    const handleAnimationEnd = () => {
+    const done = () => {
         el.classList.remove('animate__animated', animation);
-        el.removeEventListener('animationend', handleAnimationEnd);
+        el.removeEventListener('animationend', done);
     };
-
-    el.addEventListener('animationend', handleAnimationEnd);
+    el.addEventListener('animationend', done);
 };
 
 const showSuccess = (msg = 'Saved successfully!') =>
@@ -369,45 +396,35 @@ const showSuccess = (msg = 'Saved successfully!') =>
         icon: 'success',
         title: 'Success',
         text: msg,
-        customClass: { confirmButton: 'btn btn-primary' }
+        customClass: { confirmButton: 'btn btn-primary' },
     });
 
-const showError = (msg = 'Something went wrong!') =>
+const showError = (err = 'Something went wrong!') =>
     Swal.fire({
         icon: 'error',
         title: 'Oops.. 😟',
-        text: msg,
-        customClass: { confirmButton: 'btn btn-primary' }
+        text: err?.responseText ?? err,
+        customClass: { confirmButton: 'btn btn-primary' },
     });
 
 
 async function fetchHtml(url) {
     const res = await fetch(url, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
     });
 
-    if (!res.ok) {
-        showError();
-        throw new Error(`HTTP ${res.status}`);
-    }
+    if (!res.ok) { showError(); throw new Error(`HTTP ${res.status}`); }
 
     return res.text();
 }
 
 async function postForm(url) {
     const body = new URLSearchParams({
-        __RequestVerificationToken: getCsrfToken()
+        __RequestVerificationToken: getCsrfToken(),
     });
 
-    const res = await fetch(url, {
-        method: 'POST',
-        body
-    });
-
-    if (!res.ok) {
-        showError();
-        throw new Error(`HTTP ${res.status}`);
-    }
+    const res = await fetch(url, { method: 'POST', body });
+    if (!res.ok) { showError(); throw new Error(`HTTP ${res.status}`); }
 
     return res.text();
 }
@@ -415,44 +432,36 @@ async function postForm(url) {
 
 function formatDates(root = document) {
     const scope = root instanceof HTMLElement ? root : document;
+    scope.querySelectorAll('[data-utc]').forEach(el => {
 
-    scope.querySelectorAll("[data-utc]").forEach(el => {
-        const utc = el.getAttribute("data-utc");
+        const utc = el.getAttribute('data-utc');
         if (!utc) return;
 
         const date = new Date(utc);
         if (isNaN(date)) return;
 
-        const sortValue = date.toISOString();
-
-        el.setAttribute("data-order", sortValue); 
+        el.setAttribute('data-order', date.toISOString());
         el.textContent = date.toLocaleString();
     });
 }
 
 
 
-
-
 // ============================================================
-// Init
+// Bootstrap
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', () => {
 
-
+    // Clean up any stale submitted-form state from previous navigation
     document.querySelectorAll('form[data-submitted="true"]').forEach(f => {
         resetFormState(f.parentElement ?? document.body);
     });
 
-    // ----------------------------------------------------------
-    // Modal
-    // ----------------------------------------------------------
+    // Modal setup
     modalEl = document.querySelector('#Modal');
-
     if (modalEl) {
         modal = bootstrap.Modal.getOrCreateInstance(modalEl);
-
         modalEl.addEventListener('hidden.bs.modal', () => {
             pendingRow = null;
             resetFormState(modalEl);
@@ -464,24 +473,18 @@ document.addEventListener('DOMContentLoaded', () => {
         formatDates();
     });
 
+    // Delegated click handler — single listener for the whole page
     document.body.addEventListener('click', e => {
         const modalBtn = e.target.closest('.js-render-modal');
-        if (modalBtn) openModal(modalBtn);
-
         const toggleBtn = e.target.closest('.js-toggle-status');
+        if (modalBtn) openModal(modalBtn);
         if (toggleBtn) toggleStatus(toggleBtn);
     });
 
-    // ----------------------------------------------------------
     // Select2
-    // ----------------------------------------------------------
-    $('.js-select2').select2().on('change', function () {
-        $(this).valid();
-    });
+    applySelect2();
 
-    // ----------------------------------------------------------
     // Datepicker
-    // ----------------------------------------------------------
     $('.js-datepicker').daterangepicker({
         singleDatePicker: true,
         autoApply: true,
@@ -490,25 +493,15 @@ document.addEventListener('DOMContentLoaded', () => {
         showDropdowns: true,
     });
 
-    // ----------------------------------------------------------
     // TinyMCE
-    // ----------------------------------------------------------
-    KTUtil.onDOMContentLoaded(function () {
+    KTUtil.onDOMContentLoaded(() => {
         initTinyMCE();
-
-        KTThemeMode.on('kt.thememode.change', function () {
-            initTinyMCE();
-        });
+        KTThemeMode.on('kt.thememode.change', initTinyMCE);
     });
+
+    // Sign-out button
+    document.querySelector('.js-signout')
+        ?.addEventListener('click', () => document.getElementById('SignOut').submit());
 
     initImageInputSync();
-
-
-    // ----------------------------------------------------------
-    // Sign out
-    // ----------------------------------------------------------
-    document.querySelector(".js-signout").addEventListener('click', function () {
-        document.getElementById("SignOut").submit();
-    });
-
 });

@@ -1,5 +1,6 @@
 ﻿namespace Bookano.Web.Controllers
 {
+    [Authorize(Roles = AppRoles.Archive)]
     public class BookCopiesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -49,6 +50,7 @@
             {
                 EditionNumber = model.EditionNumber,
                 IsAvailableForRental = book.IsAvailableForRental && model.IsAvailableForRental,
+                CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value,
             };
 
             book.Copies.Add(copy);
@@ -92,6 +94,7 @@
 
             copy.EditionNumber = model.EditionNumber;
             copy.LastUpdatedOnUtc = DateTime.UtcNow;
+            copy.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
             copy.IsAvailableForRental =
                 copy.Book!.IsAvailableForRental && model.IsAvailableForRental;
 
@@ -114,6 +117,7 @@
             copy.IsDeleted = !copy.IsDeleted;
             var updatedOn = DateTimeOffset.UtcNow;
             copy.LastUpdatedOnUtc = updatedOn;
+            copy.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _context.SaveChangesAsync();
 

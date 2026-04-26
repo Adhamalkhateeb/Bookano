@@ -1,4 +1,5 @@
 ﻿global using System.ComponentModel.DataAnnotations;
+global using System.Security.Claims;
 global using AutoMapper;
 global using Bookano.Web.Core.Consts;
 global using Bookano.Web.Core.Models;

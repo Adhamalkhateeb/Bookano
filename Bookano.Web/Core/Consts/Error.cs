@@ -2,12 +2,29 @@
 {
     public static class Error
     {
+        public const string RequiredField = "Required Field";
         public const string MaxLength = "Length cannot be more than {1} characters.";
-        public const string Duplicated = "{0} with the same value already exists!";
+        public const string MaxMinLength =
+            "The {0} must be at least {2} and at max {1} characters long.";
+        public const string Duplicated = "Another record with the same {0} already exists!";
         public const string NotAllowedImageExtension =
-            "Only (.jpg, .jpeg, .png, .webp) files are allowed";
-        public const string ImageMaxSizeLimit = "File cannot exceed 2MB";
+            "Only (.jpg, .jpeg, .png, .webp) files are allowed.";
+        public const string ImageMaxSizeLimit = "File cannot exceed 2MB!";
         public const string NotAllowFutureDates = "Date cannot be in the future!";
         public const string ShouldBeInRange = "{0} should be between {1} and {2}!";
+        public const string PasswordNotMatch =
+            "The password and confirmation password do not match.";
+        public const string WeakPassword =
+            "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+        public const string InvalidUsername = "Username can only conatin letters or digits.";
+        public const string DenySepcialCharacters = "Only Arabic letetrs are allowed.";
+        public const string OnlyEnglishLetters = "Only English letters are allowed.";
+        public const string OnlyArabicLetters = "Only Arabic letters are allowed.";
+        public const string OnlyNumbersAndLetters =
+            "Only Arabic/English letters or digits are allowed.";
+        public const string DenySpecialCharacters = "Special characters are not allowed.";
+        public const string InvalidMobileNumber = "Invalid mobile number.";
+        public const string InvalidNationalId = "Invalid national ID.";
+        public const string InvalidSerialNumber = "Invalid serial number.";
     }
 }
