@@ -1,6 +1,7 @@
-using System.Reflection;
 using Bookano.Web.Core.Mapping;
+using Bookano.Web.Helpers;
 using Bookano.Web.Seeds;
+using Bookano.Web.Services.Images;
 using Microsoft.AspNetCore.Identity;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 
@@ -20,21 +21,25 @@ builder
     .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.SignIn.RequireConfirmedAccount = true;
+        options.Password.RequiredLength = 8;
         options.User.RequireUniqueEmail = true;
+        options.Lockout.MaxFailedAccessAttempts = 5;
     })
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 
-builder.Services.Configure<IdentityOptions>(options =>
-{
-    options.Password.RequiredLength = 8;
-});
+builder.Services.AddScoped<
+    IUserClaimsPrincipalFactory<ApplicationUser>,
+    ApplicationUserClaimsPrincipalFactory
+>();
+
+builder.Services.AddKeyedScoped<IImageService, CloudinaryImageService>("cloudinary");
+builder.Services.AddKeyedScoped<IImageService, LocalImageService>("local");
 
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddAutoMapper(cfg => { }, Assembly.GetAssembly(typeof(MappingProfile)));
-
+builder.Services.AddAutoMapper(cfg => { }, typeof(MappingProfile).Assembly);
 builder.Services.AddExpressiveAnnotations();
 
 builder.Services.Configure<CloudinarySettings>(
@@ -56,6 +61,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();

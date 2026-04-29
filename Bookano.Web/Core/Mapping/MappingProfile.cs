@@ -18,10 +18,17 @@ public class MappingProfile : Profile
         CreateMap<BookFormViewModel, Book>()
             .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
             .ForMember(dest => dest.ImageThumbnailUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImagePublicId, opt => opt.Ignore())
+            .ForMember(dest => dest.IdempotencyKey, opt => opt.Ignore())
+            .ForMember(dest => dest.RowVersion, opt => opt.Ignore())
             .ForMember(dest => dest.Categories, opt => opt.Ignore())
             .ForMember(dest => dest.Authors, opt => opt.Ignore());
 
         CreateMap<Book, BookFormViewModel>()
+            .ForMember(
+                dest => dest.ExistingImagePublicId,
+                opt => opt.MapFrom(src => src.ImagePublicId)
+            )
             .ForMember(dest => dest.Categories, opt => opt.Ignore())
             .ForMember(dest => dest.Authors, opt => opt.Ignore());
 

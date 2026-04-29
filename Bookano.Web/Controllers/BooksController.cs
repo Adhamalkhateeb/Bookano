@@ -1,8 +1,6 @@
 ﻿using System.Linq.Dynamic.Core;
-using CloudinaryDotNet;
-using CloudinaryDotNet.Actions;
+using Bookano.Web.Services.Images;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.Extensions.Options;
 
 namespace Bookano.Web.Controllers
 {
@@ -11,42 +9,31 @@ namespace Bookano.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
-        private readonly Cloudinary _cloudinary;
-
-        private readonly string[] _allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
-        private const int _maxAllowedSize = 2 * 1024 * 1024;
+        private readonly IImageService _imageService;
 
         public BooksController(
             ApplicationDbContext context,
             IMapper mapper,
-            IOptions<CloudinarySettings> options
+            [FromKeyedServices("cloudinary")] IImageService imageService
         )
         {
             _context = context;
             _mapper = mapper;
-
-            var account = new Account(
-                options.Value.Cloud,
-                options.Value.ApiKey,
-                options.Value.ApiSecret
-            );
-
-            _cloudinary = new Cloudinary(account) { Api = { Secure = true } };
+            _imageService = imageService;
         }
 
-        public IActionResult Index()
-        {
-            return View();
-        }
+        public IActionResult Index() => View();
 
         [HttpPost]
         public async Task<IActionResult> GetBooks()
         {
             int skip = int.TryParse(Request.Form["start"], out var parsedSkip) ? parsedSkip : 0;
+
             int pageSize =
                 int.TryParse(Request.Form["length"], out var parsedPageSize) && parsedPageSize > 0
                     ? parsedPageSize
                     : 10;
+
             var searchValue = Request.Form["search[value]"].ToString();
 
             var sortColumnIndex = int.TryParse(
@@ -135,10 +122,7 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Create()
-        {
-            return View("Form", await PopulateViewModelAsync());
-        }
+        public async Task<IActionResult> Create() => View("Form", await PopulateViewModelAsync());
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -147,24 +131,57 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 
-            var book = _mapper.Map<Book>(model);
-
             if (model.Image is not null)
             {
-                var upload = await UploadImageAsync(model.Image);
-
-                if (upload.url is null)
+                var imageValidationError = _imageService.ValidateImage(model.Image);
+                if (imageValidationError is not null)
+                {
+                    ModelState.AddModelError("Image", imageValidationError);
                     return View("Form", await PopulateViewModelAsync(model));
-
-                ApplyImage(book, upload.url, upload.publicId!);
+                }
             }
+
+            var duplicate = await _context.Books.FirstOrDefaultAsync(b =>
+                b.IdempotencyKey == model.IdempotencyKey
+            );
+
+            if (duplicate is not null)
+                return RedirectToAction(nameof(Details), new { duplicate.Id });
+
+            var book = _mapper.Map<Book>(model);
+            book.IdempotencyKey = model.IdempotencyKey;
 
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
             book.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Books.Add(book);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                var existing = await _context.Books.FirstAsync(b =>
+                    b.IdempotencyKey == model.IdempotencyKey
+                );
+                return RedirectToAction(nameof(Details), new { existing.Id });
+            }
+
+            if (model.Image is not null)
+            {
+                var upload = await _imageService.UploadAsync(model.Image, "books");
+
+                if (upload.IsSuccess)
+                {
+                    ApplyImage(book, upload.Url!, upload.PublicId!);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    TempData["Message"] = upload.ErrorMessage;
+                }
+            }
 
             return RedirectToAction(nameof(Details), new { book.Id });
         }
@@ -206,29 +223,12 @@ namespace Bookano.Web.Controllers
             if (book is null)
                 return NotFound();
 
+            var dbImagePublicId = book.ImagePublicId;
+            var shouldUpload = model.Image is not null;
+            var shouldRemove = model.RemoveImage && !string.IsNullOrEmpty(dbImagePublicId);
+
             book = _mapper.Map(model, book);
-
-            if (model.Image is not null)
-            {
-                if (!string.IsNullOrEmpty(book.ImagePublicId))
-                    await DeleteImageAsync(book.ImagePublicId);
-
-                var upload = await UploadImageAsync(model.Image);
-
-                if (upload.url is null)
-                    return View("Form", await PopulateViewModelAsync(model));
-
-                ApplyImage(book, upload.url, upload.publicId!);
-            }
-            else if (model.RemoveImage)
-            {
-                if (!string.IsNullOrEmpty(book.ImagePublicId))
-                    await DeleteImageAsync(book.ImagePublicId);
-
-                book.ImageUrl = null;
-                book.ImageThumbnailUrl = null;
-                book.ImagePublicId = null;
-            }
+            book.ImagePublicId = dbImagePublicId;
 
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
@@ -236,12 +236,48 @@ namespace Bookano.Web.Controllers
             book.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             if (!book.IsAvailableForRental)
-            {
                 foreach (var copy in book.Copies)
                     copy.IsAvailableForRental = false;
+
+            if (model.RowVersion is not null)
+                _context.Entry(book).Property(b => b.RowVersion).OriginalValue = model.RowVersion;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return RedirectToAction(nameof(Details), new { model.Id });
             }
 
-            await _context.SaveChangesAsync();
+            if (shouldUpload)
+            {
+                var upload = await _imageService.UploadAsync(model.Image!, "books");
+
+                if (upload.IsSuccess)
+                {
+                    var oldImagePublicId = dbImagePublicId;
+
+                    ApplyImage(book, upload.Url!, upload.PublicId!);
+                    await _context.SaveChangesAsync();
+
+                    if (!string.IsNullOrEmpty(oldImagePublicId))
+                        await _imageService.DeleteAsync(oldImagePublicId);
+                }
+                else
+                {
+                    TempData["Message"] = upload.ErrorMessage;
+                }
+            }
+            else if (shouldRemove)
+            {
+                await _imageService.DeleteAsync(dbImagePublicId!);
+                book.ImageUrl = null;
+                book.ImageThumbnailUrl = null;
+                book.ImagePublicId = null;
+                await _context.SaveChangesAsync();
+            }
 
             return RedirectToAction(nameof(Details), new { book.Id });
         }
@@ -271,6 +307,13 @@ namespace Bookano.Web.Controllers
             var isAllowed = book is null || book.Id.Equals(model.Id);
 
             return Json(isAllowed);
+        }
+
+        private void ApplyImage(Book book, string url, string publicId)
+        {
+            book.ImageUrl = url;
+            book.ImagePublicId = publicId;
+            book.ImageThumbnailUrl = _imageService.GetThumbnail(publicId);
         }
 
         private async Task<BookFormViewModel> PopulateViewModelAsync(
@@ -327,56 +370,6 @@ namespace Bookano.Web.Controllers
             foreach (var id in set)
                 if (!book.Authors.Any(c => c.AuthorId == id))
                     book.Authors.Add(new BookAuthor { AuthorId = id });
-        }
-
-        private void ApplyImage(Book book, string url, string publicId)
-        {
-            book.ImageUrl = url;
-            book.ImagePublicId = publicId;
-            book.ImageThumbnailUrl = _cloudinary
-                .Api.UrlImgUp.Transform(
-                    new Transformation()
-                        .Width(125)
-                        .Crop("scale")
-                        .Quality("auto:good")
-                        .FetchFormat("auto")
-                )
-                .BuildUrl(publicId);
-        }
-
-        private async Task<(string? url, string? publicId)> UploadImageAsync(IFormFile file)
-        {
-            var ext = Path.GetExtension(file.FileName).ToLower();
-
-            if (!_allowedExtensions.Contains(ext))
-            {
-                ModelState.AddModelError("Image", Core.Consts.Error.NotAllowedImageExtension);
-                return (null, null);
-            }
-
-            if (file.Length > _maxAllowedSize)
-            {
-                ModelState.AddModelError("Image", Core.Consts.Error.ImageMaxSizeLimit);
-                return (null, null);
-            }
-
-            var uploadParams = new ImageUploadParams
-            {
-                File = new FileDescription(file.FileName, file.OpenReadStream()),
-                Folder = "books",
-                UseFilename = true,
-                UniqueFilename = true,
-            };
-
-            var result = await _cloudinary.UploadAsync(uploadParams);
-
-            return (result.SecureUrl.ToString(), result.PublicId);
-        }
-
-        private async Task DeleteImageAsync(string publicId)
-        {
-            var deletionParams = new DeletionParams(publicId);
-            await _cloudinary.DestroyAsync(deletionParams);
         }
     }
 }

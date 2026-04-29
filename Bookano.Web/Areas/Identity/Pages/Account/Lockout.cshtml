@@ -4,7 +4,62 @@
     ViewData["Title"] = "Locked out";
 }
 
-<header>
-    <h1 class="text-danger">@ViewData["Title"]</h1>
-    <p class="text-danger">This account has been locked out, please try again later.</p>
-</header>
+<div class="d-flex flex-column flex-root">
+    <!--begin::Page bg image-->
+    <style>
+            body {
+                background-color: #f1f1f1;
+                 background-image: url('/assets/imgs/bg10.jpeg'); 
+            }
+
+            [data-bs-theme="dark"] body {
+                background-image: url('/assets/imgs/bg10-dark.jpeg');
+            }
+    </style>
+    <!--end::Page bg image-->
+    <!--begin::Authentication - Signup Welcome Message -->
+    <div class="d-flex flex-column flex-center flex-column-fluid">
+        <!--begin::Content-->
+        <div class="d-flex flex-column flex-center text-center p-10">
+            <!--begin::Wrapper-->
+            <div class="card card-flush w-lg-650px py-5">
+                <div class="card-body py-15 py-lg-20">
+                
+                    <!--begin::Logo-->
+                    <div >
+                        <a href="#" class="">
+                            <img alt="Logo" src="~/assets/imgs/logo.png" class="w-200px">
+                        </a>
+                    </div>
+                    <!--end::Logo-->
+                    <!--begin::Title-->
+                    <h1 class="fw-bolder text-gray-900 mb-5" style="margin-top: -30px">
+                        @ViewData["Title"]
+                    </h1>
+                    <!--end::Title-->
+                    <!--begin::Text-->
+                    <div class="fw-semibold fs-6 text-gray-500 mb-8">
+                        This account has been locked out, please try again later.
+                    </div>
+                    <!--end::Text-->
+                    <!--begin::Link-->
+                    <div class="mb-11">
+                        <a asp-page="./Login" class="btn btn-md btn-primary">Go to Login Page</a>
+                    </div>
+                    <!--end::Link-->
+                    <!--begin::Illustration-->
+                    <div class="mb-0">
+                        <img src="~/assets/imgs/security.svg" class="mw-100 mh-300px theme-light-show" alt="">
+                        <img src="~/assets/imgs/security.svg" class="mw-100 mh-300px theme-dark-show" alt="">
+                    </div>
+                    <!--end::Illustration-->
+
+                </div>
+            </div>
+            <!--end::Wrapper-->
+        </div>
+        <!--end::Content-->
+    </div>
+    <!--end::Authentication - Signup Welcome Message-->
+</div>
+

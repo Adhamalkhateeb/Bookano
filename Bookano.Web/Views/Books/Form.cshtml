@@ -14,6 +14,12 @@
             @if (Model?.Id > 0)
             {
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="ExistingImagePublicId" />
+                <input type="hidden" asp-for="RowVersion" />
+            }
+            else
+            {
+                <input type="hidden" asp-for="IdempotencyKey" />
             }
             <div class="mb-10">
                 <style>
@@ -25,8 +31,9 @@
                      data-kt-image-input="true">
 
                     <!-- WRAPPER -->
-                    <div class="image-input-wrapper w-125px h-200px"
-                         style="@(string.IsNullOrEmpty(Model?.ImageThumbnailUrl) ? "" : $"background-image: url('{Model.ImageThumbnailUrl}')")">
+                    <div class="image-input-wrapper"
+                         style="width:125px; min-height:200px; background-size:contain; background-repeat:no-repeat; background-position:center;
+                        @(string.IsNullOrEmpty(Model?.ImageThumbnailUrl) ? "" : $"background-image: url('{Model.ImageThumbnailUrl}');")">
                     </div>
 
 

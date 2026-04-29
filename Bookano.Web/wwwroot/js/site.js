@@ -12,7 +12,7 @@ function getAppDatatable() {
 }
 
 function isServerSideDatatable(dt) {
-    return !!dt?.settings?.()[0]?.oFeatures?.bServerSide;
+    return !!dt?.settings?.()?.[0]?.oFeatures?.bServerSide;
 }
 
 function reloadDatatable() {
@@ -45,7 +45,14 @@ function initTable() {
     window.appDatatable = datatable;
 
     const search = document.querySelector('[data-kt-filter="search"]');
-    search?.addEventListener('input', () => datatable.search(search.value).draw());
+    if (search) {
+        const savedState = datatable.state.loaded();
+        if (savedState?.search?.search) {
+            search.value = savedState.search.search;
+        }
+
+        search.addEventListener('input', () => datatable.search(search.value).draw());
+    }
 
     attachExportButtons(tableEl);
 }
@@ -112,41 +119,32 @@ function upsertRow(html, oldRow = null) {
 // GLOBAL FORM HANDLER
 // ============================================================
 
-
 document.addEventListener('submit', function (e) {
-    if (e.target.id === 'SignOut') return;
-    handleFormSubmit(e);
-});
-
-function handleFormSubmit(e) {
     const form = e.target;
+
+    if (form.id === 'SignOut') return;
 
     if (form.dataset.submitted === 'true') {
         e.preventDefault();
         return;
     }
 
-    if (window.$ && $(form).data('validator') && !$(form).valid()) {
-        e.preventDefault();
-        return;
-    }
-
-    lockForm(form);
-}
-
-function lockForm(container) {
-    const form = container.tagName === 'FORM'
-        ? container
-        : container.querySelector('form');
-
-    if (!form) return;
-
     form.dataset.submitted = 'true';
     form.querySelectorAll('[type="submit"]').forEach(btn => {
         btn.disabled = true;
         btn.setAttribute('data-kt-indicator', 'on');
     });
-}
+
+    const validator = window.$ ? $(form).data('validator') : null;
+    if (validator) {
+        validator.formSubmitted = true;
+        if (!validator.form()) {
+            resetFormState(form);
+            e.preventDefault();
+        }
+    }
+}, true);
+
 
 function resetFormState(container) {
     const form = container.tagName === 'FORM'
@@ -156,12 +154,12 @@ function resetFormState(container) {
     if (!form) return;
 
     delete form.dataset.submitted;
+
     form.querySelectorAll('[type="submit"]').forEach(btn => {
         btn.disabled = false;
         btn.setAttribute('data-kt-indicator', 'off');
     });
 }
-
 
 // ============================================================
 // Modal
@@ -223,7 +221,11 @@ function onModalComplete() {
 
 function showErrorMessage(xhr) {
     resetFormState(modalEl);
-    const message = xhr?.responseText?.trim() || 'Something went wrong!';
+    const status = xhr?.status;
+    const message = (status && status >= 500)
+        ? 'Something went wrong on the server. Please try again.'
+        : (xhr?.responseJSON?.message ?? xhr?.responseText?.trim() ?? 'Something went wrong!');
+
     showError(message);
 }
 
@@ -292,6 +294,42 @@ async function toggleStatus(btn) {
         btn.disabled = false;
     }
 }
+
+// ============================================================
+// confirm Message
+// ============================================================
+
+async function confirmMessage(btn) {
+    const confirmed = await new Promise(resolve => {
+        bootbox.confirm({
+            message: btn.dataset.message,
+            buttons: {
+                confirm: { label: 'Yes', className: 'btn-success' },
+                cancel: { label: 'No', className: 'btn-secondary' }
+            },
+            callback: resolve
+        });
+    });
+
+    if (!confirmed) return;
+
+    btn.disabled = true;
+
+    try {
+        await postForm(btn.dataset.url);
+        const row = btn.closest('tr');
+
+        animate(row, 'animate__flash');
+
+        showSuccess();
+
+    } catch {
+        showError();
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 
 // ============================================================
 // TinyMCE
@@ -453,6 +491,12 @@ function formatDates(root = document) {
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    window.addEventListener('pageshow', (e) => {
+        if (e.persisted) {
+            document.querySelectorAll('form').forEach(f => resetFormState(f));
+        }
+    });
+
     // Clean up any stale submitted-form state from previous navigation
     document.querySelectorAll('form[data-submitted="true"]').forEach(f => {
         resetFormState(f.parentElement ?? document.body);
@@ -477,8 +521,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', e => {
         const modalBtn = e.target.closest('.js-render-modal');
         const toggleBtn = e.target.closest('.js-toggle-status');
+        const confirmBtn = e.target.closest('.js-confirm')
         if (modalBtn) openModal(modalBtn);
         if (toggleBtn) toggleStatus(toggleBtn);
+        if (confirmBtn) confirmMessage(confirmBtn); 
     });
 
     // Select2

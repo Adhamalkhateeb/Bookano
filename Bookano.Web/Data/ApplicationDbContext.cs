@@ -32,6 +32,15 @@ namespace Bookano.Web.Data
                 .HasIndex(b => b.Isbn)
                 .IsUnique()
                 .HasFilter("[Isbn] IS NOT NULL");
+
+            builder.Entity<Book>().Property(b => b.IdempotencyKey).HasMaxLength(36);
+            builder
+                .Entity<Book>()
+                .HasIndex(b => b.IdempotencyKey)
+                .IsUnique()
+                .HasFilter("[IdempotencyKey] IS NOT NULL");
+
+            builder.Entity<Book>().Property(b => b.RowVersion).IsRowVersion().IsConcurrencyToken();
             base.OnModelCreating(builder);
         }
     }

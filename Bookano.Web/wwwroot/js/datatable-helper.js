@@ -50,9 +50,19 @@ function initDataTable({
     window.appDatatable = datatable;
 
     const searchEl = document.querySelector('[data-kt-filter="search"]');
-    searchEl?.addEventListener('input', (e) => {
-        datatable.search(e.target.value).draw();
-    });
+
+    if (searchEl) {
+        const savedState = datatable.state.loaded();
+
+        if (savedState?.search?.search) {
+            searchEl.value = savedState.search.search;
+        }
+
+        searchEl.addEventListener('input', (e) => {
+            datatable.search(e.target.value).draw();
+        });
+    }
+ 
 
     datatable.on('processing.dt', (_e, _settings, processing) => {
         setProcessing(processing);
