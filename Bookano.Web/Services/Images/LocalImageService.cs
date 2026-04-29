@@ -26,23 +26,11 @@ namespace Bookano.Web.Services.Images
 
         public async Task<ImageUploadResult> UploadAsync(IFormFile file, string folder)
         {
-            var ext = Path.GetExtension(file.FileName).ToLower();
+            var validateImageResult = ValidateImage(file);
+            if (validateImageResult is not null)
+                return new() { IsSuccess = false, ErrorMessage = validateImageResult };
 
-            if (!Image.AllowedExtensions.Contains(ext))
-                return new()
-                {
-                    IsSuccess = false,
-                    ErrorMessage = Core.Consts.Error.NotAllowedImageExtension,
-                };
-
-            if (file.Length > Image.MaxSize)
-                return new()
-                {
-                    IsSuccess = false,
-                    ErrorMessage = Core.Consts.Error.ImageMaxSizeLimit,
-                };
-
-            var fileName = $"{Guid.NewGuid()}{ext}";
+            var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName).ToLower()}";
             var dir = Path.Combine(_env.WebRootPath, "images", folder);
 
             Directory.CreateDirectory(dir);
@@ -61,5 +49,7 @@ namespace Bookano.Web.Services.Images
                 PublicId = publicId,
             };
         }
+
+        public string? ValidateImage(IFormFile file) => Image.ValidateImage(file);
     }
 }

@@ -131,6 +131,16 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 
+            if (model.Image is not null)
+            {
+                var imageValidationError = _imageService.ValidateImage(model.Image);
+                if (imageValidationError is not null)
+                {
+                    ModelState.AddModelError("Image", imageValidationError);
+                    return View("Form", await PopulateViewModelAsync(model));
+                }
+            }
+
             var duplicate = await _context.Books.FirstOrDefaultAsync(b =>
                 b.IdempotencyKey == model.IdempotencyKey
             );
@@ -169,7 +179,7 @@ namespace Bookano.Web.Controllers
                 }
                 else
                 {
-                    TempData["Warning"] = upload.ErrorMessage;
+                    TempData["Message"] = upload.ErrorMessage;
                 }
             }
 
@@ -243,19 +253,21 @@ namespace Bookano.Web.Controllers
 
             if (shouldUpload)
             {
-                if (!string.IsNullOrEmpty(dbImagePublicId))
-                    await _imageService.DeleteAsync(dbImagePublicId);
-
                 var upload = await _imageService.UploadAsync(model.Image!, "books");
 
                 if (upload.IsSuccess)
                 {
+                    var oldImagePublicId = dbImagePublicId;
+
                     ApplyImage(book, upload.Url!, upload.PublicId!);
                     await _context.SaveChangesAsync();
+
+                    if (!string.IsNullOrEmpty(oldImagePublicId))
+                        await _imageService.DeleteAsync(oldImagePublicId);
                 }
                 else
                 {
-                    TempData["Warning"] = upload.ErrorMessage;
+                    TempData["Message"] = upload.ErrorMessage;
                 }
             }
             else if (shouldRemove)
