@@ -6,7 +6,6 @@ global using Bookano.Web.Core.Models;
 global using Bookano.Web.Core.ViewModels;
 global using Bookano.Web.Data;
 global using Bookano.Web.Filters;
-global using Bookano.Web.Services;
 global using Bookano.Web.Settings;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Mvc;

@@ -39,21 +39,9 @@ namespace Bookano.Web.Services.Images
 
         public async Task<ImageUploadResult> UploadAsync(IFormFile file, string folder)
         {
-            var ext = Path.GetExtension(file.FileName).ToLower();
-
-            if (!Image.AllowedExtensions.Contains(ext))
-                return new()
-                {
-                    IsSuccess = false,
-                    ErrorMessage = Core.Consts.Error.NotAllowedImageExtension,
-                };
-
-            if (file.Length > Image.MaxSize)
-                return new()
-                {
-                    IsSuccess = false,
-                    ErrorMessage = Core.Consts.Error.ImageMaxSizeLimit,
-                };
+            var validateImageResult = ValidateImage(file);
+            if (validateImageResult is not null)
+                return new() { IsSuccess = false, ErrorMessage = validateImageResult };
 
             await using var stream = file.OpenReadStream();
 
@@ -82,5 +70,7 @@ namespace Bookano.Web.Services.Images
                 PublicId = result.PublicId,
             };
         }
+
+        public string? ValidateImage(IFormFile file) => Image.ValidateImage(file);
     }
 }

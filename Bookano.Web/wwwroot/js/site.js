@@ -12,7 +12,7 @@ function getAppDatatable() {
 }
 
 function isServerSideDatatable(dt) {
-    return !!dt?.settings?.()[0?.oFeatures?.bServerSide];
+    return !!dt?.settings?.()?.[0]?.oFeatures?.bServerSide;
 }
 
 function reloadDatatable() {
@@ -188,17 +188,6 @@ async function openModal(btn) {
         applySelect2();
 
         if (window.$?.validator) $.validator.unobtrusive.parse(modalEl);
-
-        const modalForm = modalEl.querySelector('form');
-        if (modalForm) {
-            modalForm.addEventListener('submit', function onModalSubmit(e) {
-                if (window.$ && $(modalForm).data('validator') && !$(modalForm).valid()) {
-                    e.preventDefault();
-                    return;
-                }
-                lockForm(modalForm);
-            }, { once: true }); // once:true — removes itself after firing, no duplicate listeners
-        }
 
         getModal()?.show();
     } catch {
