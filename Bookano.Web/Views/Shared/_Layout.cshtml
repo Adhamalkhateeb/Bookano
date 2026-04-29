@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@inject Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> SignInManager
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -12,46 +13,52 @@
     <link rel="stylesheet" href="~/assets/css/style.bundle.css" type="text/css" />
     <!--end::Global Stylesheets Bundle-->
     <link rel="stylesheet" href="~/lib/animate.css/animate.min.css" />
-    @await RenderSectionAsync("Styles", required: false);
+    @await RenderSectionAsync("Styles", required: false)
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Bookano.Web.styles.css" asp-append-version="true" />
 </head>
 <body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed page-loading">
     <!--begin::Theme mode setup on page load-->
-    <script>var defaultThemeMode = "light"; var themeMode; if ( document.documentElement ) { if ( document.documentElement.hasAttribute("data-theme-mode")) { themeMode = document.documentElement.getAttribute("data-theme-mode"); } else { if ( localStorage.getItem("data-theme") !== null ) { themeMode = localStorage.getItem("data-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-theme", themeMode); }</script>
+    <script>var defaultThemeMode = "light"; var themeMode; if (document.documentElement) { if (document.documentElement.hasAttribute("data-theme-mode")) { themeMode = document.documentElement.getAttribute("data-theme-mode"); } else { if (localStorage.getItem("data-theme") !== null) { themeMode = localStorage.getItem("data-theme"); } else { themeMode = defaultThemeMode; } } if (themeMode === "system") { themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; } document.documentElement.setAttribute("data-theme", themeMode); }</script>
     <!--end::Theme mode setup on page load-->
     <div class="page-loader">
         <span class="spinner-border text-primary" role="status">
-			<span class="visually-hidden">Loading...</span>
+            <span class="visually-hidden">Loading...</span>
         </span>
     </div>
     <!--begin::Main-->
     <!--begin::Root-->
-    <div class="d-flex flex-column flex-root">
-        <!--begin::Page-->
-        <div class="page d-flex flex-row flex-column-fluid">
-            <!--begin::Wrapper-->
-            <div class="wrapper d-flex flex-column flex-row-fluid" id="kt_wrapper">
-                <partial name="_Header" />
-                <!--begin::Content wrapper-->
-                <div class="d-flex flex-row flex-column-fluid pb-12">
-                    <partial name="_Aside" />
-                    <!--begin::Content-->
-                    <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div class="d-flex flex-column flex-root">
+            <!--begin::Page-->
+            <div class="page d-flex flex-row flex-column-fluid">
+                <!--begin::Wrapper-->
+                <div class="wrapper d-flex flex-column flex-row-fluid" id="kt_wrapper">
+                    <partial name="_Header" />
+                    <!--begin::Content wrapper-->
+                    <div class="d-flex flex-column-fluid pb-12 pt-6">
+                        <partial name="_Aside" />
                         <!--begin::Container-->
-                        <div class="container-fluid layout-page-padding" id="kt_content_container">
-                            @RenderBody()
+                        <div class="d-flex flex-column flex-column-fluid container-fluid">
+                            <div class="content flex-column-fluid" id="kt_content">
+                                @RenderBody()
+                            </div>
                         </div>
                         <!--end::Container-->
                     </div>
-                    <!--end::Content-->
+                    <!--end::Content wrapper-->
                 </div>
-                <!--end::Content wrapper-->
+                <!--end::Wrapper-->
             </div>
-            <!--end::Wrapper-->
+            <!--end::Page-->
         </div>
-        <!--end::Page-->
-    </div>
+    }
+    else
+    {
+        @RenderBody()
+    }
+
     <!--end::Root-->
     <!--end::Main-->
     <!--begin::Scrolltop-->
@@ -66,6 +73,7 @@
         <!--end::Svg Icon-->
     </div>
     <!--end::Scrolltop-->
+
     <span id="Message" class="d-none">@TempData["Message"]</span>
     <partial name="_Modal" />
     
@@ -80,3 +88,10 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+
+
+<script>
+    if (document.documentElement) {
+    document.documentElement.setAttribute("data-bs-theme", themeMode);
+    }
+</script>

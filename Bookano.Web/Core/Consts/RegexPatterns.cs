@@ -11,5 +11,6 @@ namespace Bookano.Web.Core.Consts
         public const string NumbersAndChrOnly_ArEng =
             "^(?=.*[\u0600-\u065F\u066A-\u06EF\u06FA-\u06FFa-zA-Z])[\u0600-\u065F\u066A-\u06EF\u06FA-\u06FFa-zA-Z0-9 _-]+$";
         public const string DenySpecialCharacters = "^[^<>!#%$]*$";
+        public const string MobileNumber = @"^01[0125]\d{8}$";
     }
 }

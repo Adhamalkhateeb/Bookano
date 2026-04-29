@@ -24,8 +24,10 @@ namespace Bookano.Web.Core.ViewModels
         public IFormFile? Image { get; set; }
         public string? ImageUrl { get; set; }
         public string? ImageThumbnailUrl { get; set; }
-
+        public string? ExistingImagePublicId { get; set; }
         public bool RemoveImage { get; set; }
+        public string IdempotencyKey { get; set; } = Guid.NewGuid().ToString();
+        public byte[]? RowVersion { get; set; }
 
         [MaxLength(50, ErrorMessage = Error.MaxLength)]
         public string Hall { get; set; } = null!;

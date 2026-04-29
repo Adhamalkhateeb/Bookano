@@ -65,6 +65,14 @@
                                 Reset password
                             </a>
                         </div>
+                        <div class="menu-item px-3">
+                            <a href="javascript:;"
+                               data-url="/Users/Unlock/${row.id}"
+                               data-message="Are you sure that you need to unlock that user?"
+                               class="menu-link flex-stack px-3 js-confirm">
+                                Unlock
+                            </a>
+                        </div>
                     </div>
                 `,
             },
