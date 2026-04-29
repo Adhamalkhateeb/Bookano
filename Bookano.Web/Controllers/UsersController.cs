@@ -1,4 +1,5 @@
-﻿using System.Linq.Dynamic.Core;
+﻿using System.Formats.Asn1;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -263,6 +264,23 @@ namespace Bookano.Web.Controllers
             await _userManager.UpdateAsync(user);
 
             return BadRequest(string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Unlock(string id)
+        {
+            var user = await _userManager.FindByIdAsync(id);
+
+            if (user is null)
+                return NotFound();
+
+            var isLockedOut = await _userManager.IsLockedOutAsync(user);
+
+            if (isLockedOut)
+                await _userManager.SetLockoutEndDateAsync(user, null);
+
+            return Ok();
         }
 
         public async Task<IActionResult> AllowUserName(UserFormViewModel model)

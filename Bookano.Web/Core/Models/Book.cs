@@ -26,6 +26,8 @@ namespace Bookano.Web.Core.Models
 
         public string Description { get; set; } = null!;
 
+        public string? IdempotencyKey { get; set; }
+        public byte[] RowVersion { get; set; } = [];
         public ICollection<BookCategory> Categories { get; set; } = [];
         public ICollection<BookAuthor> Authors { get; set; } = [];
         public ICollection<BookCopy> Copies { get; set; } = [];

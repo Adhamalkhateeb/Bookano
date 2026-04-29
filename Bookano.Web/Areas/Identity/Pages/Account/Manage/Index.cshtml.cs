@@ -20,7 +20,8 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
 
         public IndexModel(
             UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+            SignInManager<ApplicationUser> signInManager
+        )
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -57,8 +58,26 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [Phone]
-            [Display(Name = "Phone number")]
+            [
+                Display(Name = "Phone number"),
+                MaxLength(11, ErrorMessage = Error.MaxLength),
+                RegularExpression(
+                    RegexPatterns.MobileNumber,
+                    ErrorMessage = Error.InvalidMobileNumber
+                )
+            ]
             public string PhoneNumber { get; set; }
+
+            [
+                Required,
+                MaxLength(100, ErrorMessage = Error.MaxLength),
+                Display(Name = "Full Name"),
+                RegularExpression(
+                    RegexPatterns.CharactersOnly_Eng,
+                    ErrorMessage = Error.OnlyEnglishLetters
+                )
+            ]
+            public string FullName { get; set; } = null!;
         }
 
         private async Task LoadAsync(ApplicationUser user)
@@ -68,10 +87,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
 
             Username = userName;
 
-            Input = new InputModel
-            {
-                PhoneNumber = phoneNumber
-            };
+            Input = new InputModel { PhoneNumber = phoneNumber, FullName = user.FullName };
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -103,10 +119,24 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
             if (Input.PhoneNumber != phoneNumber)
             {
-                var setPhoneResult = await _userManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
+                var setPhoneResult = await _userManager.SetPhoneNumberAsync(
+                    user,
+                    Input.PhoneNumber
+                );
                 if (!setPhoneResult.Succeeded)
                 {
                     StatusMessage = "Unexpected error when trying to set phone number.";
+                    return RedirectToPage();
+                }
+            }
+
+            if (Input.FullName != user.FullName)
+            {
+                user.FullName = Input.FullName;
+                var setfullNameResult = await _userManager.UpdateAsync(user);
+                if (!setfullNameResult.Succeeded)
+                {
+                    StatusMessage = "Unexpected error when trying to set full name.";
                     return RedirectToPage();
                 }
             }
