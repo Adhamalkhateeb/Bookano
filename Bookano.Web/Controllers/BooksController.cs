@@ -1,5 +1,5 @@
 ﻿using System.Linq.Dynamic.Core;
-using Bookano.Web.Services.Images;
+using Bookano.Web.Services.Image;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookano.Web.Controllers
@@ -170,16 +170,16 @@ namespace Bookano.Web.Controllers
 
             if (model.Image is not null)
             {
-                var upload = await _imageService.UploadAsync(model.Image, "books");
+                var uploadResult = await _imageService.UploadAsync(model.Image, "books", null);
 
-                if (upload.IsSuccess)
+                if (uploadResult.IsSuccess)
                 {
-                    ApplyImage(book, upload.Url!, upload.PublicId!);
+                    ApplyImage(book, uploadResult.Url!, uploadResult.PublicId!);
                     await _context.SaveChangesAsync();
                 }
                 else
                 {
-                    TempData["Message"] = upload.ErrorMessage;
+                    TempData["Message"] = uploadResult.ErrorMessage;
                 }
             }
 
@@ -223,6 +223,16 @@ namespace Bookano.Web.Controllers
             if (book is null)
                 return NotFound();
 
+            if (model.Image is not null)
+            {
+                var imageValidationError = _imageService.ValidateImage(model.Image);
+                if (imageValidationError is not null)
+                {
+                    ModelState.AddModelError("Image", imageValidationError);
+                    return View("Form", await PopulateViewModelAsync(model));
+                }
+            }
+
             var dbImagePublicId = book.ImagePublicId;
             var shouldUpload = model.Image is not null;
             var shouldRemove = model.RemoveImage && !string.IsNullOrEmpty(dbImagePublicId);
@@ -253,30 +263,40 @@ namespace Bookano.Web.Controllers
 
             if (shouldUpload)
             {
-                var upload = await _imageService.UploadAsync(model.Image!, "books");
+                var uploadResult = await _imageService.UploadAsync(model.Image!, "books", null);
 
-                if (upload.IsSuccess)
+                if (uploadResult.IsSuccess)
                 {
                     var oldImagePublicId = dbImagePublicId;
 
-                    ApplyImage(book, upload.Url!, upload.PublicId!);
+                    ApplyImage(book, uploadResult.Url!, uploadResult.PublicId!);
                     await _context.SaveChangesAsync();
 
                     if (!string.IsNullOrEmpty(oldImagePublicId))
+                    {
                         await _imageService.DeleteAsync(oldImagePublicId);
+                    }
                 }
                 else
                 {
-                    TempData["Message"] = upload.ErrorMessage;
+                    TempData["Message"] = uploadResult.ErrorMessage;
                 }
             }
             else if (shouldRemove)
             {
-                await _imageService.DeleteAsync(dbImagePublicId!);
-                book.ImageUrl = null;
-                book.ImageThumbnailUrl = null;
-                book.ImagePublicId = null;
-                await _context.SaveChangesAsync();
+                var deleteResult = await _imageService.DeleteAsync(dbImagePublicId!);
+
+                if (!deleteResult.IsSuccess)
+                {
+                    TempData["Message"] = deleteResult.ErrorMessage;
+                }
+                else
+                {
+                    book.ImageUrl = null;
+                    book.ImageThumbnailUrl = null;
+                    book.ImagePublicId = null;
+                    await _context.SaveChangesAsync();
+                }
             }
 
             return RedirectToAction(nameof(Details), new { book.Id });

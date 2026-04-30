@@ -3,6 +3,7 @@ using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using AspNetCoreGeneratedDocument;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -195,6 +196,8 @@ namespace Bookano.Web.Controllers
                     await _userManager.AddToRolesAsync(user, model.SelectedRoles);
                 }
 
+                await _userManager.UpdateSecurityStampAsync(user);
+
                 return Ok();
             }
 
@@ -216,6 +219,8 @@ namespace Bookano.Web.Controllers
             user.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _userManager.UpdateAsync(user);
+            if (user.IsDeleted)
+                await _userManager.UpdateSecurityStampAsync(user);
 
             return Ok(updatedOn.ToString("o"));
         }

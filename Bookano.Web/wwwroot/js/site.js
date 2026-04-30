@@ -124,6 +124,14 @@ document.addEventListener('submit', function (e) {
 
     if (form.id === 'SignOut') return;
 
+    const validator = window.$ ? $(form).data('validator') : null;
+    if (validator && form.dataset.invalidHooked !== 'true') {
+        $(form).on('invalid-form.validate', function () {
+            resetFormState(form);
+        });
+        form.dataset.invalidHooked = 'true';
+    }
+
     if (form.dataset.submitted === 'true') {
         e.preventDefault();
         return;
@@ -135,13 +143,9 @@ document.addEventListener('submit', function (e) {
         btn.setAttribute('data-kt-indicator', 'on');
     });
 
-    const validator = window.$ ? $(form).data('validator') : null;
-    if (validator) {
-        validator.formSubmitted = true;
-        if (!validator.form()) {
-            resetFormState(form);
-            e.preventDefault();
-        }
+    if (validator && !validator.form()) {
+        resetFormState(form);
+        e.preventDefault();
     }
 }, true);
 
@@ -369,30 +373,46 @@ function initTinyMCE() {
 
 function initImageInputSync(container = document) {
 
-    const el = container.querySelector('#book_image_input');
+    const el = container.querySelector('[data-kt-image-input="true"]');
     if (!el) return;
 
-    const instance = KTImageInput.getInstance(el) || new KTImageInput(el);
+    const instance =
+        KTImageInput.getInstance(el) || new KTImageInput(el);
+
     const wrapper = el.querySelector('.image-input-wrapper');
-    const removeInput = container.querySelector('[name="RemoveImage"]');
+
+    const removeInput =
+        container.querySelector('#RemoveImage') ||
+        container.querySelector('[name="Input.RemoveImage"]') ||
+        container.querySelector('[name="RemoveImage"]');
 
     if (!wrapper || !removeInput) return;
 
-    instance.on('kt.imageinput.changed', () => { removeInput.value = 'false'; });
+    instance.on('kt.imageinput.changed', () => {
+        removeInput.value = 'false';
+    });
 
     instance.on('kt.imageinput.canceled', () => {
+
         wrapper.style.backgroundImage = 'none';
+
         el.classList.add('image-input-empty');
         el.classList.remove('image-input-filled');
+
         removeInput.value = 'false';
     });
 
     instance.on('kt.imageinput.removed', () => {
+
         wrapper.style.backgroundImage = 'none';
+
         el.classList.remove('image-input-filled');
+        el.classList.add('image-input-empty');
+
         removeInput.value = 'true';
     });
 }
+
 
 
 // ============================================================
