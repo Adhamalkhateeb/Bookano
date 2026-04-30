@@ -1,11 +1,17 @@
 using Bookano.Web.Core.Mapping;
 using Bookano.Web.Helpers;
 using Bookano.Web.Seeds;
-using Bookano.Web.Services.Images;
+using Bookano.Web.Services.Image;
+using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+    options.ValidationInterval = TimeSpan.FromMinutes(5)
+);
 
 // Add services to the container.
 var connectionString =
@@ -36,6 +42,7 @@ builder.Services.AddScoped<
 
 builder.Services.AddKeyedScoped<IImageService, CloudinaryImageService>("cloudinary");
 builder.Services.AddKeyedScoped<IImageService, LocalImageService>("local");
+builder.Services.AddScoped<IEmailSender, EmailSender>();
 
 builder.Services.AddControllersWithViews();
 
@@ -45,6 +52,8 @@ builder.Services.AddExpressiveAnnotations();
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection(nameof(CloudinarySettings))
 );
+
+builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
 
 var app = builder.Build();
 

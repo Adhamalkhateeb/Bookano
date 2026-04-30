@@ -1,6 +1,6 @@
 ﻿namespace Bookano.Web.Settings
 {
-    public class CloudinarySettings
+    public sealed class CloudinarySettings
     {
         public string Cloud { get; set; } = null!;
         public string ApiKey { get; set; } = null!;

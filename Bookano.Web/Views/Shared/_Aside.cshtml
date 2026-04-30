@@ -16,45 +16,52 @@
                         <span class="menu-title">Home</span>
                     </a>
                     <!--end:Menu link-->
-                    <!--begin:Menu link-->
-                    <a class="menu-link " asp-controller="Categories" asp-action="Index" active-when="Categories">
-                        <span class="menu-icon">
-                            <i class="fa-solid fa-layer-group fa-lg"></i>
-                        </span>
-                        <span class="menu-title">Categories</span>
-                    </a>
-                    <!--end:Menu link-->
-                    <!--end:Menu link-->
-                    <a class="menu-link " asp-controller="Authors" asp-action="Index" active-when="Authors">
-                        <span class="menu-icon">
-                            <i class="fa-solid fa-user-pen fa-lg"></i>
-                        </span>
-                        <span class="menu-title">Authors</span>
-                    </a>
-                    <!--end:Menu link-->
-                    <!--begin:Menu link-->
-                    <a class="menu-link " asp-controller="Publishers" asp-action="Index" active-when="Publishers">
-                        <span class="menu-icon">
-                            <i class="fa-solid fa-newspaper fa-lg"></i>
-                        </span>
-                        <span class="menu-title">Publishers</span>
-                    </a>
-                    <!--end:Menu link-->
-                    <!--begin:Menu link-->
-                    <a class="menu-link " asp-controller="Books" asp-action="Index" active-when="Books">
-                        <span class="menu-icon">
-                            <i class="fa-solid fa-book fa-lg"></i>
-                        </span>
-                        <span class="menu-title">Books</span>
-                    </a>
-                    <!--end:Menu link-->
-                    <!--begin:Menu link-->
-                    <a class="menu-link " asp-controller="Users" asp-action="Index" active-when="Users">
-                        <span class="menu-icon">
-                            <i class="fa-solid fa-user-lock fa-lg"></i>
-                        </span>
-                        <span class="menu-title">Users</span>
-                    </a>
+                    @if (User.IsInRole(AppRoles.Archive))
+                    {
+                        <!--begin:Menu link-->
+                        <a class="menu-link " asp-controller="Categories" asp-action="Index" active-when="Categories">
+                            <span class="menu-icon">
+                                <i class="fa-solid fa-layer-group fa-lg"></i>
+                            </span>
+                            <span class="menu-title">Categories</span>
+                        </a>
+                        <!--end:Menu link-->
+                        <!--end:Menu link-->
+                        <a class="menu-link " asp-controller="Authors" asp-action="Index" active-when="Authors">
+                            <span class="menu-icon">
+                                <i class="fa-solid fa-user-pen fa-lg"></i>
+                            </span>
+                            <span class="menu-title">Authors</span>
+                        </a>
+                        <!--end:Menu link-->
+                        <!--begin:Menu link-->
+                        <a class="menu-link " asp-controller="Publishers" asp-action="Index" active-when="Publishers">
+                            <span class="menu-icon">
+                                <i class="fa-solid fa-newspaper fa-lg"></i>
+                            </span>
+                            <span class="menu-title">Publishers</span>
+                        </a>
+                        <!--end:Menu link-->
+                        <!--begin:Menu link-->
+                        <a class="menu-link " asp-controller="Books" asp-action="Index" active-when="Books">
+                            <span class="menu-icon">
+                                <i class="fa-solid fa-book fa-lg"></i>
+                            </span>
+                            <span class="menu-title">Books</span>
+                        </a>
+                        <!--end:Menu link-->
+                    }
+                    @if (User.IsInRole(AppRoles.Admin))
+                    {         
+                        <!--begin:Menu link-->
+                        <a class="menu-link " asp-controller="Users" asp-action="Index" active-when="Users">
+                            <span class="menu-icon">
+                                <i class="fa-solid fa-user-lock fa-lg"></i>
+                            </span>
+                            <span class="menu-title">Users</span>
+                        </a>
+                        <!--end:Menu link-->
+                    }
                 </div>
                 <!--end:Menu item-->
             </div>

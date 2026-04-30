@@ -27,7 +27,7 @@
                                         background-image: url('/images/no-image-placeholder-125x200.svg');
                                     }
                 </style>
-                <div id="book_image_input" class="image-input image-input-placeholder @(string.IsNullOrEmpty(Model?.ImageUrl) ? "image-input-empty" : "image-input-filled")"
+                <div id="image_input" class="image-input image-input-placeholder @(string.IsNullOrEmpty(Model?.ImageUrl) ? "image-input-empty" : "image-input-filled")"
                      data-kt-image-input="true">
 
                     <!-- WRAPPER -->
@@ -57,7 +57,7 @@
                         <i class="fa-solid fa-x"></i>
                     </span>
                 </div>
-                <input type="hidden" asp-for="RemoveImage" id="RemoveImage" />
+                <input type="hidden" asp-for="RemoveImage"/>
                 <div class="form-text">Allowed file types: [png, jpeg, jpg, webp] - maximum 2MB </div>
                 <span asp-validation-for="Image" class="text-danger d-block"></span>
                 <!--end::Image input-->

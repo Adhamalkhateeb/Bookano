@@ -1,8 +1,10 @@
-﻿using CloudinaryDotNet;
+﻿using System.Net;
+using Bookano.Web.Services.Image.Result;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.Extensions.Options;
 
-namespace Bookano.Web.Services.Images
+namespace Bookano.Web.Services.Image
 {
     public sealed class CloudinaryImageService : IImageService
     {
@@ -19,9 +21,43 @@ namespace Bookano.Web.Services.Images
             _cloudinary = new Cloudinary(account) { Api = { Secure = true } };
         }
 
-        public async Task DeleteAsync(string imageId)
+        public async Task<ImageDeleteResult> DeleteAsync(string imageId)
         {
-            await _cloudinary.DestroyAsync(new DeletionParams(imageId));
+            if (string.IsNullOrWhiteSpace(imageId))
+            {
+                return new ImageDeleteResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = "Image id is required.",
+                };
+            }
+
+            var deletionResult = await _cloudinary.DestroyAsync(new DeletionParams(imageId));
+
+            if (deletionResult.Error is not null)
+            {
+                return new ImageDeleteResult
+                {
+                    IsSuccess = false,
+                    ErrorMessage = deletionResult.Error.Message,
+                };
+            }
+
+            if (deletionResult.StatusCode == HttpStatusCode.OK)
+            {
+                return new ImageDeleteResult { IsSuccess = true };
+            }
+
+            if (deletionResult.StatusCode == HttpStatusCode.NotFound)
+            {
+                return new ImageDeleteResult { IsSuccess = true };
+            }
+
+            return new ImageDeleteResult
+            {
+                IsSuccess = false,
+                ErrorMessage = $"Deletion failed: {deletionResult.Result}",
+            };
         }
 
         public string GetThumbnail(string imageId, int width = 125)
@@ -37,7 +73,11 @@ namespace Bookano.Web.Services.Images
                 .BuildUrl(imageId);
         }
 
-        public async Task<ImageUploadResult> UploadAsync(IFormFile file, string folder)
+        public async Task<Result.ImageUploadResult> UploadAsync(
+            IFormFile file,
+            string folder,
+            string? fileName
+        )
         {
             var validateImageResult = ValidateImage(file);
             if (validateImageResult is not null)
@@ -45,10 +85,13 @@ namespace Bookano.Web.Services.Images
 
             await using var stream = file.OpenReadStream();
 
+            fileName = fileName ?? Path.GetFileName(fileName);
+
             var uploadParams = new ImageUploadParams
             {
-                File = new FileDescription(file.FileName, stream),
+                File = new FileDescription(fileName, stream),
                 Folder = folder,
+                UseFilename = true,
                 UniqueFilename = true,
             };
 
@@ -56,14 +99,14 @@ namespace Bookano.Web.Services.Images
 
             if (result.Error is not null)
             {
-                return new ImageUploadResult
+                return new Result.ImageUploadResult
                 {
                     IsSuccess = false,
                     ErrorMessage = result.Error.Message,
                 };
             }
 
-            return new ImageUploadResult
+            return new Result.ImageUploadResult
             {
                 IsSuccess = true,
                 Url = result.SecureUrl.ToString(),
@@ -71,6 +114,6 @@ namespace Bookano.Web.Services.Images
             };
         }
 
-        public string? ValidateImage(IFormFile file) => Image.ValidateImage(file);
+        public string? ValidateImage(IFormFile file) => Core.Consts.Image.ValidateImage(file);
     }
 }
