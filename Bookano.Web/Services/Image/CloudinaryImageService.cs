@@ -50,11 +50,7 @@ namespace Bookano.Web.Services.Image
 
             if (deletionResult.StatusCode == HttpStatusCode.NotFound)
             {
-                return new ImageDeleteResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Image not found.",
-                };
+                return new ImageDeleteResult { IsSuccess = true };
             }
 
             return new ImageDeleteResult
