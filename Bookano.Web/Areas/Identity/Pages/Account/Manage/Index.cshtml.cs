@@ -86,7 +86,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
             ]
             public string PhoneNumber { get; set; }
 
-            public IFormFile Avatar { get; set; }
+            public IFormFile? Avatar { get; set; }
 
             public bool RemoveImage { get; set; }
         }
