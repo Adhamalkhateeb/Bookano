@@ -2,17 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Text.Encodings.Web;
-using System.Threading.Tasks;
-using Bookano.Web.Core.Models;
 using Bookano.Web.Services.Image;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Routing.Matching;
-using NuGet.Common;
 
 namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
 {
@@ -86,7 +78,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
             ]
             public string PhoneNumber { get; set; }
 
-            public IFormFile Avatar { get; set; }
+            public IFormFile? Avatar { get; set; }
 
             public bool RemoveImage { get; set; }
         }

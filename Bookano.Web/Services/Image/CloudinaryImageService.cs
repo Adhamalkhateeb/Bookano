@@ -50,11 +50,7 @@ namespace Bookano.Web.Services.Image
 
             if (deletionResult.StatusCode == HttpStatusCode.NotFound)
             {
-                return new ImageDeleteResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "Image not found.",
-                };
+                return new ImageDeleteResult { IsSuccess = true };
             }
 
             return new ImageDeleteResult
@@ -89,9 +85,11 @@ namespace Bookano.Web.Services.Image
 
             await using var stream = file.OpenReadStream();
 
+            fileName = fileName ?? Path.GetFileName(fileName);
+
             var uploadParams = new ImageUploadParams
             {
-                File = new FileDescription(fileName ?? file.FileName, stream),
+                File = new FileDescription(fileName, stream),
                 Folder = folder,
                 UseFilename = true,
                 UniqueFilename = true,

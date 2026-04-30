@@ -1,7 +1,4 @@
-﻿using Microsoft.Build.Execution;
-using NuGet.Protocol.Plugins;
-
-namespace Bookano.Web.Settings
+﻿namespace Bookano.Web.Settings
 {
     public sealed class MailSettings
     {

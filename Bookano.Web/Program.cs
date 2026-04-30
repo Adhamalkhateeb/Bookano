@@ -10,7 +10,7 @@ using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
-    options.ValidationInterval = TimeSpan.Zero
+    options.ValidationInterval = TimeSpan.FromMinutes(5)
 );
 
 // Add services to the container.
