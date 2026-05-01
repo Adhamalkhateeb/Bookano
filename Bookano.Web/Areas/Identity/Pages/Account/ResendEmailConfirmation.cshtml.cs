@@ -2,16 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Bookano.Web.Core.Models;
+using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -22,11 +17,17 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IEmailSender _emailSender;
+        private readonly IEmailBodyBuilder _emailBodyBuilder;
 
-        public ResendEmailConfirmationModel(UserManager<ApplicationUser> userManager, IEmailSender emailSender)
+        public ResendEmailConfirmationModel(
+            UserManager<ApplicationUser> userManager,
+            IEmailSender emailSender,
+            IEmailBodyBuilder emailBodyBuilder
+        )
         {
             _userManager = userManager;
             _emailSender = emailSender;
+            _emailBodyBuilder = emailBodyBuilder;
         }
 
         /// <summary>
@@ -47,12 +48,12 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
             [Required]
-            [EmailAddress]
-            public string Email { get; set; }
+            public string Username { get; set; }
         }
 
-        public void OnGet()
+        public void OnGet(string username)
         {
+            Input = new InputModel { Username = username };
         }
 
         public async Task<IActionResult> OnPostAsync()
@@ -62,10 +63,16 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
                 return Page();
             }
 
-            var user = await _userManager.FindByEmailAsync(Input.Email);
+            var userName = Input.Username.ToUpper();
+            var user = await _userManager.Users.SingleOrDefaultAsync(u =>
+                (u.UserName == userName || u.Email == userName)
+            );
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email.");
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Verification email sent. Please check your email."
+                );
                 return Page();
             }
 
@@ -75,14 +82,29 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
             var callbackUrl = Url.Page(
                 "/Account/ConfirmEmail",
                 pageHandler: null,
-                values: new { userId = userId, code = code },
-                protocol: Request.Scheme);
-            await _emailSender.SendEmailAsync(
-                Input.Email,
-                "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                values: new
+                {
+                    area = "Identity",
+                    userId = user.Id,
+                    code = code,
+                },
+                protocol: Request.Scheme
+            );
 
-            ModelState.AddModelError(string.Empty, "Verification email sent. Please check your email.");
+            var body = _emailBodyBuilder.GetEmailBody(
+                "https://res.cloudinary.com/bookano/image/upload/v1777605605/icon-positive-vote-1_zw88ur.svg",
+                $"Hey {user.FullName}, thanks for joining us!",
+                "Please confirm your email",
+                HtmlEncoder.Default.Encode(callbackUrl!),
+                "Active Account!"
+            );
+
+            await _emailSender.SendEmailAsync(user.Email, "Confirm your email", body);
+
+            ModelState.AddModelError(
+                string.Empty,
+                "Verification email sent. Please check your email."
+            );
             return Page();
         }
     }

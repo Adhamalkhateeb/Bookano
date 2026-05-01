@@ -65,7 +65,7 @@ namespace Bookano.Web.Services.Image
             if (validateImageResult is not null)
                 return new() { IsSuccess = false, ErrorMessage = validateImageResult };
 
-            fileName = fileName ?? Path.GetFileName(fileName);
+            fileName ??= Path.GetFileName(file.FileName);
 
             var dir = Path.Combine(_env.WebRootPath, "images", folder);
 
