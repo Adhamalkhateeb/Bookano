@@ -40,9 +40,10 @@ builder.Services.AddScoped<
     ApplicationUserClaimsPrincipalFactory
 >();
 
-builder.Services.AddKeyedScoped<IImageService, CloudinaryImageService>("cloudinary");
-builder.Services.AddKeyedScoped<IImageService, LocalImageService>("local");
-builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloudinary");
+builder.Services.AddKeyedTransient<IImageService, LocalImageService>("local");
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddTransient<IEmailBodyBuilder, EmailBodyBuilder>();
 
 builder.Services.AddControllersWithViews();
 

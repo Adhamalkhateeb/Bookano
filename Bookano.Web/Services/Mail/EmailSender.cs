@@ -8,10 +8,15 @@ namespace Bookano.Web.Services.Mail
     public class EmailSender : IEmailSender
     {
         private readonly MailSettings _mailSettings;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public EmailSender(IOptions<MailSettings> mailSettings)
+        public EmailSender(
+            IOptions<MailSettings> mailSettings,
+            IWebHostEnvironment webHostEnvironment
+        )
         {
             _mailSettings = mailSettings.Value;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
@@ -24,7 +29,9 @@ namespace Bookano.Web.Services.Mail
                 IsBodyHtml = true,
             };
 
-            message.To.Add(email);
+            message.To.Add(
+                _webHostEnvironment.IsDevelopment() ? "adhamfawzy2006@gmail.com" : email
+            );
             using SmtpClient smtpClient = new(_mailSettings.Host, _mailSettings.Port)
             {
                 UseDefaultCredentials = false,
