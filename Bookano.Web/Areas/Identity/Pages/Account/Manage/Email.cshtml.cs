@@ -2,15 +2,11 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using System;
-using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
-using Bookano.Web.Core.Models;
+using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -20,22 +16,27 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IEmailBodyBuilder _emailBodyBuilder;
         private readonly IEmailSender _emailSender;
 
         public EmailModel(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            IEmailBodyBuilder emailBodyBuilder
+        )
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _emailSender = emailSender;
+            _emailBodyBuilder = emailBodyBuilder;
         }
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
         ///     directly from your code. This API may change or be removed in future releases.
         /// </summary>
+        [Display(Name = "Current email")]
         public string Email { get; set; }
 
         /// <summary>
@@ -78,12 +79,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
         {
             var email = await _userManager.GetEmailAsync(user);
             Email = email;
-
-            Input = new InputModel
-            {
-                NewEmail = email,
-            };
-
+            Input = new InputModel { NewEmail = email };
             IsEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
         }
 
@@ -122,12 +118,25 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
                 var callbackUrl = Url.Page(
                     "/Account/ConfirmEmailChange",
                     pageHandler: null,
-                    values: new { area = "Identity", userId = userId, email = Input.NewEmail, code = code },
-                    protocol: Request.Scheme);
-                await _emailSender.SendEmailAsync(
-                    Input.NewEmail,
-                    "Confirm your email",
-                    $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    values: new
+                    {
+                        area = "Identity",
+                        userId = userId,
+                        email = Input.NewEmail,
+                        code = code,
+                    },
+                    protocol: Request.Scheme
+                );
+
+                var body = _emailBodyBuilder.GetEmailBody(
+                    "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg",
+                    $"Hey {user.FullName}",
+                    "We received a request to change your email. You can do so by clicking the button below:",
+                    HtmlEncoder.Default.Encode(callbackUrl!),
+                    "Change Email"
+                );
+
+                await _emailSender.SendEmailAsync(Input.NewEmail, "Confirm your email", body);
 
                 StatusMessage = "Confirmation link to change email sent. Please check your email.";
                 return RedirectToPage();
@@ -158,12 +167,24 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
             var callbackUrl = Url.Page(
                 "/Account/ConfirmEmail",
                 pageHandler: null,
-                values: new { area = "Identity", userId = userId, code = code },
-                protocol: Request.Scheme);
-            await _emailSender.SendEmailAsync(
-                email,
-                "Confirm your email",
-                $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                values: new
+                {
+                    area = "Identity",
+                    userId = userId,
+                    code = code,
+                },
+                protocol: Request.Scheme
+            );
+
+            var body = _emailBodyBuilder.GetEmailBody(
+                "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg",
+                $"Hey {user.FullName}",
+                "please confirm your account.",
+                HtmlEncoder.Default.Encode(callbackUrl!),
+                "Confirm Email!"
+            );
+
+            await _emailSender.SendEmailAsync(email, "Confirm your email", body);
 
             StatusMessage = "Verification email sent. Please check your email.";
             return RedirectToPage();
