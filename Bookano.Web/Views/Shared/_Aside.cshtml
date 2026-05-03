@@ -16,6 +16,14 @@
                         <span class="menu-title">Home</span>
                     </a>
                     <!--end:Menu link-->
+                    <!--begin:Menu link-->
+                    <a class="menu-link " asp-controller="Areas" asp-action="Index" active-when="Areas">
+                        <span class="menu-icon">
+                            <i class="fa-solid fa-map-location-dot fa-lg"></i>
+                        </span>
+                        <span class="menu-title">Areas</span>
+                    </a>
+                    <!--end:Menu link-->
                     @if (User.IsInRole(AppRoles.Archive))
                     {
                         <!--begin:Menu link-->
@@ -50,6 +58,7 @@
                             <span class="menu-title">Books</span>
                         </a>
                         <!--end:Menu link-->
+
                     }
                     @if (User.IsInRole(AppRoles.Admin))
                     {         
@@ -61,6 +70,7 @@
                             <span class="menu-title">Users</span>
                         </a>
                         <!--end:Menu link-->
+
                     }
                 </div>
                 <!--end:Menu item-->

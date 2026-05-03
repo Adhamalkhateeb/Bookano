@@ -11,13 +11,15 @@
     : "/assets/imgs/avatar.png";
 }
 
+
+
 <div class="content flex-column-fluid" id="kt_content">
-							
+
     <!--begin::Navbar-->
     <div class="card mb-5 mb-xl-10">
         <div class="card-body pt-9 pb-0">
             <!--begin::Details-->
-            <div class="d-flex flex-wrap flex-sm-nowrap">
+            <div class="d-flex flex-wrap flex-sm-nowrap account-profile-top">
                 <!--begin: Pic-->
                 <div class="me-7 mb-4">
                     <div class="symbol symbol-50px symbol-lg-60px symbol-fixed position-relative">
@@ -42,7 +44,7 @@
 
                                 <a href="#" class="d-flex align-items-center text-gray-500 text-hover-primary mb-2">
                                     <i class="fa-solid fa-envelope me-2 fs-6 mt-1"></i>
-                                    @User.FindFirst(ClaimTypes.Email)!.Value
+                                    @(User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty)
                                 </a>
                             </div>
                             <!--end::Info-->
@@ -186,11 +188,11 @@
             <!--begin::Card body-->
             <div class="card-body border-top p-9">
                 <!--begin::Email Address-->
-                <div class="d-flex flex-wrap align-items-center">
+                <div class="d-flex flex-wrap align-items-center account-signin-row">
                     <!--begin::Label-->
                     <div id="kt_signin_email">
                         <div class="fs-6 fw-bold mb-1">Email Address</div>
-                        <div class="fw-semibold text-gray-600">@User.FindFirst(ClaimTypes.Email)!.Value</div>
+                        <div class="fw-semibold text-gray-600">@(User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty)</div>
                     </div>
                     <!--end::Label-->
                     <!--begin::Action-->
@@ -204,7 +206,7 @@
                 <div class="separator separator-dashed my-6"></div>
                 <!--end::Separator-->
                 <!--begin::Password-->
-                <div class="d-flex flex-wrap align-items-center mb-10">
+                <div class="d-flex flex-wrap align-items-center mb-10 account-signin-row">
                     <!--begin::Label-->
                     <div id="kt_signin_password">
                         <div class="fs-6 fw-bold mb-1">Password</div>

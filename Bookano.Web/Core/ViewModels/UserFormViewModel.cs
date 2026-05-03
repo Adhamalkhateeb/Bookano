@@ -50,7 +50,7 @@ namespace Bookano.Web.Core.ViewModels
             RegularExpression(RegexPatterns.Password, ErrorMessage = Error.WeakPassword),
             RequiredIf("Id == null ", ErrorMessage = Error.RequiredField)
         ]
-        public string Password { get; set; } = null!;
+        public string? Password { get; set; }
 
         [
             DataType(DataType.Password),
@@ -58,7 +58,7 @@ namespace Bookano.Web.Core.ViewModels
             Compare("Password", ErrorMessage = Error.PasswordNotMatch),
             RequiredIf("Id == null || Password != null", ErrorMessage = Error.RequiredField)
         ]
-        public string ConfirmPassword { get; set; } = null!;
+        public string? ConfirmPassword { get; set; } = null!;
 
         public IList<string> SelectedRoles { get; set; } = new List<string>();
 

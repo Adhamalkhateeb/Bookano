@@ -63,10 +63,14 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
                 return Page();
             }
 
-            var userName = Input.Username.ToUpper();
+            var noramlizedUserName = Input.Username.ToUpper();
             var user = await _userManager.Users.SingleOrDefaultAsync(u =>
-                (u.UserName == userName || u.Email == userName)
+                (
+                    u.NormalizedUserName == noramlizedUserName
+                    || u.NormalizedEmail == noramlizedUserName
+                ) && !u.IsDeleted
             );
+
             if (user == null)
             {
                 ModelState.AddModelError(

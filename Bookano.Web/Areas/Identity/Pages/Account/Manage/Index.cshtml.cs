@@ -87,7 +87,6 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
         {
             var userName = await _userManager.GetUserNameAsync(user);
             var phoneNumber = await _userManager.GetPhoneNumberAsync(user);
-            var email = await _userManager.GetEmailAsync(user);
 
             Username = userName;
 
