@@ -1,14 +1,16 @@
-﻿@model PublisherViewModel
+﻿@model AreaViewModel
+
 <tr class="d-block mb-4 mb-md-0 d-md-table-row">
     <td data-label="Name">@Model.Name</td>
+    <td data-label="Governorate">@Model.Governorate</td>
     <td data-label="Status">
         <span class="badge badge-light-@(Model.IsDeleted ? "danger" : "success") js-status">
             @(Model.IsDeleted ? "Deleted" : "Available")
         </span>
     </td>
     <td data-label="Created On" class="js-created-on" data-utc="@Model.CreatedOnUtc.ToString("o")"></td>
-    <td data-label="Last Updated"  class="js-updated-on" data-utc="@(Model.LastUpdatedOnUtc?.ToString("o"))"></td>
-    <td  class="text-end">
+    <td data-label="Last Updated" class="js-updated-on" data-utc="@(Model.LastUpdatedOnUtc?.ToString("o"))"></td>
+    <td class="text-center">
         <a href="#"
                class="btn btn-light btn-active-light-primary btn-flex d-block d-md-inline-block  btn-center btn-sm text-nowrap w-100 w-md-auto"
                data-kt-menu-trigger="click"
@@ -16,25 +18,29 @@
             Actions
             <i class="fa-solid fa-angle-down fs-5 ms-2 fa-sm"></i>
         </a>
-        <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px py-3" data-kt-menu="true" style="">
+        <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px py-3"
+             data-kt-menu="true">
             <!--begin::Menu item-->
             <div class="menu-item px-3">
-                <a href="javascript:;" data-url="Publishers/Edit/@Model.Id" 
-                data-title="Edit Category"
-                data-mode="true"
-                class="menu-link flex-stack px-3 js-render-modal">
+                <a href="javascript:;"
+                       data-url="/Areas/Edit/@Model.Id"
+                       data-title="Edit Area"
+                       data-mode="true"
+                       class="menu-link flex-stack px-3 js-render-modal">
                     Edit
                 </a>
             </div>
             <!--end::Menu item-->
             <!--begin::Menu item-->
             <div class="menu-item px-3">
-                <a href="javascript:;" class="menu-link px-3 js-toggle-status" 
-                       data-url="/Publishers/ToggleStatus/@Model.Id">
+                <a href="javascript:;"
+                       class="menu-link px-3 js-toggle-status"
+                       data-url="/Areas/ToggleStatus/@Model.Id">
                     Toggle status
                 </a>
             </div>
-            <!--end::Menu item-->                          
+            <!--end::Menu item-->
         </div>
     </td>
 </tr>
+

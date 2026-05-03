@@ -1,7 +1,7 @@
-﻿@model IEnumerable<AuthorViewModel>
+﻿@model IEnumerable<AreaViewModel>
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery
 @{
-    ViewData["Title"] = "Authors";
+    ViewData["Title"] = "Areas";
 }
 
 @section Styles {
@@ -16,19 +16,19 @@
         <!--begin::Icon-->
         <div class="symbol symbol-50px me-4 ">
             <div class="symbol-label fs-2 fw-semibold text-success">
-                <i class="fa-solid fa-user-pen  fa-lg text-dark "></i>
+                <i class="fa-solid fa-map-location-dot fa-lg text-dark"></i>
             </div>
         </div>
         <!--end::Icon-->
         <!--begin::Content-->
         <div class="d-flex flex-column  justify-content-center pe-0 pe-sm-10">
-            <h3 class="mb-1">Authors</h3>
+            <h3 class="mb-1">Areas</h3>
         </div>
     </div>
     <!--end::Content-->
     <!--begin::Add-->
     <div>
-        <a href="javascript:;" class="btn btn-md btn-primary js-render-modal fs-5 w-100" data-title="Add Author" data-url="/Authors/Create">
+        <a href="javascript:;" class="btn btn-md btn-primary js-render-modal fs-5 w-100" data-title="Add Area" data-url="/Areas/Create">
             <i class="bi bi-plus-square-dotted fs-3"></i>
             Add
         </a>
@@ -36,18 +36,17 @@
     <!--end::Add-->
 </div>
 <!--end::header-->
-
-
 <!--begin::body-->
 
 <div class="card shadow-sm">
     <partial name="_DataTableCardHeader" />
     <div class="card-body pt-0">
         <div class="table-responsive">
-            <table class="table table-sm table-row-dashed table-row-gray-300 gy-2 align-middle js-datatable" data-export-title="Authors">
+            <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-datatable" data-export-title="Areas">
                 <thead>
                     <tr class="fw-bold fs-6 text-gray-800">
                         <th class="text-nowrap">Name</th>
+                        <th class="text-nowrap">Governorate</th>
                         <th class="text-nowrap">Status</th>
                         <th class="text-nowrap">Created on</th>
                         <th class="text-nowrap">Last updated on</th>
@@ -55,9 +54,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var author in Model)
+                    @foreach (var area in Model)
                     {
-                        <partial name="_AuthorRow" model="@author" />
+                        <partial name="_AreaRow" model="@area" />
                     }
                 </tbody>
             </table>
@@ -74,7 +73,14 @@
 }
 
 
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.body.addEventListener('click', e => {
+          $("#GovernorateId").on("change", function () {
+            $("#Name").valid();
+        });
+        })
+      
+    </script>
 }

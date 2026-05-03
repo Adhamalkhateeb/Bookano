@@ -419,11 +419,20 @@ function initImageInputSync(container = document) {
 // Select2
 // ============================================================
 
-function applySelect2() {
-    $('.js-select2').select2().on('change', function () { $(this).valid(); });
+function applySelect2(container = document) {
+    const $el = $(container).find('.js-select2');
+
+    $el.each(function () {
+        let $parent = $(this).closest('.modal');
+
+        $(this).select2({
+            width: '100%',
+            dropdownParent: $parent.length ? $parent : $(document.body)
+        }).on('change', function () {
+            $(this).valid();
+        });
+    });
 }
-
-
 
 // ============================================================
 // Helpers
@@ -501,6 +510,21 @@ function formatDates(root = document) {
         el.setAttribute('data-order', date.toISOString());
         el.textContent = date.toLocaleString();
     });
+}
+
+function togglePassword(inputId, el) {
+    const input = document.getElementById(inputId);
+    const icon = el.querySelector("i");
+
+    if (input.type === "password") {
+        input.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    } else {
+        input.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
+    }
 }
 
 

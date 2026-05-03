@@ -1,6 +1,6 @@
 ﻿namespace Bookano.Web.Core.Models
 {
-    public class BookCopy : BaseModel
+    public sealed class BookCopy : BaseModel
     {
         public int Id { get; set; }
         public int BookId { get; set; }

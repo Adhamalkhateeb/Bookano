@@ -7,6 +7,14 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        //Areas
+        CreateMap<Area, AreaViewModel>()
+            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(a => a.Governorate!.Name));
+        CreateMap<AreaFormViewModel, Area>().ReverseMap();
+        CreateMap<Area, SelectListItem>()
+            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
+            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
+
         //Authors
         CreateMap<Author, AuthorViewModel>();
         CreateMap<AuthorFormViewModel, Author>().ReverseMap();
@@ -56,6 +64,12 @@ public class MappingProfile : Profile
         CreateMap<Category, CategoryViewModel>();
         CreateMap<CategoryFormViewModel, Category>().ReverseMap();
         CreateMap<Category, SelectListItem>()
+            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
+            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
+
+        //Governorates
+
+        CreateMap<Governorate, SelectListItem>()
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 

@@ -29,9 +29,11 @@ namespace Bookano.Web.Services.Mail
                 IsBodyHtml = true,
             };
 
-            message.To.Add(
-                _webHostEnvironment.IsDevelopment() ? "adhamfawzy2006@gmail.com" : email
-            );
+            var recipient = _webHostEnvironment.IsDevelopment()
+                ? _mailSettings.DevelopmentOverrideRecipient ?? email
+                : email;
+
+            message.To.Add(recipient);
             using SmtpClient smtpClient = new(_mailSettings.Host, _mailSettings.Port)
             {
                 UseDefaultCredentials = false,

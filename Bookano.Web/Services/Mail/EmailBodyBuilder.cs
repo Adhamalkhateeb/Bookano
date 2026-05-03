@@ -12,7 +12,7 @@ namespace Bookano.Web.Services.Mail
         }
 
         public string GetEmailBody(
-            string imgaeUrl,
+            string imageUrl,
             string header,
             string body,
             string url,
@@ -24,7 +24,7 @@ namespace Bookano.Web.Services.Mail
             var template = sr.ReadToEnd();
 
             return template
-                .Replace("[imageUrl]", imgaeUrl)
+                .Replace("[imageUrl]", imageUrl)
                 .Replace("[header]", header)
                 .Replace("[body]", body)
                 .Replace("[url]", url)

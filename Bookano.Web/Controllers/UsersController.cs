@@ -144,7 +144,7 @@ namespace Bookano.Web.Controllers
                 Email = model.Email,
                 CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value,
             };
-            var result = await _userManager.CreateAsync(user, model.Password);
+            var result = await _userManager.CreateAsync(user, model.Password!);
 
             if (result.Succeeded)
             {
