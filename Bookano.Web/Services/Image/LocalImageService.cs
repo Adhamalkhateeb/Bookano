@@ -1,91 +1,122 @@
 ﻿using Bookano.Web.Services.Image.Result;
-using CloudinaryDotNet;
-using CloudinaryDotNet.Actions;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace Bookano.Web.Services.Image
 {
     public sealed class LocalImageService : IImageService
     {
         private readonly IWebHostEnvironment _env;
+        private const string ImagesRoot = "images";
+        private const string ThumbFolder = "thumb";
 
         public LocalImageService(IWebHostEnvironment env)
         {
             _env = env;
         }
 
-        public Task<ImageDeleteResult> DeleteAsync(string imageId)
+        public async Task<ImageDeleteResult> DeleteAsync(string imageId)
         {
             if (string.IsNullOrWhiteSpace(imageId))
-            {
-                return Task.FromResult(
-                    new ImageDeleteResult
-                    {
-                        IsSuccess = false,
-                        ErrorMessage = "Image id is required.",
-                    }
-                );
-            }
+                return FailDelete("Image id is required.");
 
             var path = Path.Combine(_env.WebRootPath, "images", imageId);
 
             try
             {
-                if (!File.Exists(path))
-                {
-                    return Task.FromResult(
-                        new ImageDeleteResult
-                        {
-                            IsSuccess = false,
-                            ErrorMessage = "Image not found.",
-                        }
-                    );
-                }
+                var filePath = Path.Combine(_env.WebRootPath, ImagesRoot, imageId);
+                var thumbPath = GetThumbnailPath(imageId);
 
-                File.Delete(path);
+                if (!File.Exists(filePath))
+                    return FailDelete("Image not found.");
 
-                return Task.FromResult(new ImageDeleteResult { IsSuccess = true });
+                await Task.Run(() => File.Delete(filePath));
+
+                if (File.Exists(thumbPath))
+                    await Task.Run(() => File.Delete(thumbPath));
+
+                return new ImageDeleteResult { IsSuccess = true };
             }
             catch (Exception ex)
             {
-                return Task.FromResult(
-                    new ImageDeleteResult { IsSuccess = false, ErrorMessage = ex.Message }
-                );
+                return FailDelete(ex.Message);
             }
         }
 
-        public string GetThumbnail(string imageId, int width = 125) => $"/images/{imageId}";
-
-        public async Task<Result.ImageUploadResult> UploadAsync(
+        public async Task<ImageUploadResult> UploadAsync(
             IFormFile file,
             string folder,
             string? fileName
         )
         {
-            var validateImageResult = ValidateImage(file);
-            if (validateImageResult is not null)
-                return new() { IsSuccess = false, ErrorMessage = validateImageResult };
+            var validationError = ValidateImage(file);
+            if (validationError is not null)
+                return new() { IsSuccess = false, ErrorMessage = validationError };
 
             fileName ??= Path.GetFileName(file.FileName);
 
-            var dir = Path.Combine(_env.WebRootPath, "images", folder);
+            var dir = Path.Combine(_env.WebRootPath, ImagesRoot, folder);
+            var thumbDir = Path.Combine(_env.WebRootPath, ImagesRoot, folder, ThumbFolder);
 
             Directory.CreateDirectory(dir);
+            Directory.CreateDirectory(thumbDir);
 
-            var fullPath = Path.Combine(dir, fileName);
+            var filePath = Path.Combine(dir, fileName);
+            var thumbPath = Path.Combine(thumbDir, fileName);
 
-            using var stream = File.Create(fullPath);
-            await file.CopyToAsync(stream);
+            await using (var stream = File.Create(filePath))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            await CreateThumbnailAsync(filePath, thumbPath, 125);
 
             var publicId = $"{folder}/{fileName}";
 
-            return new Result.ImageUploadResult
+            return new ImageUploadResult
             {
                 IsSuccess = true,
-                Url = $"/images/{publicId}",
+                Url = GetUrl(publicId),
                 PublicId = publicId,
             };
         }
 
+        public string GetThumbnail(string imageId, int width = 125)
+        {
+            var thumbPath = GetThumbnailPath(imageId);
+
+            return File.Exists(thumbPath)
+                ? GetUrl(
+                    $"{Path.GetDirectoryName(imageId) ?? ""}/{ThumbFolder}/{Path.GetFileName(imageId)}"
+                )
+                : GetUrl(imageId);
+        }
+
         public string? ValidateImage(IFormFile file) => Core.Consts.Image.ValidateImage(file);
+
+        private async Task CreateThumbnailAsync(string source, string destination, int width)
+        {
+            using var image = await SixLabors.ImageSharp.Image.LoadAsync(source);
+
+            var height = (int)(image.Height * (width / (float)image.Width));
+
+            image.Mutate(x => x.Resize(width, height));
+
+            await image.SaveAsync(destination);
+        }
+
+        private string GetThumbnailPath(string imageId)
+        {
+            var folder = Path.GetDirectoryName(imageId) ?? "";
+            var fileName = Path.GetFileName(imageId);
+
+            return Path.Combine(_env.WebRootPath, ImagesRoot, folder!, ThumbFolder, fileName);
+        }
+
+        private string GetUrl(string relativePath) =>
+            $"/{ImagesRoot}/{relativePath.Replace("\\", "/")}";
+
+        private static ImageDeleteResult FailDelete(string message) =>
+            new() { IsSuccess = false, ErrorMessage = message };
     }
 }

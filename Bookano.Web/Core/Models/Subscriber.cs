@@ -19,6 +19,7 @@
 
         [MaxLength(15)]
         public string MobileNumber { get; set; } = null!;
+
         public bool HasWhatsApp { get; set; }
 
         [MaxLength(150)]
@@ -38,6 +39,6 @@
         [MaxLength(500)]
         public string Address { get; set; } = null!;
 
-        public bool IsBlackListed { get; set; }
+        public bool IsBlackListed { get; set; } = false;
     }
 }

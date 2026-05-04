@@ -80,6 +80,10 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
+        //Subscribers
+        //CreateMap<Subscriber, PublisherViewModel>();
+        CreateMap<SubscriberFormViewModel, Subscriber>().ReverseMap();
+
         //Users
         CreateMap<ApplicationUser, UserViewModel>()
             .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(u => u.CreatedOnUtc))
