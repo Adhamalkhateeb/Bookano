@@ -1,13 +1,9 @@
 ﻿@model SubscriberFormViewModel
-@inject IWebHostEnvironment WebHostEnvironment
 @* @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery *@
 @{
     ViewData["Title"] = $" {(Model.Id > 0 ? "Edit" : "Create")} Book";
-    var imageUrl = $"{WebHostEnvironment.WebRootPath}/images/subscripers/{Model.ImageUrl}.png";
 
-    imageUrl = System.IO.File.Exists(imageUrl) ?
-    $"/images/subscripers/{Model.ImageUrl}.png"
-    : "/assets/imgs/avatar-blank.svg";
+    var imageUrl = !string.IsNullOrEmpty(Model.ImageUrl) ? Model.ImageUrl : "/assets/imgs/avatar-blank.svg";
 }
 
 <form method="post" asp-controller="Subscribers" enctype="multipart/form-data">
@@ -20,6 +16,8 @@
             @if (Model.Id > 0)
             {
                 <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="ImageUrl" />
+                <input type="hidden" asp-for="ImageThumbnailUrl" />
             }
             <!--begin::Input group-->
             <div class="row mb-6">
@@ -69,13 +67,13 @@
                         <!--begin::Col-->
                         <div class="fv-row col-6 fv-plugins-icon-container">
                             <input asp-for="FirstName" type="text" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="First name">
-                            <span asp-validation-for="FirstName" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <span asp-validation-for="FirstName" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="fv-row col-6 fv-plugins-icon-container">
                             <input asp-for="LastName" type="text" class="form-control form-control-lg form-control-solid mb-3 mb-lg-0" placeholder="Last name">
-                            <span asp-validation-for="LastName" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <span asp-validation-for="LastName" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                     </div>
@@ -95,8 +93,8 @@
                     <div class="row">
                         <!--begin::Col-->
                         <div class="fv-row  fv-plugins-icon-container">
-                            <input asp-for="DateOfBirth" type="text" class="form-control form-control-solid js-datepicker form-control-lg mb-3 mb-lg-0"  " placeholder="Date Of Birth">
-                            <span asp-validation-for="DateOfBirth" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <input asp-for="DateOfBirth" type="text" class="form-control form-control-solid js-datepicker form-control-lg mb-3 mb-lg-0"  placeholder="Date Of Birth">
+                            <span asp-validation-for="DateOfBirth" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                     </div>
@@ -117,7 +115,7 @@
                         <!--begin::Col-->
                         <div class="fv-row  fv-plugins-icon-container">
                             <input asp-for="NationalId" type="text" class="form-control form-control-solid  form-control-lg mb-3 mb-lg-0"  placeholder="National ID">
-                            <span asp-validation-for="NationalId" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <span asp-validation-for="NationalId" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                     </div>
@@ -138,13 +136,13 @@
                         <!--begin::Col-->
                         <div class="fv-row col-6  fv-plugins-icon-container">
                             <input asp-for="Email" type="email" class="form-control form-control-solid  form-control-lg mb-3 mb-lg-0" placeholder="Email">
-                            <span asp-validation-for="Email" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="fv-row col-6  fv-plugins-icon-container">
                             <input asp-for="MobileNumber" type="tel" class="form-control form-control-solid  form-control-lg mb-3 mb-lg-0" placeholder="Mpbile Number">
-                            <span asp-validation-for="MobileNumber" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <span asp-validation-for="MobileNumber" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                     </div>
@@ -170,7 +168,7 @@
                                 </select>
                                 <label asp-for="GovernorateId" class="form-label"></label>
                             </div>
-                            <span asp-validation-for="GovernorateId" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <span asp-validation-for="GovernorateId" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                         <!--begin::Col-->
@@ -181,7 +179,7 @@
                                 </select>
                                  <label asp-for="AreaId" class="form-label"></label> 
                             </div>
-                            <span asp-validation-for="AreaId" class="fv-plugins-message-container fv-plugins-message-container--enabled invalid-feedback"></span>
+                            <span asp-validation-for="AreaId" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
                     </div>

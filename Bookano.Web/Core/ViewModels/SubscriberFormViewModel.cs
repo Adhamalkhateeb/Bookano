@@ -69,8 +69,8 @@ namespace Bookano.Web.Core.ViewModels
         [MaxLength(500, ErrorMessage = Error.MaxLength)]
         public string Address { get; set; } = null!;
 
-        public IFormFile Image { get; set; } = null!;
-
+        [RequiredIf("Id == 0", ErrorMessage = Error.EmptyImage)]
+        public IFormFile? Image { get; set; }
         public string? ImageUrl { get; set; }
         public string? ImageThumbnailUrl { get; set; }
     }

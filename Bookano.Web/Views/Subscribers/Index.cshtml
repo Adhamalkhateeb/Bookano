@@ -1,1 +1,57 @@
-﻿<a asp-action="Create" class="btn btn-primary" >Add subscriper</a>
+﻿@model SearchFormViewModel 
+@{
+    ViewData["Title"] = "Subscribers";
+}
+<div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
+    <div class="d-flex align-items-center">
+        <!--begin::Icon-->
+        <div class="symbol symbol-50px me-4 ">
+            <div class="symbol-label fs-2 fw-semibold text-success">
+                <i class="fa-solid fa-id-card-clip fa-lg text-dark"></i>
+            </div>
+        </div>
+        <!--end::Icon-->
+        <!--begin::Content-->
+        <div class="d-flex flex-column  justify-content-center pe-0 pe-sm-10">
+            <h3 class="mb-1">Find a subscriber</h3>
+        </div>
+    </div>
+    <!--end::Content-->
+</div>
+
+<form asp-action="Search"
+      data-ajax-method="post"
+      data-ajax="true"
+      data-ajax-update="#Result"
+      data-ajax-failure="showErrorMessage"
+      data-ajax-complete="onSearchComplete">
+    <!--begin::Card-->
+    <div class="card mb-7">
+        <!--begin::Card body-->
+        <div class="card-body px-3 py-5  px-md-5 py-md-10">
+            <!--begin::Compact form-->
+            <div class="d-flex justify-content-between  justify-content-md-start align-items-center">
+                <!--begin::Input group-->
+                <div class="position-relative w-100 me-3 w-md-450px me-md-4">
+                    <i class="fa-solid fa-magnifying-glass fs-3 text-gray-500 position-absolute top-50 translate-middle ms-6 "></i>
+                    <input type="text" class="form-control form-control-solid ps-10"  placeholder="Search by mobile, natioal ID or email..." asp-for="Value">
+                </div>
+                <!--end::Input group-->
+                <!--begin:Action-->
+                <div class="d-flex align-items-center">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+                <!--end:Action-->
+            </div>
+            <!--end::Compact form-->
+        </div>
+        <!--end::Card body-->
+    </div>
+    <!--end::Card-->
+</form>
+
+<div id="Result" ></div>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+}

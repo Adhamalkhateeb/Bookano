@@ -1,5 +1,7 @@
-﻿using System.Formats.Asn1;
+﻿using System.Composition;
+using System.Formats.Asn1;
 using Bookano.Web.Services.Image;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -28,6 +30,24 @@ namespace Bookano.Web.Controllers
             return View();
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Search(SearchFormViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(nameof(Index), model);
+
+            var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
+                s.MobileNumber == model.Value
+                || s.NationalId == model.Value
+                || s.Email == model.Value
+            );
+
+            var viewModel = _mapper.Map<SubscriberSearchResultViewModel>(subscriber);
+
+            return PartialView("_Result", viewModel);
+        }
+
         [HttpGet]
         public async Task<IActionResult> Create() => View("Form", await PopulateViewModelAsync());
 
@@ -54,12 +74,84 @@ namespace Bookano.Web.Controllers
             }
 
             subscriber.ImageUrl = uploadResult.Url!;
-            subscriber.ImageThumnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
+            subscriber.ImagePublicId = uploadResult.PublicId!;
+            subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
             subscriber.CreatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             _context.Subscribers.Add(subscriber);
             await _context.SaveChangesAsync();
 
+            return RedirectToAction("Index");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var subscriber = await _context.Subscribers.FindAsync(id);
+
+            if (subscriber is null)
+                return NotFound();
+
+            var viewModel = _mapper.Map<SubscriberFormViewModel>(subscriber);
+
+            return View("Form", await PopulateViewModelAsync(viewModel));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(SubscriberFormViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View("Form", await PopulateViewModelAsync(model));
+
+            var subscriber = await _context.Subscribers.FindAsync(model.Id);
+
+            if (subscriber is null)
+                return NotFound();
+
+            subscriber = _mapper.Map(model, subscriber);
+
+            if (model.Image is not null)
+            {
+                var imageValidationError = _imageService.ValidateImage(model.Image);
+                if (imageValidationError is not null)
+                {
+                    ModelState.AddModelError("Image", imageValidationError);
+                    return View("Form", await PopulateViewModelAsync(model));
+                }
+
+                if (!string.IsNullOrEmpty(subscriber.ImagePublicId))
+                {
+                    var deleteResult = await _imageService.DeleteAsync(subscriber.ImagePublicId);
+                    if (!deleteResult.IsSuccess)
+                    {
+                        ModelState.AddModelError("Image", deleteResult.ErrorMessage!);
+                        return View("Form", await PopulateViewModelAsync(model));
+                    }
+                }
+
+                var imageName = $"{Guid.NewGuid()}{Path.GetExtension(model.Image.FileName)}";
+                var uploadResult = await _imageService.UploadAsync(
+                    model.Image,
+                    "subscribers",
+                    imageName
+                );
+
+                if (!uploadResult.IsSuccess)
+                {
+                    ModelState.AddModelError("Image", uploadResult.ErrorMessage!);
+                    return View("Form", await PopulateViewModelAsync(model));
+                }
+
+                subscriber.ImageUrl = uploadResult.Url!;
+                subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
+                subscriber.ImagePublicId = uploadResult.PublicId!;
+            }
+
+            subscriber.LastUpdatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            subscriber.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
+
+            await _context.SaveChangesAsync();
             return RedirectToAction("Index");
         }
 

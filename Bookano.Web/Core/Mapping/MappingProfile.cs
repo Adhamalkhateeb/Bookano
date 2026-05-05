@@ -82,7 +82,16 @@ public class MappingProfile : Profile
 
         //Subscribers
         //CreateMap<Subscriber, PublisherViewModel>();
-        CreateMap<SubscriberFormViewModel, Subscriber>().ReverseMap();
+        CreateMap<Subscriber, SubscriberFormViewModel>();
+        CreateMap<SubscriberFormViewModel, Subscriber>()
+            .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImageThumbnailUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImagePublicId, opt => opt.Ignore());
+        CreateMap<Subscriber, SubscriberSearchResultViewModel>()
+            .ForMember(
+                dest => dest.FullName,
+                opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
+            );
 
         //Users
         CreateMap<ApplicationUser, UserViewModel>()

@@ -20,8 +20,6 @@ namespace Bookano.Web.Services.Image
             if (string.IsNullOrWhiteSpace(imageId))
                 return FailDelete("Image id is required.");
 
-            var path = Path.Combine(_env.WebRootPath, "images", imageId);
-
             try
             {
                 var filePath = Path.Combine(_env.WebRootPath, ImagesRoot, imageId);

@@ -29,7 +29,9 @@
         public string ImageUrl { get; set; } = null!;
 
         [MaxLength(500)]
-        public string ImageThumnailUrl { get; set; } = null!;
+        public string ImageThumbnailUrl { get; set; } = null!;
+
+        public string ImagePublicId { get; set; } = null!;
 
         public int AreaId { get; set; }
         public Area? Area { get; set; }
