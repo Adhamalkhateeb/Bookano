@@ -80,6 +80,19 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
+        //Subscribers
+        //CreateMap<Subscriber, PublisherViewModel>();
+        CreateMap<Subscriber, SubscriberFormViewModel>();
+        CreateMap<SubscriberFormViewModel, Subscriber>()
+            .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImageThumbnailUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImagePublicId, opt => opt.Ignore());
+        CreateMap<Subscriber, SubscriberSearchResultViewModel>()
+            .ForMember(
+                dest => dest.FullName,
+                opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
+            );
+
         //Users
         CreateMap<ApplicationUser, UserViewModel>()
             .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(u => u.CreatedOnUtc))

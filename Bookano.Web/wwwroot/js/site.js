@@ -233,6 +233,11 @@ function showErrorMessage(xhr) {
     showError(message);
 }
 
+function onSearchComplete() {
+    const form = document.querySelector('form[data-ajax="true"]');
+    resetFormState(form);
+}
+
 // ============================================================
 // Toggle Status
 // ============================================================
