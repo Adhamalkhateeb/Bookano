@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Bookano.Web.Core.Mapping;
 
@@ -81,7 +82,14 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
         //Subscribers
-        //CreateMap<Subscriber, PublisherViewModel>();
+        CreateMap<Subscriber, SubscriberViewModel>()
+            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(s => s.Governorate!.Name))
+            .ForMember(dest => dest.Area, opt => opt.MapFrom(s => s.Area!.Name))
+            .ForMember(
+                dest => dest.FullName,
+                opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
+            );
+        ;
         CreateMap<Subscriber, SubscriberFormViewModel>();
         CreateMap<SubscriberFormViewModel, Subscriber>()
             .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())

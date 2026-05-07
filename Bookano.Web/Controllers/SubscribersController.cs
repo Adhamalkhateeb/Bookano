@@ -35,7 +35,7 @@ namespace Bookano.Web.Controllers
         public async Task<IActionResult> Search(SearchFormViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(nameof(Index), model);
+                return BadRequest(ModelState);
 
             var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
                 s.MobileNumber == model.Value
@@ -46,6 +46,21 @@ namespace Bookano.Web.Controllers
             var viewModel = _mapper.Map<SubscriberSearchResultViewModel>(subscriber);
 
             return PartialView("_Result", viewModel);
+        }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var subscriber = await _context
+                .Subscribers.AsNoTracking()
+                .Include(s => s.Area)
+                .Include(s => s.Governorate)
+                .SingleOrDefaultAsync(s => s.Id == id);
+
+            if (subscriber is null)
+                return NotFound();
+
+            var viewModel = _mapper.Map<SubscriberViewModel>(subscriber);
+            return View(viewModel);
         }
 
         [HttpGet]
@@ -81,7 +96,7 @@ namespace Bookano.Web.Controllers
             _context.Subscribers.Add(subscriber);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Details), new { Id = subscriber.Id });
         }
 
         [HttpGet]
@@ -152,7 +167,7 @@ namespace Bookano.Web.Controllers
             subscriber.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
 
             await _context.SaveChangesAsync();
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Details), new { Id = subscriber.Id });
         }
 
         [AjaxOnly]
