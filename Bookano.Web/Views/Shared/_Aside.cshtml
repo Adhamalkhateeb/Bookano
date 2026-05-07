@@ -50,6 +50,26 @@
                             <span class="menu-title">Books</span>
                         </a>
                         <!--end:Menu link-->
+
+                    }
+                    @if (User.IsInRole(AppRoles.Reception))
+                    {
+                        <!--begin:Menu link-->
+                        <a class="menu-link " asp-controller="Areas" asp-action="Index" active-when="Areas">
+                            <span class="menu-icon">
+                                <i class="fa-solid fa-map-location-dot fa-lg"></i>
+                            </span>
+                            <span class="menu-title">Areas</span>
+                        </a>
+                        <!--end:Menu link-->
+                        <!--begin:Menu link-->
+                        <a class="menu-link " asp-controller="Subscribers" asp-action="Index" active-when="Subscribers">
+                            <span class="menu-icon">
+                                <i class="fa-solid fa-id-card-clip fa-lg"></i>
+                            </span>
+                            <span class="menu-title">Subscribers</span>
+                        </a>
+                        <!--end:Menu link-->
                     }
                     @if (User.IsInRole(AppRoles.Admin))
                     {         
@@ -61,7 +81,9 @@
                             <span class="menu-title">Users</span>
                         </a>
                         <!--end:Menu link-->
+
                     }
+                   
                 </div>
                 <!--end:Menu item-->
             </div>

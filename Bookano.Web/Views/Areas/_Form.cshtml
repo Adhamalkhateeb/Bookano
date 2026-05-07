@@ -1,0 +1,37 @@
+﻿@model AreaFormViewModel
+
+<form asp-action="@(Model.Id > 0 ? "Edit" : "Create")"
+      data-ajax-method="post"
+      data-ajax="true"
+      data-ajax-success="onModalSuccess"
+      data-ajax-failure="showErrorMessage"
+      data-ajax-complete="onModalComplete"
+      class="needs-validation">
+    @if (Model.Id > 0)
+    {
+        <input type="hidden" asp-for="Id" />
+    }
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="form-floating mb-3 mb-md-5">
+                <input type="text"
+                       class="form-control form-control-solid form-control-lg"
+                       placeholder=" "
+                       asp-for="Name" />
+                <label asp-for="Name"></label>
+                <span class="text-danger small" asp-validation-for="Name"></span>
+            </div>
+            <div class="form-floating mb-3 mb-md-5">
+                <select class="form-select form-select-solid js-select2 " data-placeholder="Select an governorate" asp-for="GovernorateId" asp-items="Model.Governorates">
+                    <option value="">Select Governorate</option>
+                </select>
+                <label asp-for="GovernorateId" class="form-label"></label>
+                <span class="text-danger small" asp-validation-for="GovernorateId"></span>
+            </div>
+           
+            <partial name="_ModalFooter" />
+        </div>
+    </div>
+</form>
+
+

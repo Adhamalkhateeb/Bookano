@@ -58,7 +58,7 @@ namespace Bookano.Web.Core.ViewModels
             Compare("Password", ErrorMessage = Error.PasswordNotMatch),
             RequiredIf("Id == null || Password != null", ErrorMessage = Error.RequiredField)
         ]
-        public string? ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; } = null!;
 
         public IList<string> SelectedRoles { get; set; } = new List<string>();
 

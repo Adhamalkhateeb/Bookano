@@ -4,5 +4,59 @@
     ViewData["Title"] = "Confirm email change";
 }
 
-<h1>@ViewData["Title"]</h1>
-<partial name="_StatusMessage" model="Model.StatusMessage" />
+<div class="d-flex flex-column flex-root">
+    <!--begin::Page bg image-->
+    <style>
+            body {
+                background-image: url('/assets/imgs/bg10.jpeg');
+            }
+
+            [data-bs-theme="dark"] body {
+                background-image: url('/assets/imgs/bg10-dark.jpeg');
+            }
+    </style>
+    <!--end::Page bg image-->
+    <!--begin::Authentication - Signup Welcome Message -->
+    <div class="d-flex flex-column flex-center flex-column-fluid">
+        <!--begin::Content-->
+        <div class="d-flex flex-column flex-center text-center p-10">
+            <!--begin::Wrapper-->
+            <div class="card card-flush w-lg-650px py-5">
+                <div class="card-body py-15 py-lg-20">
+                
+                    <!--begin::Logo-->
+                    <div class="mb-14">
+                        <a href="/metronic8/demo14/?page=index" class="">
+                            <img alt="Logo" src="~/assets/imgs/logo.png" class="h-150px" style="margin-bottom:-35px">
+                        </a>
+                    </div>
+                    <!--end::Logo-->
+                    <!--begin::Title-->
+                    <h1 class="fw-bolder text-gray-900 mb-5">
+                        Email is changed
+                    </h1>
+                    <div class="fs-6 fw-semibold text-gray-500 mb-5">
+                        Your email has been changed. Please click below to return home.
+                    </div>
+                    <!--end::Title-->
+                    <!--begin::Link-->
+                    <div class="mb-11">         
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-md btn-primary">Return Home</a>
+                    </div>
+                    <!--end::Link-->
+                    <!--begin::Illustration-->
+                    <div class="mb-0">
+                        <img src="/assets/imgs/ok.png" class="mw-100 mh-200px theme-light-show" alt="">
+                        <img src="/assets/imgs/ok-dark.png" class="mw-100 mh-200px theme-dark-show" alt="">
+                    </div>
+                    <!--end::Illustration-->
+
+                </div>
+            </div>
+            <!--end::Wrapper-->
+        </div>
+        <!--end::Content-->
+    </div>
+    <!--end::Authentication - Signup Welcome Message-->
+</div>
+

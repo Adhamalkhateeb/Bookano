@@ -1,4 +1,6 @@
-﻿namespace Bookano.Web.Core.Consts
+﻿using NuGet.Protocol.Plugins;
+
+namespace Bookano.Web.Core.Consts
 {
     public static class Error
     {
@@ -26,5 +28,9 @@
         public const string InvalidMobileNumber = "Invalid mobile number.";
         public const string InvalidNationalId = "Invalid national ID.";
         public const string InvalidSerialNumber = "Invalid serial number.";
+        public const string InvalidAreaName =
+            "Only Arabic or English letters, digits, spaces, and hyphens are allowed.";
+        public const string AreaAlreadyExists = "Area already exist in that governorate";
+        public const string EmptyImage = "Please select an image";
     }
 }

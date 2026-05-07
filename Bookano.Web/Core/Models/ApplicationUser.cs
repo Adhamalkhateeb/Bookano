@@ -3,7 +3,7 @@
 namespace Bookano.Web.Core.Models
 {
     [Index(nameof(Email), IsUnique = true), Index(nameof(UserName), IsUnique = true)]
-    public class ApplicationUser : IdentityUser
+    public sealed class ApplicationUser : IdentityUser
     {
         [MaxLength(100)]
         public string FullName { get; set; } = null!;

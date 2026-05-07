@@ -9,38 +9,32 @@
     <link rel="stylesheet" href="~/assets/plugins/datatables/datatables.bundle.css" />
 }
 
-
-<div class="content flex-column-fluid  " id="kt_content">
+<div class="content flex-column-fluid" id="kt_content">
 
     <!--begin::Navbar-->
     <div class="card mb-9">
         <div class="card-body pt-9 pb-0">
             <!--begin::Details-->
-            <div class="d-flex flex-wrap flex-sm-nowrap mb-6">
+            <div class="d-flex flex-column flex-md-row mb-6">
                 <!--begin::Image-->
-                <div class="d-flex flex-center flex-shrink-0 bg-light rounded w-100px h-100px w-lg-150px h-lg-200px me-7 mb-4">
+                <div class="d-flex flex-center flex-shrink-0 bg-light rounded w-100 h-175px w-md-150px h-md-200px me-md-7 mb-4 mx-auto mx-md-0">
                     <a class="d-block overlay" data-fslightbox href="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/books/no-image-cover.png" : Model.ImageUrl)">
-                        <!--begin::Image-->
-                        <img class=" overlay-wrapper w-100px h-150px " src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/books/no-image-cover.png" : Model.ImageUrl)" alt="@Model.Title" />
-                        <!--end::Image-->
-                        <!--begin::Action-->
+                        <img class="overlay-wrapper w-100px h-150px" src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/images/books/no-image-cover.png" : Model.ImageUrl)" alt="@Model.Title" />
                         <div class="overlay-layer card-rounded bg-dark bg-opacity-25 shadow">
                             <i class="bi bi-eye-fill text-white fs-3x"></i>
                         </div>
-                        <!--end::Action-->
                     </a>
                 </div>
                 <!--end::Image-->
                 <!--begin::Wrapper-->
                 <div class="flex-grow-1">
                     <!--begin::Head-->
-                    <div class="d-flex justify-content-between align-items-start flex-wrap ">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
                         <!--begin::Details-->
-                        <div class="d-flex flex-column">
+                        <div class="d-flex flex-column w-100">
                             <!--begin::Status-->
-                            <div class="d-flex align-items-center mb-1">
-                                <a href="javascript:;"
-                                       class="text-gray-800 text-hover-primary fs-2 fw-bold me-3">
+                            <div class="d-flex align-items-center flex-wrap mb-1">
+                                <a href="javascript:;" class="text-gray-800 text-hover-primary fs-2 fw-bold me-3">
                                     @Model.Title
                                 </a>
                                 @{
@@ -48,98 +42,74 @@
                                         : (Model.IsAvailableForRental ? ("success", "Available for rental")
                                         : ("warning", "Not available for rental"));
                                 }
-                                <span class="badge badge-light-@badge me-auto">@text</span>
+                                <span class="badge badge-light-@badge my-1">@text</span>
                             </div>
-                            <!--end::Status-->
+                            
                             <!--begin::Description-->
                             <div class="d-flex flex-wrap fw-semibold mb-1 fs-5 text-gray-500">
                                 <i class="fa-solid fa-user-pen align-self-center fs-7"></i>
                                 @foreach (var author in Model.Authors)
                                 {
-                                    <span class="badge badge-light-primary ms-2 ">@author</span>
+                                    <span class="badge badge-light-primary ms-2 my-1">@author</span>
                                 }
                             </div>
-                            <div class="d-flex flex-wrap   mb-4 fs-7 text-gray-500">
+                            <div class="d-flex flex-wrap mb-4 fs-7 text-gray-500">
                                 @Model.Publisher
                             </div>
-                            <!--end::Description-->
                         </div>
-                        <!--end::Details-->
+
                         <!--begin::Actions-->
-                        <div class="d-flex mb-4">
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-md btn-primary me-3">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                                Edit
+                        <div class="d-flex mb-4  w-100  justify-content-end">
+                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-md btn-primary flex-grow-1 flex-md-grow-0 me-2 w-100px ">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
                             </a>
                         </div>
-                        <!--end::Actions-->
                     </div>
-                    <!--end::Head-->
-                    <!--begin::Info-->
+
+                    <!--begin::Stats-->
                     <div class="d-flex flex-wrap justify-content-start">
-                        <!--begin::Stats-->
-                        <div class="d-flex flex-wrap">
-                            <!--begin::Stat-->
-                            <div class="border border-gray-500 border-dashed rounded min-w-125px py-3 px-4 me-6 mb-3">
-                                <!--begin::Number-->
-                                
+                        <div class="d-flex flex-wrap w-100 w-md-auto">
+                            <!--Stat: Publishing Date-->
+                            <div class="border border-gray-500 border-dashed rounded min-w-125px py-3 px-4 me-md-6 me-2 mb-3 flex-grow-1 flex-md-grow-0">
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-calendar-date-fill text-primary mb-2 me-2"></i>
                                     <div class="fs-7 fw-bold mb-1">@Model.PublishingDate.ToString("dd MMM, yyyy")</div>
                                 </div>
-                                <!--end::Number-->
-                                <!--begin::Label-->
                                 <div class="fw-semibold fs-7 text-gray-500">Publishing Date</div>
-                                <!--end::Label-->
                             </div>
-                            <!--end::Stat-->
-                            <!--begin::Stat-->
-                            <div class="border border-gray-500 border-dashed rounded min-w-125px py-3 px-4 me-6 mb-3">
-                                <!--begin::Number-->
+                            <!--Stat: Added Date-->
+                            <div class="border border-gray-500 border-dashed rounded min-w-125px py-3 px-4 me-md-6 me-2 mb-3 flex-grow-1 flex-md-grow-0">
                                 <div class="d-flex align-items-center">
                                     <i class="bi bi-calendar-date-fill text-primary mb-2 me-2"></i>
                                     <div class="fs-7 fw-bold mb-1">@Model.CreatedOnUtc.ToString("dd MMM, yyyy")</div>
                                 </div>
-                                <!--end::Number-->
-                                <!--begin::Label-->
                                 <div class="fw-semibold fs-7 text-gray-500">Added Date</div>
-                                <!--end::Label-->
                             </div>
-                            <!--end::Stat-->
-                            <!--begin::Stat-->
-                            <div class="border border-gray-500 border-dashed rounded min-w-125px py-3 px-4 me-6 mb-3">
-                                <!--begin::Number-->
+                            <!--Stat: Copies-->
+                            <div class="border border-gray-500 border-dashed rounded min-w-125px py-3 px-4 me-md-6 me-2 mb-3 flex-grow-1 flex-md-grow-0">
                                 <div class="d-flex align-items-center">
                                     <i class="fa-regular fa-copy text-primary me-2"></i>
-                                    <div id="CopiesCount" class="fs-7 fw-bold" data-kt-countup="true"
-                                         data-kt-countup-value="@Model.Copies.Count()">
+                                    <div id="CopiesCount" class="fs-7 fw-bold" data-kt-countup="true" data-kt-countup-value="@Model.Copies.Count()">
                                         @Model.Copies.Count()
                                     </div>
                                 </div>
-                                <!--end::Number-->
-                                <!--begin::Label-->
                                 <div class="fw-semibold fs-7 text-gray-500">Copies</div>
-                                <!--end::Label-->
                             </div>
-                            <!--end::Stat-->
                         </div>
                     </div>
-                    <!--begin::categories-->
-                    <div class="align-self-end pb-2">
-                        <span class="text-dark">Categories: </span>
+
+                    <!--begin::Categories-->
+                    <div class="d-flex flex-wrap align-items-center pb-2">
+                        <span class="text-dark me-2">Categories: </span>
                         @foreach (var category in Model.Categories)
                         {
-                            <span class="badge badge-light-info me-2">@category</span>
+                            <span class="badge badge-light-info me-2 my-1">@category</span>
                         }
                     </div>
-                    <!--end::categories-->
-                    <!--end::Info-->
-                    <div class=" d-flex align-items-end gap-2">
+
+                    <div class="d-flex align-items-center gap-2">
                         <span>ISBN:</span>
-                        <span id="isbnValue"
-                              class="text-primary fw-bolder cursor-pointer"
-                              onclick="copyISBN(this)"
-                              title="Click to copy">
+                        <span id="isbnValue" class="text-primary fw-bolder cursor-pointer" onclick="copyISBN(this)" title="Click to copy">
                             @Model.Isbn
                         </span>
                     </div>
@@ -151,64 +121,37 @@
             <div class="separator"></div>
 
             <!--begin::Nav-->
-            <ul class="nav nav-stretch nav-line-tabs nav-line-tabs-2x border-transparent fs-5 fw-bold">
-                
-                <!--end::Nav item-->
-                <!--begin::Nav item-->
+            <ul class="nav nav-stretch nav-line-tabs nav-line-tabs-2x border-transparent fs-5 fw-bold overflow-auto flex-nowrap">
                 <li class="nav-item">
-                    <a class="nav-link text-active-primary py-5 me-6 active " data-bs-toggle="tab"
-                           href="#Description">
-                        Description
-                    </a>
+                    <a class="nav-link text-active-primary py-5 me-6 active" data-bs-toggle="tab" href="#Description">Description</a>
                 </li>
-                <!--end::Nav item-->
-                <!--begin::Nav item-->
                 <li class="nav-item">
-                    <a class="nav-link text-active-primary py-5 me-6 " data-bs-toggle="tab"
-                           href="#Copies">
-                        Copies
-                    </a>
+                    <a class="nav-link text-active-primary py-5 me-6" data-bs-toggle="tab" href="#Copies">Copies</a>
                 </li>
-                <!--end::Nav item-->
             </ul>
-            <!--end::Nav-->
         </div>
     </div>
-    <!--end::Navbar-->
-    <!--begin::Card-->
-    <div class="tab-content " style="max-width: 1510px">
+
+    <!--begin::Tab Content-->
+    <div class="tab-content" style="max-width: 1510px">
         <div id="Description" class="card tab-pane fade show active">
-            <!--begin::Card header-->
             <div class="card-header">
-                <!--begin::Card title-->
                 <div class="card-title fs-3 fw-bold">Description</div>
-                <!--end::Card title-->
             </div>
-            <!--end::Card header-->
-            <!--begin::Card body-->
-            <div class="card-body" style="min-width: 0; word-break: break-word; overflow-wrap: break-word;">
-               
+            <div class="card-body" style="word-break: break-word; overflow-wrap: break-word;">
                 @Html.Raw(Model.Description)
             </div>
-            <!--end::Card body-->
         </div>
         <div id="Copies" class="card tab-pane fade">
-            <!--begin::Card header-->
             <div class="card-header">
-                <!--begin::Card title-->
                 <div class="card-title fs-3 fw-bold">Copies</div>
-                <!--end::Card title-->
                 <div class="card-toolbar">
-                    <a href="javascript:;" class=" btn btn-sm btn-primary js-render-modal fs-5" data-title="Add Copy" data-url="/BookCopies/Create?bookId=@Model.Id">
-                        <i class="bi bi-plus-square-dotted fs-6"></i>
-                        Add
+                    <a href="javascript:;" class="btn btn-sm btn-primary js-render-modal fs-5" data-title="Add Copy" data-url="/BookCopies/Create?bookId=@Model.Id">
+                        <i class="bi bi-plus-square-dotted fs-6"></i> Add
                     </a>
                 </div>
             </div>
-            <!--end::Card header-->
-            <!--begin::Card body-->
-            <div class="card-body ">
-             
+            <div class="card-body">
                 <div class="@(!Model.Copies.Any() ? "d-none" : string.Empty) table-responsive">
                     <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-datatable">
                         <thead>
@@ -217,8 +160,8 @@
                                 <th>Edition</th>
                                 <th>Rental</th>
                                 <th>Status</th>
-                                <th>Created on</th>
-                                <th class=" text-center ">Actions</th>
+                                <th class="d-none d-md-table-cell">Created on</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -226,25 +169,18 @@
                             {
                                 <partial name="_BookCopyRow" model="copy" />
                             }
-
                         </tbody>
                     </table>
                 </div>
                 <div class="@(Model.Copies.Any() ? "d-none" : string.Empty) alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex flex-column flex-sm-row w-100 p-5 mb-10 js-alert">
-                    <!--begin::Icon-->
-                    <i class="bi bi-exclamation-octagon-fill me-5  text-warning align-self-center fs-1"></i>
-                    <!--end::Icon-->
-                    <!--begin::Content-->
+                    <i class="bi bi-exclamation-octagon-fill me-5 text-warning align-self-center fs-1"></i>
                     <div class="d-flex flex-column pe-0 pe-sm-10">
                         <h5 class="mt-2">No copies available for this Book</h5>
                     </div>
-                    <!--end::Content-->
                 </div>
             </div>
-            <!--end::Card body-->
         </div>
     </div>
-    <!--end::Card-->
 </div>
 
 <input type="hidden" name="__RequestVerificationToken" value="@antiforgery.GetAndStoreTokens(Context).RequestToken" />
@@ -256,9 +192,5 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script src="~/js/book-details.js"  asp-append-version="true"></script>
+    <script src="~/js/book-details.js" asp-append-version="true"></script>
 }
-
-
-
-

@@ -3,7 +3,7 @@
 namespace Bookano.Web.Core.Models
 {
     [Index(nameof(Isbn), IsUnique = true)]
-    public class Book : BaseModel
+    public sealed class Book : BaseModel
     {
         public int Id { get; set; }
 

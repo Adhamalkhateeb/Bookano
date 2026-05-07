@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Bookano.Web.Core.Mapping;
 
@@ -7,6 +8,14 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        //Areas
+        CreateMap<Area, AreaViewModel>()
+            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(a => a.Governorate!.Name));
+        CreateMap<AreaFormViewModel, Area>().ReverseMap();
+        CreateMap<Area, SelectListItem>()
+            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
+            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
+
         //Authors
         CreateMap<Author, AuthorViewModel>();
         CreateMap<AuthorFormViewModel, Author>().ReverseMap();
@@ -59,12 +68,38 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
+        //Governorates
+
+        CreateMap<Governorate, SelectListItem>()
+            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
+            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
+
         //Publishers
         CreateMap<Publisher, PublisherViewModel>();
         CreateMap<PublisherFormViewModel, Publisher>().ReverseMap();
         CreateMap<Publisher, SelectListItem>()
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
+
+        //Subscribers
+        CreateMap<Subscriber, SubscriberViewModel>()
+            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(s => s.Governorate!.Name))
+            .ForMember(dest => dest.Area, opt => opt.MapFrom(s => s.Area!.Name))
+            .ForMember(
+                dest => dest.FullName,
+                opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
+            );
+        ;
+        CreateMap<Subscriber, SubscriberFormViewModel>();
+        CreateMap<SubscriberFormViewModel, Subscriber>()
+            .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImageThumbnailUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.ImagePublicId, opt => opt.Ignore());
+        CreateMap<Subscriber, SubscriberSearchResultViewModel>()
+            .ForMember(
+                dest => dest.FullName,
+                opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
+            );
 
         //Users
         CreateMap<ApplicationUser, UserViewModel>()

@@ -1,6 +1,6 @@
 ﻿namespace Bookano.Web.Core.Models
 {
-    public class BookCategory
+    public sealed class BookCategory
     {
         public int BookId { get; set; }
         public Book? Book { get; set; }

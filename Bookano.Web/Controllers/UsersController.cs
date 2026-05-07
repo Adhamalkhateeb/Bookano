@@ -1,6 +1,11 @@
 ﻿using System.Linq.Dynamic.Core;
+using System.Text;
+using System.Text.Encodings.Web;
+using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookano.Web.Controllers
 {
@@ -9,17 +14,23 @@ namespace Bookano.Web.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IEmailBodyBuilder _emailBodyBuilder;
+        private readonly IEmailSender _emailSender;
         private readonly IMapper _mapper;
 
         public UsersController(
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
+            IEmailBodyBuilder emailBodyBuilder,
+            IEmailSender emailSender,
             IMapper mapper
         )
         {
             _userManager = userManager;
             _mapper = mapper;
             _roleManager = roleManager;
+            _emailSender = emailSender;
+            _emailBodyBuilder = emailBodyBuilder;
         }
 
         public async Task<IActionResult> Index()
@@ -133,11 +144,35 @@ namespace Bookano.Web.Controllers
                 Email = model.Email,
                 CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value,
             };
-            var result = await _userManager.CreateAsync(user, model.Password);
+            var result = await _userManager.CreateAsync(user, model.Password!);
 
             if (result.Succeeded)
             {
                 await _userManager.AddToRolesAsync(user, model.SelectedRoles);
+
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var callbackUrl = Url.Page(
+                    "/Account/ConfirmEmail",
+                    pageHandler: null,
+                    values: new
+                    {
+                        area = "Identity",
+                        userId = user.Id,
+                        code = code,
+                    },
+                    protocol: Request.Scheme
+                );
+
+                var body = _emailBodyBuilder.GetEmailBody(
+                    "https://res.cloudinary.com/bookano/image/upload/v1777605605/icon-positive-vote-1_zw88ur.svg",
+                    $"Hey {user.FullName}, thanks for joining us!",
+                    "Please confirm your email",
+                    HtmlEncoder.Default.Encode(callbackUrl!),
+                    "Active Account!"
+                );
+
+                await _emailSender.SendEmailAsync(user.Email, "Confirm your email", body);
                 return Ok();
             }
 

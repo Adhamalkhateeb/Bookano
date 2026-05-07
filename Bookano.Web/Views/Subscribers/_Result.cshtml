@@ -1,0 +1,60 @@
+﻿@model SubscriberSearchResultViewModel
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        
+        @if (Model is null)
+        {
+            <div class="alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex  flex-column flex-sm-row  w-100 p-5 justify-content-between ">   
+                <div class="d-flex flex-row justify-content-center justify-content-sm-start pe-0 pe-sm-10">
+                    <i class="bi bi-exclamation-octagon-fill me-2 me-sm-5 text-warning align-self-center fs-1"></i>
+                    <h5 class="mt-2 align-self-center">No subscribers were found!</h5>
+                </div>
+                <a asp-action="Create" class="btn btn-primary  btn-md justify-self-end mt-3 mt-sm-0">Add Subscriber</a>
+
+            </div>
+        }
+        else
+        {
+            <div class="flex-column mx-auto flex-lg-row-auto w-100 w-xl-350px mb-10">
+        
+                <!--begin::Card-->
+                <div class="card mb-5 mb-xl-8">
+                    <!--begin::Card body-->
+                    <div class="card-body pt-15">
+                        <!--begin::Summary-->
+                        <div class="d-flex flex-center flex-column mb-5">
+                            <!--begin::Avatar-->
+                            <div class="symbol symbol-150px  mb-7">
+                                <img src="@Model.ImageThumbnailUrl" alt="subscriber image">
+                            </div>
+                            <!--end::Avatar-->
+                            <!--begin::Name-->
+                            <a href="#" class="fs-3 text-gray-800 text-hover-primary fw-bold mb-1">
+                                @Model.FullName
+                            </a>
+                            <!--end::Name-->
+                            <!--begin::Email-->
+                            <a href="#" class="fs-5 fw-semibold text-muted text-hover-primary mb-6">
+                                @Model.Email
+                            </a>
+                            <!--end::Email-->
+                        </div>
+                        <!--end::Summary-->
+                        <!--begin::Details toggle-->
+                        <div class="d-flex flex-stack fs-4 py-3">
+                            <div class="fw-bold w-100">
+                                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-primary w-100">Details</a>
+                            </div>
+
+                        </div>
+                        <!--end::Details toggle-->
+
+                    </div>
+                    <!--end::Card body-->
+                </div>
+                <!--end::Card-->
+            </div>
+        }
+    </div>
+</div>

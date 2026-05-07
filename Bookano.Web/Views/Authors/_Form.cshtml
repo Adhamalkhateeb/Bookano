@@ -5,19 +5,24 @@
       data-ajax="true"
       data-ajax-success="onModalSuccess"
       data-ajax-failure="showErrorMessage"
-      data-ajax-complete="onModalComplete">
+      data-ajax-complete="onModalComplete"
+      class="needs-validation">
     @if (Model?.Id > 0)
     {
         <input type="hidden" asp-for="Id" />
     }
-    <div class="row">
-        <div class="col">
-            <div class="form-floating mb-7">
-                <input type="text" class="form-control form-control-solid" placeholder=" " asp-for="Name" />
+    <div class="row g-3">
+        <div class="col-12">
+            <div class="form-floating mb-3 mb-md-5">
+                <input type="text"
+                       class="form-control form-control-solid form-control-lg"
+                       placeholder=" "
+                       asp-for="Name" />
                 <label asp-for="Name"></label>
-                <span class="text-danger" asp-validation-for="Name"></span>
+                <span class="text-danger small" asp-validation-for="Name"></span>
             </div>
             <partial name="_ModalFooter" />
         </div>
     </div>
 </form>
+

@@ -85,7 +85,7 @@ namespace Bookano.Web.Services.Image
 
             await using var stream = file.OpenReadStream();
 
-            fileName = fileName ?? Path.GetFileName(fileName);
+            fileName ??= Path.GetFileName(file.FileName);
 
             var uploadParams = new ImageUploadParams
             {

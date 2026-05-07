@@ -1,15 +1,18 @@
 ﻿@model PublisherViewModel
-<tr>
-    <td>@Model.Name</td>
-    <td>
+<tr class="d-block mb-4 mb-md-0 d-md-table-row">
+    <td data-label="Name">@Model.Name</td>
+    <td data-label="Status">
         <span class="badge badge-light-@(Model.IsDeleted ? "danger" : "success") js-status">
             @(Model.IsDeleted ? "Deleted" : "Available")
         </span>
     </td>
-    <td class="js-created-on" data-utc="@Model.CreatedOnUtc.ToString("o")"></td>
-    <td class="js-updated-on" data-utc="@(Model.LastUpdatedOnUtc?.ToString("o"))"></td>
+    <td data-label="Created On" class="js-created-on" data-utc="@Model.CreatedOnUtc.ToString("o")"></td>
+    <td data-label="Last Updated"  class="js-updated-on" data-utc="@(Model.LastUpdatedOnUtc?.ToString("o"))"></td>
     <td  class="text-end">
-        <a href="#" class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm" data-kt-menu-trigger="click" data-kt-menu-placement="bottom-end">
+        <a href="#"
+               class="btn btn-light btn-active-light-primary btn-flex d-block d-md-inline-block  btn-center btn-sm text-nowrap w-100 w-md-auto"
+               data-kt-menu-trigger="click"
+               data-kt-menu-placement="bottom-end">
             Actions
             <i class="fa-solid fa-angle-down fs-5 ms-2 fa-sm"></i>
         </a>

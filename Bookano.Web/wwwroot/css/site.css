@@ -1,33 +1,33 @@
 html {
-  font-size: 14px;
+    font-size: 14px;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+    html {
+        font-size: 16px;
+    }
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
 
 html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+    color: var(--bs-secondary-color);
+    text-align: end;
 }
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+    text-align: start;
 }
 
 
@@ -51,13 +51,13 @@ body {
     }
 }
 
-.image-input-wrapper{
+.image-input-wrapper {
     width: 125px !important;
 }
 
 /* HTML: <div class="loader"></div> */
 
-.loader + div{
+.loader + div {
     display: none !important;
 }
 
@@ -145,3 +145,81 @@ body {
 
 /* End   Override theme  */
 
+@media (max-width: 767.98px) {
+    
+    #Auth{
+        display:none;
+    }
+
+    .js-datatable thead {
+        display: none;
+    }
+
+
+
+    .js-datatable tbody td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        border: none !important;
+        padding: 0.7rem 0 !important;
+    }
+
+    .js-datatable tbody td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #5e6278;
+        flex-shrink: 0;
+        margin-right: 0.5rem;
+    }
+
+        .js-datatable tbody td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #5e6278;
+            flex-shrink: 0;
+            margin-right: 0.5rem;
+        }
+
+        .js-datatable tbody td:last-child::before {
+            display: none;
+        }
+
+    .js-datatable tbody td.text-end {
+        justify-content: flex-end;
+    }
+
+    .js-datatable tbody td.text-end::before {
+        display: none;
+    }
+
+    .dataTables_paginate .page-link {
+        padding: 0.5rem 0.5rem;
+        font-size: 1rem;
+        min-width: unset;
+    }
+
+    .dataTables_wrapper .row:last-child {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+        .dataTables_wrapper .row:last-child > div {
+            width: auto !important;
+            max-width: none !important;
+            flex: 0 0 auto !important;
+        }
+
+      
+
+}

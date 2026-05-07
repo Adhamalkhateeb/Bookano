@@ -9,12 +9,14 @@
 }
 
 
+
+<!--begin::header-->
 <div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
     <div class="d-flex align-items-center">
         <!--begin::Icon-->
         <div class="symbol symbol-50px me-4 ">
             <div class="symbol-label fs-2 fw-semibold text-success">
-                <i class="fa-solid fa-user-pen fa-lg text-dark "></i>
+                <i class="fa-solid fa-user-pen  fa-lg text-dark "></i>
             </div>
         </div>
         <!--end::Icon-->
@@ -26,25 +28,30 @@
     <!--end::Content-->
     <!--begin::Add-->
     <div>
-        <a href="javascript:;" class="btn btn-md btn-primary js-render-modal fs-5" data-title="Add Author" data-url="/Authors/Create">
+        <a href="javascript:;" class="btn btn-md btn-primary js-render-modal fs-5 w-100" data-title="Add Author" data-url="/Authors/Create">
             <i class="bi bi-plus-square-dotted fs-3"></i>
             Add
         </a>
     </div>
     <!--end::Add-->
 </div>
+<!--end::header-->
+
+
+<!--begin::body-->
+
 <div class="card shadow-sm">
     <partial name="_DataTableCardHeader" />
     <div class="card-body pt-0">
         <div class="table-responsive">
-            <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-datatable" data-export-title="Authors">
+            <table class="table table-sm table-row-dashed table-row-gray-300 gy-2 align-middle js-datatable" data-export-title="Authors">
                 <thead>
                     <tr class="fw-bold fs-6 text-gray-800">
-                        <th>Name</th>
-                        <th>Status</th>
-                        <th>Created on</th>
-                        <th>Last updated on</th>
-                        <th class=" text-end js-no-export">Actions</th>
+                        <th class="text-nowrap">Name</th>
+                        <th class="text-nowrap">Status</th>
+                        <th class="text-nowrap">Created on</th>
+                        <th class="text-nowrap">Last updated on</th>
+                        <th class="text-center js-no-export text-nowrap">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -57,6 +64,7 @@
         </div>
     </div>
 </div>
+<!--end::body-->
 
 
 <input type="hidden" name="__RequestVerificationToken" value="@antiforgery.GetAndStoreTokens(Context).RequestToken" />
@@ -64,6 +72,8 @@
 @section Plugins {
     <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
 }
+
+
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
