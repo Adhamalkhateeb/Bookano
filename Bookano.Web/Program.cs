@@ -3,9 +3,11 @@ using Bookano.Web.Helpers;
 using Bookano.Web.Seeds;
 using Bookano.Web.Services.Image;
 using Bookano.Web.Services.Mail;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
+using WhatsAppCloudApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +37,8 @@ builder
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 
+builder.Services.AddDataProtection().SetApplicationName(nameof(Bookano));
+
 builder.Services.AddScoped<
     IUserClaimsPrincipalFactory<ApplicationUser>,
     ApplicationUserClaimsPrincipalFactory
@@ -53,8 +57,9 @@ builder.Services.AddExpressiveAnnotations();
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection(nameof(CloudinarySettings))
 );
-
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
+
+builder.Services.AddWhatsAppApiClient(builder.Configuration);
 
 var app = builder.Build();
 

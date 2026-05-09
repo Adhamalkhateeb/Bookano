@@ -5,7 +5,7 @@ namespace Bookano.Web.Core.ViewModels
 {
     public class SubscriberFormViewModel
     {
-        public int Id { get; set; }
+        public string? Key { get; set; }
 
         [MaxLength(100, ErrorMessage = Error.MaxLength), Display(Name = "First Name")]
         [RegularExpression(
@@ -31,7 +31,7 @@ namespace Bookano.Web.Core.ViewModels
         [Remote(
             "AllowNationalId",
             null!,
-            AdditionalFields = nameof(Id),
+            AdditionalFields = nameof(Key),
             ErrorMessage = Error.Duplicated
         )]
         public string NationalId { get; set; } = null!;
@@ -40,7 +40,7 @@ namespace Bookano.Web.Core.ViewModels
         [Remote(
             "AllowEmail",
             null!,
-            AdditionalFields = nameof(Id),
+            AdditionalFields = nameof(Key),
             ErrorMessage = Error.Duplicated
         )]
         public string Email { get; set; } = null!;
@@ -50,7 +50,7 @@ namespace Bookano.Web.Core.ViewModels
         [Remote(
             "AllowMobileNumber",
             null!,
-            AdditionalFields = nameof(Id),
+            AdditionalFields = nameof(Key),
             ErrorMessage = Error.Duplicated
         )]
         public string MobileNumber { get; set; } = null!;
@@ -69,7 +69,7 @@ namespace Bookano.Web.Core.ViewModels
         [MaxLength(500, ErrorMessage = Error.MaxLength)]
         public string Address { get; set; } = null!;
 
-        [RequiredIf("Id == 0", ErrorMessage = Error.EmptyImage)]
+        [RequiredIf("Key == ''", ErrorMessage = Error.EmptyImage)]
         public IFormFile? Image { get; set; }
         public string? ImageUrl { get; set; }
         public string? ImageThumbnailUrl { get; set; }

@@ -1,9 +1,10 @@
-﻿using System.Composition;
-using System.Formats.Asn1;
-using Bookano.Web.Services.Image;
-using CloudinaryDotNet.Actions;
-using Microsoft.AspNetCore.Mvc;
+﻿using Bookano.Web.Services.Image;
+using Bookano.Web.Services.Mail;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using WhatsAppCloudApi;
+using WhatsAppCloudApi.Services;
 
 namespace Bookano.Web.Controllers
 {
@@ -11,18 +12,33 @@ namespace Bookano.Web.Controllers
     public class SubscribersController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly IImageService _imageService;
+        private readonly IDataProtector _dataProtector;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private readonly IMapper _mapper;
+        private readonly IWhatsAppClient _whatsAppClient;
+        private readonly IImageService _imageService;
+        private readonly IEmailBodyBuilder _emailBodyBuilder;
+        private readonly IEmailSender _emailSender;
 
         public SubscribersController(
             ApplicationDbContext context,
+            IDataProtectionProvider dataProtector,
+            IWebHostEnvironment webHostEnvironment,
             IMapper mapper,
-            [FromKeyedServices("local")] IImageService imageService
+            IWhatsAppClient whatsAppClient,
+            [FromKeyedServices("local")] IImageService imageService,
+            IEmailBodyBuilder emailBodyBuilder,
+            IEmailSender emailSender
         )
         {
             _context = context;
+            _dataProtector = dataProtector.CreateProtector("security");
             _mapper = mapper;
+            _whatsAppClient = whatsAppClient;
             _imageService = imageService;
+            _webHostEnvironment = webHostEnvironment;
+            _emailBodyBuilder = emailBodyBuilder;
+            _emailSender = emailSender;
         }
 
         public IActionResult Index()
@@ -44,22 +60,27 @@ namespace Bookano.Web.Controllers
             );
 
             var viewModel = _mapper.Map<SubscriberSearchResultViewModel>(subscriber);
+            if (subscriber is not null)
+                viewModel.Key = _dataProtector.Protect(subscriber.Id.ToString());
 
             return PartialView("_Result", viewModel);
         }
 
-        public async Task<IActionResult> Details(int id)
+        public async Task<IActionResult> Details(string id)
         {
+            var subscriberId = int.Parse(_dataProtector.Unprotect(id));
+
             var subscriber = await _context
                 .Subscribers.AsNoTracking()
                 .Include(s => s.Area)
                 .Include(s => s.Governorate)
-                .SingleOrDefaultAsync(s => s.Id == id);
+                .SingleOrDefaultAsync(s => s.Id == subscriberId);
 
             if (subscriber is null)
                 return NotFound();
 
             var viewModel = _mapper.Map<SubscriberViewModel>(subscriber);
+            viewModel.Key = id;
             return View(viewModel);
         }
 
@@ -75,7 +96,7 @@ namespace Bookano.Web.Controllers
 
             var subscriber = _mapper.Map<Subscriber>(model);
 
-            var imageName = $"{Guid.NewGuid()}{Path.GetExtension(model.Image.FileName)}";
+            var imageName = $"{Guid.NewGuid()}{Path.GetExtension(model.Image!.FileName)}";
             var uploadResult = await _imageService.UploadAsync(
                 model.Image,
                 "subscribers",
@@ -96,18 +117,60 @@ namespace Bookano.Web.Controllers
             _context.Subscribers.Add(subscriber);
             await _context.SaveChangesAsync();
 
-            return RedirectToAction(nameof(Details), new { Id = subscriber.Id });
+            var placeholders = new Dictionary<string, string>
+            {
+                {
+                    "imageUrl",
+                    "https://res.cloudinary.com/bookano/image/upload/v1777605605/icon-positive-vote-1_zw88ur.svg"
+                },
+                { "header", $"Welcome {subscriber.FirstName}" },
+                { "body", "Thanks for joining Bookano 🤩" },
+            };
+
+            var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Notification, placeholders);
+
+            await _emailSender.SendEmailAsync(subscriber.Email, "Welcome to Bookano", body);
+
+            if (subscriber.HasWhatsApp)
+            {
+                var component = new List<WhatsAppComponent>
+                {
+                    new WhatsAppComponent
+                    {
+                        Type = "body",
+                        Parameters = new List<object>
+                        {
+                            new WhatsAppTextParameter { Text = subscriber.FirstName },
+                        },
+                    },
+                };
+                var mobileNumber = _webHostEnvironment.IsDevelopment()
+                    ? "01021094971"
+                    : subscriber.MobileNumber;
+                await _whatsAppClient.SendMessage(
+                    $"2{mobileNumber}",
+                    WhatsAppLanguageCode.English_US,
+                    WhatsAppTemplates.WelcomeMessage
+                );
+            }
+
+            return RedirectToAction(
+                nameof(Details),
+                new { Id = _dataProtector.Protect(subscriber.Id.ToString()) }
+            );
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(string id)
         {
-            var subscriber = await _context.Subscribers.FindAsync(id);
+            var subscriberId = int.Parse(_dataProtector.Unprotect(id));
+            var subscriber = await _context.Subscribers.FindAsync(subscriberId);
 
             if (subscriber is null)
                 return NotFound();
 
             var viewModel = _mapper.Map<SubscriberFormViewModel>(subscriber);
+            viewModel.Key = id;
 
             return View("Form", await PopulateViewModelAsync(viewModel));
         }
@@ -119,7 +182,8 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 
-            var subscriber = await _context.Subscribers.FindAsync(model.Id);
+            var subscriberId = int.Parse(_dataProtector.Unprotect(model.Key!));
+            var subscriber = await _context.Subscribers.FindAsync(subscriberId);
 
             if (subscriber is null)
                 return NotFound();
@@ -167,7 +231,7 @@ namespace Bookano.Web.Controllers
             subscriber.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
 
             await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Details), new { Id = subscriber.Id });
+            return RedirectToAction(nameof(Details), new { Id = model.Key });
         }
 
         [AjaxOnly]
@@ -184,30 +248,42 @@ namespace Bookano.Web.Controllers
 
         public async Task<IActionResult> AllowEmail(SubscriberFormViewModel model)
         {
+            var subscriberId = 0;
+            if (!string.IsNullOrEmpty(model.Key))
+                subscriberId = int.Parse(_dataProtector.Unprotect(model.Key));
+
             var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
                 s.Email == model.Email
             );
-            var isAllowed = subscriber is null || subscriber.Id.Equals(model.Id);
+            var isAllowed = subscriber is null || subscriber.Id.Equals(subscriberId);
 
             return Json(isAllowed);
         }
 
         public async Task<IActionResult> AllowMobileNumber(SubscriberFormViewModel model)
         {
+            var subscriberId = 0;
+            if (!string.IsNullOrEmpty(model.Key))
+                subscriberId = int.Parse(_dataProtector.Unprotect(model.Key));
+
             var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
                 s.MobileNumber == model.MobileNumber
             );
-            var isAllowed = subscriber is null || subscriber.Id.Equals(model.Id);
+            var isAllowed = subscriber is null || subscriber.Id.Equals(subscriberId);
 
             return Json(isAllowed);
         }
 
         public async Task<IActionResult> AllowNationalId(SubscriberFormViewModel model)
         {
+            var subscriberId = 0;
+            if (!string.IsNullOrEmpty(model.Key))
+                subscriberId = int.Parse(_dataProtector.Unprotect(model.Key));
+
             var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
                 s.NationalId == model.NationalId
             );
-            var isAllowed = subscriber is null || subscriber.Id.Equals(model.Id);
+            var isAllowed = subscriber is null || subscriber.Id.Equals(subscriberId);
 
             return Json(isAllowed);
         }

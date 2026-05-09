@@ -128,13 +128,22 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
                     protocol: Request.Scheme
                 );
 
-                var body = _emailBodyBuilder.GetEmailBody(
-                    "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg",
-                    $"Hey {user.FullName}",
-                    "We received a request to change your email. You can do so by clicking the button below:",
-                    HtmlEncoder.Default.Encode(callbackUrl!),
-                    "Change Email"
-                );
+                var placeholders = new Dictionary<string, string>
+                {
+                    {
+                        "imageUrl",
+                        "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg"
+                    },
+                    { "header", $"Hey {user.FullName}" },
+                    {
+                        "body",
+                        "We received a request to change your email. You can do so by clicking the button below:"
+                    },
+                    { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
+                    { "linkTitle", "Change Email" },
+                };
+
+                var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
 
                 await _emailSender.SendEmailAsync(Input.NewEmail, "Confirm your email", body);
 
@@ -176,13 +185,19 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
                 protocol: Request.Scheme
             );
 
-            var body = _emailBodyBuilder.GetEmailBody(
-                "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg",
-                $"Hey {user.FullName}",
-                "please confirm your account.",
-                HtmlEncoder.Default.Encode(callbackUrl!),
-                "Confirm Email!"
-            );
+            var placeholders = new Dictionary<string, string>
+            {
+                {
+                    "imageUrl",
+                    "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg"
+                },
+                { "header", $"Hey {user.FullName}" },
+                { "body", "please confirm your account." },
+                { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
+                { "linkTitle", "Confirm Email!" },
+            };
+
+            var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
 
             await _emailSender.SendEmailAsync(email, "Confirm your email", body);
 
