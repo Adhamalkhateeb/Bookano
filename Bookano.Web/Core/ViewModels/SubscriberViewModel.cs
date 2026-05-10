@@ -17,5 +17,7 @@
         public string? Address { get; set; }
         public bool IsBlackListed { get; set; }
         public DateTimeOffset CreatedOnUtc { get; set; }
+
+        public IEnumerable<SubscriptionViewModel> Subscriptions { get; set; } = [];
     }
 }

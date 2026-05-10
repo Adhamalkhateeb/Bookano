@@ -151,13 +151,13 @@ body {
         display:none;
     }
 
-    .js-datatable thead {
+    table thead {
         display: none;
     }
 
 
 
-    .js-datatable tbody td {
+    table tbody td {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -166,7 +166,7 @@ body {
         padding: 0.7rem 0 !important;
     }
 
-    .js-datatable tbody td::before {
+    table tbody td::before {
         content: attr(data-label);
         font-weight: 600;
         font-size: 0.75rem;
@@ -177,7 +177,7 @@ body {
         margin-right: 0.5rem;
     }
 
-        .js-datatable tbody td::before {
+        table tbody td::before {
             content: attr(data-label);
             font-weight: 600;
             font-size: 0.75rem;
@@ -188,17 +188,17 @@ body {
             margin-right: 0.5rem;
         }
 
-        .js-datatable tbody td:last-child::before {
+        table tbody td:last-child::before {
             display: none;
         }
 
-    .js-datatable tbody td.text-end {
-        justify-content: flex-end;
-    }
+        table tbody td.text-end {
+            justify-content: flex-end;
+        }
 
-    .js-datatable tbody td.text-end::before {
-        display: none;
-    }
+            table tbody td.text-end::before {
+                display: none;
+            }
 
     .dataTables_paginate .page-link {
         padding: 0.5rem 0.5rem;

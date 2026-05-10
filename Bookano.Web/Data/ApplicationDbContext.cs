@@ -17,6 +17,7 @@ namespace Bookano.Web.Data
         public DbSet<Governorate> Governorates => Set<Governorate>();
         public DbSet<Publisher> Publishers => Set<Publisher>();
         public DbSet<Subscriber> Subscribers => Set<Subscriber>();
+        public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

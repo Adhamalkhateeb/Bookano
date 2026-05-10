@@ -1,6 +1,22 @@
 ﻿@model SubscriberViewModel
 @{
     ViewData["Title"] = "Details";
+    var lastSubscription = Model.Subscriptions.OrderBy(s => s.EndDate).Last();
+
+    var subscriberStatus = Model.IsBlackListed ? SubscriberStatus.Banned 
+        : lastSubscription.EndDate < DateTime.Today 
+        ? SubscriberStatus.InActive : SubscriberStatus.Active;
+
+    var statusClass = Model.IsBlackListed ? "danger"
+        : lastSubscription.EndDate < DateTime.Today
+        ? "warning" : "success";
+
+    string statusIcon = subscriberStatus switch
+    {
+        SubscriberStatus.Active => "fa-award",
+        SubscriberStatus.Banned => "fa-ban",
+        _ => "fa-triangle-exclamation"
+    };
 }
 
 <!--begin::header-->
@@ -71,7 +87,7 @@
                         </div>
 
                         <!--begin::Badge-->
-                        <div class="badge badge-light-success d-inline">Active Subscriber</div>
+                        <div id="BadgeStatus" class="badge badge-light-@statusClass d-inline">@subscriberStatus Subscriber</div>
                         <!--begin::Badge-->
                     </div>
                     <!--end::Details toggle-->
@@ -161,13 +177,12 @@
 
                         <div class="col">
                             <!--begin::Reward Tier-->
-                            <a href="#" class="card  bg-success  hoverable h-md-100">
+                            <a  id="CardStatus" href="#" class="card  bg-@statusClass  hoverable h-md-100">
                                 <!--begin::Body-->
                                 <div class="card-body">
-                                    <i class="fa-solid fa-award text-white fs-3x "></i>
-                                    <i class="ki-duotone ki-award text-white fs-3x ms-n1"><span class="path1"></span><span class="path2"></span><span class="path3"></span></i>
-                                    <div class="text-white fw-bold fs-2 mt-5">
-                                        Active Subscriber
+                                    <i id="ActiveStatusIcon" class="fa-solid @statusIcon text-white fs-3x"></i>
+                                    <div id="ActiveCard" class="text-white fw-bold fs-2 mt-5">
+                                        @subscriberStatus Subscriber
                                     </div>
 
                                     <div class="fw-semibold text-white">
@@ -184,20 +199,48 @@
                     <!--begin::Card-->
                     <div class="card pt-4 mb-6 mb-xl-9">
                         <!--begin::Card header-->
-                        <div class="card-header border-0">
-                            <!--begin::Card title-->
-                            <div class="card-title">
-                                <h2>Renewal History</h2>
-                            </div>
-                            <!--end::Card title-->
+                        <div class="card-header border-0 py-5">
+                            <h3 class="card-title align-items-start flex-column">
+                                <span class="card-label fw-bold fs-3 mb-1">Renewal History</span>
+                            </h3>
+                            @if (!Model.IsBlackListed)
+                            {
+                                <div class="card-toolbar">
+                                    <a href="javascript:;" class="btn btn-sm btn-light-primary js-renew" data-key="@Model.Key">
+                                        <i class="fa-solid fa-arrow-rotate-right "></i>
+                                        Renew
+                                    </a>
+                                </div>
+                            }
                         </div>
                         <!--end::Card header-->
                         <!--begin::Card body-->
                         <div class="card-body pt-0 pb-5">
                             <!--begin::Table-->
                             <div id="kt_table_customers_payment_wrapper" class="dt-container dt-bootstrap5 dt-empty-footer">
-                                <div id="" class="table-responsive">
-                                    Renewal history will be here
+                                <div class="table-responsive">
+                                    <!--begin::Table-->
+                                    <table id="subscriptionTable" class="table align-middle gs-0 gy-4">
+                                        <!--begin::Table head-->
+                                        <thead>
+                                            <tr class="fw-bold text-muted bg-light">
+                                                <th class="ps-4 min-w-125px rounded-start">Start Date</th>
+                                                <th class="min-w-125px">End Date</th>
+                                                <th class="min-w-125px">Status</th>
+                                                <th class="min-w-125px rounded-end">Added On</th>
+                                            </tr>
+                                        </thead>
+                                        <!--end::Table head-->
+                                        <!--begin::Table body-->
+                                        <tbody>
+                                            @foreach (var subscription in Model.Subscriptions.OrderByDescending(s => s.EndDate))
+                                            {
+                                                <partial name="_SubscriptionRow" model="@subscription" />
+                                            }
+                                        </tbody>
+                                        <!--end::Table body-->
+                                    </table>
+                                    <!--end::Table-->
                                 </div>
                             </div>
                             <!--end::Table-->
@@ -239,6 +282,10 @@
     <!--end::Layout-->
 					
 </div>
+
+@section Scripts {
+    <script src="~/js/renew-subscription.js" asp-append-version="true"></script>
+}
 
 @section Plugins {
     <script src="~/assets/plugins/fslightbox/fslightbox.bundle.js"></script>

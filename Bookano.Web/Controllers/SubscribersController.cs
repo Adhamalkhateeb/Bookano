@@ -71,9 +71,9 @@ namespace Bookano.Web.Controllers
             var subscriberId = int.Parse(_dataProtector.Unprotect(id));
 
             var subscriber = await _context
-                .Subscribers.AsNoTracking()
-                .Include(s => s.Area)
+                .Subscribers.Include(s => s.Area)
                 .Include(s => s.Governorate)
+                .Include(s => s.Subscriptions)
                 .SingleOrDefaultAsync(s => s.Id == subscriberId);
 
             if (subscriber is null)
@@ -114,6 +114,16 @@ namespace Bookano.Web.Controllers
             subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
             subscriber.CreatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
+            var subscription = new Subscription
+            {
+                CreatedById = subscriber.CreatedById,
+                CreatedOnUtc = subscriber.CreatedOnUtc,
+                StartDate = DateTime.Today,
+                EndDate = DateTime.Today.AddYears(1),
+            };
+
+            subscriber.Subscriptions.Add(subscription);
+
             _context.Subscribers.Add(subscriber);
             await _context.SaveChangesAsync();
 
@@ -147,10 +157,12 @@ namespace Bookano.Web.Controllers
                 var mobileNumber = _webHostEnvironment.IsDevelopment()
                     ? "01021094971"
                     : subscriber.MobileNumber;
-                await _whatsAppClient.SendMessage(
+
+                var result = await _whatsAppClient.SendMessage(
                     $"2{mobileNumber}",
                     WhatsAppLanguageCode.English_US,
-                    WhatsAppTemplates.WelcomeMessage
+                    WhatsAppTemplates.WelcomeMessage,
+                    component
                 );
             }
 
@@ -232,6 +244,94 @@ namespace Bookano.Web.Controllers
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Details), new { Id = model.Key });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        //[AjaxOnly]
+        public async Task<IActionResult> RenewSubscription(string subscriberKey)
+        {
+            var subscriberId = int.Parse(_dataProtector.Unprotect(subscriberKey));
+
+            var subscriber = await _context
+                .Subscribers.Include(s => s.Subscriptions)
+                .SingleOrDefaultAsync(s => s.Id == subscriberId);
+
+            if (subscriber is null)
+                return NotFound();
+
+            if (subscriber.IsBlackListed)
+                return BadRequest();
+
+            var lastSubscription = subscriber.Subscriptions.OrderBy(s => s.EndDate).Last();
+
+            var startDate =
+                DateTime.Today > lastSubscription.EndDate
+                    ? DateTime.Today
+                    : lastSubscription.EndDate.AddDays(1);
+
+            var newSubscription = new Subscription
+            {
+                CreatedById = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                StartDate = startDate,
+                EndDate = startDate.AddYears(1),
+            };
+
+            subscriber.Subscriptions.Add(newSubscription);
+            await _context.SaveChangesAsync();
+
+            var placeholders = new Dictionary<string, string>
+            {
+                {
+                    "imageUrl",
+                    "https://res.cloudinary.com/bookano/image/upload/v1777605605/icon-positive-vote-1_zw88ur.svg"
+                },
+                { "header", $"Hello {subscriber.FirstName}" },
+                {
+                    "body",
+                    $"your subscription has been renewed through {newSubscription.EndDate:d MMM, yyyy} 🎉🎉"
+                },
+            };
+
+            var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Notification, placeholders);
+
+            await _emailSender.SendEmailAsync(
+                subscriber.Email,
+                "Bookano Subscription Renewal",
+                body
+            );
+
+            if (subscriber.HasWhatsApp)
+            {
+                var component = new List<WhatsAppComponent>
+                {
+                    new WhatsAppComponent
+                    {
+                        Type = "body",
+                        Parameters = new List<object>
+                        {
+                            new WhatsAppTextParameter { Text = subscriber.FirstName },
+                            new WhatsAppTextParameter
+                            {
+                                Text = newSubscription.EndDate.ToString("d MMM, yyyy"),
+                            },
+                        },
+                    },
+                };
+                var mobileNumber = _webHostEnvironment.IsDevelopment()
+                    ? "01021094971"
+                    : subscriber.MobileNumber;
+
+                var result = await _whatsAppClient.SendMessage(
+                    $"2{mobileNumber}",
+                    WhatsAppLanguageCode.English,
+                    WhatsAppTemplates.SubscriptionRenewal,
+                    component
+                );
+            }
+
+            var viewModel = _mapper.Map<SubscriptionViewModel>(newSubscription);
+            return PartialView("_SubscriptionRow", viewModel);
         }
 
         [AjaxOnly]

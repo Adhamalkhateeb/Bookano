@@ -101,6 +101,9 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
             );
 
+        //Subscription
+        CreateMap<Subscription, SubscriptionViewModel>();
+
         //Users
         CreateMap<ApplicationUser, UserViewModel>()
             .ForMember(dest => dest.CreatedOn, opt => opt.MapFrom(u => u.CreatedOnUtc))
