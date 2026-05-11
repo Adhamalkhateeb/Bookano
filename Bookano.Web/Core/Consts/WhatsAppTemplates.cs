@@ -4,5 +4,7 @@
     {
         public const string WelcomeMessage = "welcome_message";
         public const string SubscriptionRenewal = "subscribtion_renew_alert";
+        public const string SubscriptionExpiration = "subscription_expiration_alert";
+        public const string SubscriptionExpired = "subscription_expired";
     }
 }

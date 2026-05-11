@@ -1,10 +1,8 @@
 ﻿using Bookano.Web.Services.Image;
 using Bookano.Web.Services.Mail;
+using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using WhatsAppCloudApi;
-using WhatsAppCloudApi.Services;
 
 namespace Bookano.Web.Controllers
 {
@@ -139,7 +137,9 @@ namespace Bookano.Web.Controllers
 
             var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Notification, placeholders);
 
-            await _emailSender.SendEmailAsync(subscriber.Email, "Welcome to Bookano", body);
+            BackgroundJob.Enqueue(() =>
+                _emailSender.SendEmailAsync(subscriber.Email, "Welcome to Bookano", body)
+            );
 
             if (subscriber.HasWhatsApp)
             {
@@ -158,11 +158,13 @@ namespace Bookano.Web.Controllers
                     ? "01021094971"
                     : subscriber.MobileNumber;
 
-                var result = await _whatsAppClient.SendMessage(
-                    $"2{mobileNumber}",
-                    WhatsAppLanguageCode.English_US,
-                    WhatsAppTemplates.WelcomeMessage,
-                    component
+                BackgroundJob.Enqueue(() =>
+                    _whatsAppClient.SendMessage(
+                        $"2{mobileNumber}",
+                        WhatsAppLanguageCode.English_US,
+                        WhatsAppTemplates.WelcomeMessage,
+                        component
+                    )
                 );
             }
 
@@ -248,7 +250,6 @@ namespace Bookano.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        //[AjaxOnly]
         public async Task<IActionResult> RenewSubscription(string subscriberKey)
         {
             var subscriberId = int.Parse(_dataProtector.Unprotect(subscriberKey));
@@ -295,10 +296,8 @@ namespace Bookano.Web.Controllers
 
             var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Notification, placeholders);
 
-            await _emailSender.SendEmailAsync(
-                subscriber.Email,
-                "Bookano Subscription Renewal",
-                body
+            BackgroundJob.Enqueue(() =>
+                _emailSender.SendEmailAsync(subscriber.Email, "Bookano Subscription Renewal", body)
             );
 
             if (subscriber.HasWhatsApp)
@@ -322,11 +321,13 @@ namespace Bookano.Web.Controllers
                     ? "01021094971"
                     : subscriber.MobileNumber;
 
-                var result = await _whatsAppClient.SendMessage(
-                    $"2{mobileNumber}",
-                    WhatsAppLanguageCode.English,
-                    WhatsAppTemplates.SubscriptionRenewal,
-                    component
+                BackgroundJob.Enqueue(() =>
+                    _whatsAppClient.SendMessage(
+                        $"2{mobileNumber}",
+                        WhatsAppLanguageCode.English,
+                        WhatsAppTemplates.SubscriptionRenewal,
+                        component
+                    )
                 );
             }
 

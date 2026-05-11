@@ -3,9 +3,10 @@ using Bookano.Web.Helpers;
 using Bookano.Web.Seeds;
 using Bookano.Web.Services.Image;
 using Bookano.Web.Services.Mail;
+using Bookano.Web.Tasks;
+using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 using WhatsAppCloudApi.Extensions;
 
@@ -15,10 +16,10 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
     options.ValidationInterval = TimeSpan.FromMinutes(5)
 );
 
-// Add services to the container.
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
@@ -44,6 +45,22 @@ builder.Services.AddScoped<
     ApplicationUserClaimsPrincipalFactory
 >();
 
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(connectionString));
+builder.Services.AddHangfireServer();
+
+builder.Services.Configure<AuthorizationOptions>(options =>
+{
+    options.AddPolicy(
+        "AdminsOnly",
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireRole(AppRoles.Admin);
+        }
+    );
+});
+
+builder.Services.AddScoped<SubscriptionJobs>();
 builder.Services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloudinary");
 builder.Services.AddKeyedTransient<IImageService, LocalImageService>("local");
 builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -94,6 +111,22 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapStaticAssets();
+
+app.UseHangfireDashboard(
+    "/hangfire",
+    new DashboardOptions()
+    {
+        DashboardTitle = "Bookano Dashboard",
+        IsReadOnlyFunc = (context => true),
+        Authorization = [new HangfireAuthorizationFilter("AdminsOnly")],
+    }
+);
+
+RecurringJob.AddOrUpdate<SubscriptionJobs>(
+    "prepare-expiration-alerts",
+    jobs => jobs.PrepareExpirationAlerts(),
+    "0 12 * * *"
+);
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 
