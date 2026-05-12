@@ -44,5 +44,6 @@
         public bool IsBlackListed { get; set; } = false;
 
         public ICollection<Subscription> Subscriptions { get; set; } = [];
+        public ICollection<Rental> Rentals { get; set; } = [];
     }
 }

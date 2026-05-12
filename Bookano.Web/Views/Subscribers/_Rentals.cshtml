@@ -1,0 +1,52 @@
+﻿@model IEnumerable<RentalViewModel>
+@if (!Model.Any())
+{
+    <div class="alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex  flex-column flex-sm-row  w-100 p-5 justify-content-between ">
+        <div class="d-flex flex-row justify-content-center justify-content-sm-start pe-0 pe-sm-10">
+            <i class="bi bi-exclamation-octagon-fill me-5  text-warning align-self-center fs-1"></i>
+            <h5 class="mt-2 align-self-center">This subscriber has no rentals!</h5>
+        </div>
+    </div>
+}
+else
+{
+    
+    <!--begin::Table-->
+    <table id="rentalsTable" class="table align-middle gs-0 gy-4">
+        <!--begin::Table head-->
+        <thead>
+            <tr class="fw-bold text-muted bg-light">
+                <th class="ps-4 min-w-125px rounded-start">Start Date</th>
+                <th class="min-w-125px">Number Of Copies</th>
+                <th class="min-w-125px">Total Delay (Days)</th>
+                <th class="min-w-125px">Added On</th>
+                <th class="min-w-125px rounded-end"></th>
+            </tr>
+        </thead>
+        <!--end::Table head-->
+        <!--begin::Table body-->
+        <tbody>
+            @foreach (var rental in Model)
+            {
+                <tr>
+                    <td data-label="Start Date" class="ps-0 ps-md-4">
+                        @rental.StartDate.ToString("d MMM, yyyy")
+                    </td>
+                    <td data-label="Copies">
+                        @rental.NumberOfCopies
+                    </td>
+                    <td data-label="Delay (Days)">
+                        @rental.TotalDelayInDays
+                    </td>
+                    <td data-label="Created On" class="js-created-on" data-utc="@rental.CreatedOnUtc.ToString("o")">
+                    </td>
+                    <td>
+                        <a class="btn btn-primary btn-sm" asp-controller="Rentals" asp-action="Details" asp-route-id="@rental.Id">Details</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <!--end::Table body-->
+    </table>
+    <!--end::Table-->
+}

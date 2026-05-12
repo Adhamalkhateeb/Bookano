@@ -72,6 +72,8 @@ namespace Bookano.Web.Controllers
                 .Subscribers.Include(s => s.Area)
                 .Include(s => s.Governorate)
                 .Include(s => s.Subscriptions)
+                .Include(s => s.Rentals)
+                    .ThenInclude(r => r.RentalCopies)
                 .SingleOrDefaultAsync(s => s.Id == subscriberId);
 
             if (subscriber is null)

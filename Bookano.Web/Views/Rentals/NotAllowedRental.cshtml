@@ -1,0 +1,16 @@
+﻿@model string
+@{
+    ViewData["Title"] = "Not Allowed Rental";
+}
+
+<div class=" alert alert-dismissible bg-light-danger border border-danger border-3 border-dashed d-flex  flex-sm-row w-100 px-5 py-10">
+
+    <i class="fa-solid fa-ban text-danger fa-2xl  me-5 align-self-center"></i>
+    <div class="d-flex flex-column pe-0 pe-sm-10">
+        <h5 class="mb-0">@Model</h5>
+    </div>
+    <!--end::Content-->
+</div>
+<div class="text-center d-flex justify-content-center h-75">
+    <img src="~/assets/imgs/do not enter sign-pana.svg" class="w-300px w-sm-400px " alt="stop"/>
+</div>

@@ -1,5 +1,6 @@
 ﻿document.addEventListener("DOMContentLoaded", function () {
 
+    formatDates();
     const renewBtn = document.querySelector('.js-renew');
 
     if (!renewBtn)
@@ -30,6 +31,7 @@
             const activeCard = document.getElementById("ActiveCard");
             const badgeStatus = document.getElementById("BadgeStatus");
             const cardStatus = document.getElementById("CardStatus");
+            const addRentalBtn = document.getElementById("AddRental")
 
             activeIcon.classList.remove("fa-triangle-exclamation");
             activeIcon.classList.add("fa-award");
@@ -43,7 +45,7 @@
 
             activeCard.textContent = "Active Subscriber";
 
-
+            addRentalBtn.classList.remove('d-none');
 
 
             tableBody.insertAdjacentHTML('afterbegin', addedRow);

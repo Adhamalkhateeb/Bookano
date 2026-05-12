@@ -4,6 +4,7 @@ using Bookano.Web.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bookano.Web.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260511093221_FixTypo")]
+    partial class FixTypo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -537,7 +540,7 @@ namespace Bookano.Web.Data.Migrations
                     b.Property<int>("RentalId")
                         .HasColumnType("int");
 
-                    b.Property<int>("BookCopyId")
+                    b.Property<int>("CopyId")
                         .HasColumnType("int");
 
                     b.Property<DateOnly>("EndDate")
@@ -552,9 +555,9 @@ namespace Bookano.Web.Data.Migrations
                     b.Property<DateOnly?>("ReturnDate")
                         .HasColumnType("date");
 
-                    b.HasKey("RentalId", "BookCopyId");
+                    b.HasKey("RentalId", "CopyId");
 
-                    b.HasIndex("BookCopyId");
+                    b.HasIndex("CopyId");
 
                     b.ToTable("RentalCopies");
                 });
@@ -1006,7 +1009,7 @@ namespace Bookano.Web.Data.Migrations
                         .HasForeignKey("LastUpdatedById");
 
                     b.HasOne("Bookano.Web.Core.Models.Subscriber", "Subscriber")
-                        .WithMany("Rentals")
+                        .WithMany()
                         .HasForeignKey("SubscriberId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1020,19 +1023,19 @@ namespace Bookano.Web.Data.Migrations
 
             modelBuilder.Entity("Bookano.Web.Core.Models.RentalCopy", b =>
                 {
-                    b.HasOne("Bookano.Web.Core.Models.BookCopy", "BookCopy")
-                        .WithMany("Rentals")
-                        .HasForeignKey("BookCopyId")
+                    b.HasOne("Bookano.Web.Core.Models.BookCopy", "Copy")
+                        .WithMany()
+                        .HasForeignKey("CopyId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Bookano.Web.Core.Models.Rental", "Rental")
-                        .WithMany("RentalCopies")
+                        .WithMany()
                         .HasForeignKey("RentalId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("BookCopy");
+                    b.Navigation("Copy");
 
                     b.Navigation("Rental");
                 });
@@ -1150,11 +1153,6 @@ namespace Bookano.Web.Data.Migrations
                     b.Navigation("Copies");
                 });
 
-            modelBuilder.Entity("Bookano.Web.Core.Models.BookCopy", b =>
-                {
-                    b.Navigation("Rentals");
-                });
-
             modelBuilder.Entity("Bookano.Web.Core.Models.Category", b =>
                 {
                     b.Navigation("Books");
@@ -1165,15 +1163,8 @@ namespace Bookano.Web.Data.Migrations
                     b.Navigation("Books");
                 });
 
-            modelBuilder.Entity("Bookano.Web.Core.Models.Rental", b =>
-                {
-                    b.Navigation("RentalCopies");
-                });
-
             modelBuilder.Entity("Bookano.Web.Core.Models.Subscriber", b =>
                 {
-                    b.Navigation("Rentals");
-
                     b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618

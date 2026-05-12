@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
@@ -54,10 +55,13 @@ public class MappingProfile : Profile
 
         //BookCopies
         CreateMap<BookCopy, BookCopyViewModel>()
+            .ForMember(dest => dest.BookTitle, opt => opt.MapFrom(bc => bc.Book!.Title))
+            .ForMember(dest => dest.BookImageUrl, opt => opt.MapFrom(bc => bc.Book!.ImageUrl))
             .ForMember(
-                dest => dest.BookTitle,
-                opt => opt.MapFrom(bc => bc.Book != null ? bc.Book.Title : string.Empty)
-            );
+                dest => dest.BookThumbnailUrl,
+                opt => opt.MapFrom(bc => bc.Book!.ImageThumbnailUrl)
+            )
+            .ForMember(dest => dest.BookId, opt => opt.MapFrom(bc => bc.Book!.Id));
 
         CreateMap<BookCopy, BookCopyFormViewModel>();
 
@@ -80,6 +84,10 @@ public class MappingProfile : Profile
         CreateMap<Publisher, SelectListItem>()
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
+
+        //Rentals
+        CreateMap<Rental, RentalViewModel>();
+        CreateMap<RentalCopy, RentalCopyViewModel>();
 
         //Subscribers
         CreateMap<Subscriber, SubscriberViewModel>()

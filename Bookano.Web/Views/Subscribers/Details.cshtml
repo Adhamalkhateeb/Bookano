@@ -3,8 +3,8 @@
     ViewData["Title"] = "Details";
     var lastSubscription = Model.Subscriptions.OrderBy(s => s.EndDate).Last();
 
-    var subscriberStatus = Model.IsBlackListed ? SubscriberStatus.Banned 
-        : lastSubscription.EndDate < DateTime.Today 
+    var subscriberStatus = Model.IsBlackListed ? SubscriberStatus.Banned
+        : lastSubscription.EndDate < DateTime.Today
         ? SubscriberStatus.InActive : SubscriberStatus.Active;
 
     var statusClass = Model.IsBlackListed ? "danger"
@@ -152,7 +152,7 @@
                                 <div class="card-header border-0">
                                     <!--begin::Card title-->
                                     <div class="card-title">
-                                        <h2 class="fw-bold">Reward Points</h2>
+                                        <h2 class="fw-bold">Total Rentals</h2>
                                     </div>
                                     <!--end::Card title-->
                                 </div>
@@ -162,11 +162,11 @@
                                     <div class="fw-bold fs-2">
                                         <div class="d-flex">
                                             <i class="fa-solid fa-heart text-info fs-2x"></i>
-                                            <div class="ms-2">
-                                                4,571 <span class="text-muted fs-4 fw-semibold">Points earned</span>
+                                            <div class="ms-3">
+                                                @Model.Rentals.Sum(r => r.NumberOfCopies)
                                             </div>
                                         </div>
-                                        <div class="fs-7 fw-normal text-muted">Earn reward points with every purchase.</div>
+                                        <div class="fs-7 fw-normal text-muted">Total number of copies.</div>
                                     </div>
                                 </div>
                                 <!--end::Card body-->
@@ -177,7 +177,7 @@
 
                         <div class="col">
                             <!--begin::Reward Tier-->
-                            <a  id="CardStatus" href="#" class="card  bg-@statusClass  hoverable h-md-100">
+                            <a id="CardStatus" href="#" class="card  bg-@statusClass  hoverable h-md-100">
                                 <!--begin::Body-->
                                 <div class="card-body">
                                     <i id="ActiveStatusIcon" class="fa-solid @statusIcon text-white fs-3x"></i>
@@ -255,17 +255,27 @@
                     <!--begin::Card-->
                     <div class="card pt-4 mb-6 mb-xl-9">
                         <!--begin::Card header-->
-                        <div class="card-header border-0">
-                            <!--begin::Card title-->
-                            <div class="card-title">
-                                <h2>Rentals</h2>
+                        <div class="card-header border-0 py-5">
+                            <h3 class="card-title align-items-start flex-column">
+                                <span class="card-label fw-bold fs-3 mb-1">Rentals</span>
+                            </h3>
+                            @{
+                                var IsAddRentalBtnVisable = !Model.IsBlackListed 
+                                && lastSubscription.EndDate >= DateTime.Today.AddDays((int)RentalsConfigurations.RentalDuration)
+                                && Model.Rentals.Sum(r => r.ActiveCopies) < (int)RentalsConfigurations.MaxAllowedCopies;
+                            }
+                            <div id="AddRental" class="card-toolbar @(IsAddRentalBtnVisable ? "" : "d-none")">
+                                <a asp-controller="Rentals" asp-action="Create" asp-route-subscriberkey="@Model.Key" class="btn btn-sm btn-light-primary">
+                                    <i class="bi bi-plus-square-dotted fs-5"></i>
+                                    Add Rental
+                                </a>
                             </div>
-                            <!--end::Card title-->
+                            
                         </div>
                         <!--end::Card header-->
                         <!--begin::Card body-->
                         <div class="card-body pt-0 pb-5">
-                            Rentals will be here
+                            <partial name="_Rentals" model="@Model.Rentals" />
                         </div>
                         <!--end::Card body-->
                     </div>

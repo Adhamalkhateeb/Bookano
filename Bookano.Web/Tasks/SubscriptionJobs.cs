@@ -1,4 +1,5 @@
-﻿using Bookano.Web.Services.Mail;
+﻿using System.Threading.RateLimiting;
+using Bookano.Web.Services.Mail;
 
 namespace Bookano.Web.Tasks
 {
@@ -27,28 +28,28 @@ namespace Bookano.Web.Tasks
 
         public async Task PrepareExpirationAlerts()
         {
-            var today = DateOnly.FromDateTime(DateTime.Today);
+            var today = DateTime.Today;
             var soonThreshold = today.AddDays(5);
 
-            var subscribers = await _context
+            var relevant = await _context
                 .Subscribers.Include(s => s.Subscriptions)
-                .Where(s => s.Subscriptions.Any())
+                .Where(s => !s.IsBlackListed && s.Subscriptions.Any())
+                .Select(s => new
+                {
+                    Subscriber = s,
+                    LatestEnd = s.Subscriptions.Max(sb => sb.EndDate),
+                })
+                .Where(x => x.LatestEnd >= today && x.LatestEnd <= soonThreshold)
                 .ToListAsync();
 
-            var expiringSoon = subscribers
-                .Where(s =>
-                {
-                    var endDate = DateOnly.FromDateTime(s.Subscriptions.Max(sb => sb.EndDate));
-                    return endDate > today && endDate <= soonThreshold;
-                })
+            var expiredToday = relevant
+                .Where(x => x.LatestEnd.Date == today)
+                .Select(x => x.Subscriber)
                 .ToList();
 
-            var expiredToday = subscribers
-                .Where(s =>
-                {
-                    var endDate = DateOnly.FromDateTime(s.Subscriptions.Max(sb => sb.EndDate));
-                    return endDate == today;
-                })
+            var expiringSoon = relevant
+                .Where(x => x.LatestEnd.Date == soonThreshold)
+                .Select(x => x.Subscriber)
                 .ToList();
 
             await SendExpiringSoonAlerts(expiringSoon);
