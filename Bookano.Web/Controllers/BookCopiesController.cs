@@ -123,5 +123,37 @@
 
             return Ok(updatedOn.ToString("o"));
         }
+
+        public async Task<IActionResult> RentalHistory(int id)
+        {
+
+            var viewModel = await _context.RentalCopies
+                .AsNoTracking()
+                .Where(rc => rc.BookCopy!.Id == id)
+                .Select(c => new CopyHistoyViewModel
+                {
+                    SubscriberName = $"{c.Rental!.Subscriber!.FirstName} {c.Rental.Subscriber.LastName}",
+                    SubscriberMobile = c.Rental.Subscriber.MobileNumber,
+
+                    StartDate = c.RentalDate.ToDateTime(TimeOnly.MinValue),
+                    EndDate = c.EndDate.ToDateTime(TimeOnly.MinValue),
+
+                    ReturnDate = c.ReturnDate.HasValue
+                        ? c.ReturnDate.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+
+                    ExtendedOn = c.ExtendedOn.HasValue
+                        ? c.ExtendedOn.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+                }).OrderByDescending(c => c.StartDate)
+                .ToListAsync();
+
+            if (!viewModel.Any() && !await _context.BookCopies.AnyAsync(c => c.Id == id))
+                return NotFound();
+
+
+            return View(viewModel);
+        }
+
     }
 }

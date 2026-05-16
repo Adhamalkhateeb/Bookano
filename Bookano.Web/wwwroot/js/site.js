@@ -236,6 +236,8 @@ function showErrorMessage(xhr) {
 function onSearchComplete() {
     const form = document.querySelector('form[data-ajax="true"]');
     resetFormState(form);
+    if (typeof refreshFsLightbox === 'function') refreshFsLightbox();
+    
 }
 
 // ============================================================

@@ -2,10 +2,7 @@
 
     formatDates();
     const renewBtn = document.querySelector('.js-renew');
-
-    if (!renewBtn)
-        return;
-
+    
     renewBtn.addEventListener("click", async function () {
         const confirmed = await new Promise(resolve => {
             bootbox.confirm({
@@ -60,5 +57,49 @@
         } finally {
             renewBtn.disabled = false;
         }
+    });
+
+
+    document.querySelectorAll(".js-cancel-rental").forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const confirmed = await new Promise(resolve => {
+                bootbox.confirm({
+                    message: 'Are you sure you want to cancel this rental?',
+                    buttons: {
+                        confirm: { label: 'Yes', className: 'btn-danger' },
+                        cancel: { label: 'No', className: 'btn-secondary' }
+                    },
+                    callback: resolve
+                });
+            });
+
+            if (!confirmed) return;
+
+            btn.disabled = true;
+
+            try {
+
+                const canceledCopies = await postForm(`/Rentals/Cancel/${btn.dataset.id}`);
+                const row = btn.closest("tr");
+
+                const totalCopiesEl = document.querySelector(".js-totalCopies");
+                totalCopiesEl.textContent = Number(totalCopiesEl.textContent) - canceledCopies;
+
+                row.remove();
+
+                //showSuccess();
+
+                if (document.querySelectorAll("#rentalsTable tbody tr").length === 0) {
+                    $("#rentalsTable").fadeOut(function () {
+                        $("#Alert").fadeIn();
+                    });
+                }
+
+            } catch {
+                showError();
+            } finally {
+                renewBtn.disabled = false;
+            }
+        })
     })
 })

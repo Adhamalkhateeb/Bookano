@@ -8,22 +8,15 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
 {
-    public class IndexModel : PageModel
+    public class IndexModel(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        [FromKeyedServices("local")] IImageService imageService
+        ) : PageModel
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IImageService _imageService;
-
-        public IndexModel(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
-            [FromKeyedServices("local")] IImageService imageService
-        )
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _imageService = imageService;
-        }
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
+        private readonly IImageService _imageService = imageService;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -78,7 +71,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
             ]
             public string PhoneNumber { get; set; }
 
-            public IFormFile? Avatar { get; set; }
+            public IFormFile Avatar { get; set; }
 
             public bool RemoveImage { get; set; }
         }

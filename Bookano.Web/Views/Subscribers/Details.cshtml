@@ -4,11 +4,11 @@
     var lastSubscription = Model.Subscriptions.OrderBy(s => s.EndDate).Last();
 
     var subscriberStatus = Model.IsBlackListed ? SubscriberStatus.Banned
-        : lastSubscription.EndDate < DateTime.Today
+        : lastSubscription.EndDate < DateTime.UtcNow.Date
         ? SubscriberStatus.InActive : SubscriberStatus.Active;
 
     var statusClass = Model.IsBlackListed ? "danger"
-        : lastSubscription.EndDate < DateTime.Today
+        : lastSubscription.EndDate < DateTime.UtcNow.Date
         ? "warning" : "success";
 
     string statusIcon = subscriberStatus switch
@@ -162,7 +162,7 @@
                                     <div class="fw-bold fs-2">
                                         <div class="d-flex">
                                             <i class="fa-solid fa-heart text-info fs-2x"></i>
-                                            <div class="ms-3">
+                                            <div class="ms-3 js-totalCopies">
                                                 @Model.Rentals.Sum(r => r.NumberOfCopies)
                                             </div>
                                         </div>
@@ -261,7 +261,7 @@
                             </h3>
                             @{
                                 var IsAddRentalBtnVisable = !Model.IsBlackListed 
-                                && lastSubscription.EndDate >= DateTime.Today.AddDays((int)RentalsConfigurations.RentalDuration)
+                                && lastSubscription.EndDate >= DateTime.UtcNow.Date.AddDays((int)RentalsConfigurations.RentalDuration)
                                 && Model.Rentals.Sum(r => r.ActiveCopies) < (int)RentalsConfigurations.MaxAllowedCopies;
                             }
                             <div id="AddRental" class="card-toolbar @(IsAddRentalBtnVisable ? "" : "d-none")">
@@ -294,7 +294,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/js/renew-subscription.js" asp-append-version="true"></script>
+    <script src="~/js/subscriber-details.js" asp-append-version="true"></script>
 }
 
 @section Plugins {

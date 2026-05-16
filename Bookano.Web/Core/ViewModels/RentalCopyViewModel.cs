@@ -18,21 +18,19 @@
             {
                 var today = DateOnly.FromDateTime(DateTime.Today);
 
-                var dueDate = ExtendedOn ?? EndDate;
-
-                if (ReturnDate.HasValue && ReturnDate.Value > dueDate)
+                if (ReturnDate.HasValue && ReturnDate.Value > EndDate)
                 {
                     return (
                         ReturnDate.Value.ToDateTime(TimeOnly.MinValue)
-                        - dueDate.ToDateTime(TimeOnly.MinValue)
+                        - EndDate.ToDateTime(TimeOnly.MinValue)
                     ).Days;
                 }
 
-                if (!ReturnDate.HasValue && today > dueDate)
+                if (!ReturnDate.HasValue && today > EndDate)
                 {
                     return (
                         today.ToDateTime(TimeOnly.MinValue)
-                        - dueDate.ToDateTime(TimeOnly.MinValue)
+                        - EndDate.ToDateTime(TimeOnly.MinValue)
                     ).Days;
                 }
 

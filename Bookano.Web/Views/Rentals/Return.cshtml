@@ -1,0 +1,131 @@
+﻿@model RentalReturnFormViewModel
+@{
+    ViewData["Title"] = "Rental Return";
+}
+
+
+@if (Model.RentalCopies.All(rc => rc.ReturnDate.HasValue))
+{
+    <div class="alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex  flex-column flex-sm-row  w-100 p-5 justify-content-between">
+        <div class="d-flex flex-row justify-content-center justify-content-sm-start pe-0 pe-sm-10">
+            <i class="bi bi-exclamation-octagon-fill me-5  text-warning align-self-center fs-1"></i>
+            <h5 class="mt-2 align-self-center">All copies have been returned</h5>
+        </div>
+    </div>
+}
+else
+{
+    <form asp-controller="Rentals">
+        <!--begin::Card-->
+        <div class="card pt-4 mb-6 mb-xl-9">
+            <!--begin::Card header-->
+            <div class="card-header border-0 py-5">
+                <h3 class="card-title align-items-start flex-column">
+                    <span class="card-label fw-bold fs-3 mb-1">Books</span>
+                </h3>
+            </div>
+            <!--end::Card header-->
+            <!--begin::Card body-->
+            <div class="card-body pt-0 pb-5">
+                <!--begin::Table-->
+                <div id="kt_table_customers_payment_wrapper" class="dt-container dt-bootstrap5 dt-empty-footer">
+                    <div class="table-responsive">
+                        <!--begin::Table-->
+                        <table class="table align-middle gs-0 gy-4">
+                            <!--begin::Table head-->
+                            <thead>
+                                <tr class="fw-bold text-muted bg-light">
+                                    <th class="ps-4 min-w-150px rounded-start">Book</th>
+                                    <th class="min-w-125px">Start Date</th>
+                                    <th class="min-w-125px">End Date</th>
+                                    <th class="min-w-125px">Total Delay (Days)</th>
+                                    <th class="min-w-125px">Return Date</th>
+                                    <th class="min-w-125px">Extend Date</th>
+                                    <th class="min-w-125px">Return</th>
+                                    <th class="min-w-125px rounded-end">Extend</th>
+                                </tr>
+                            </thead>
+                            <!--end::Table head-->
+                            <!--begin::Table body-->
+                            <tbody>
+                                @for (var i = 0; i < Model.RentalCopies.Count; i++)
+                                {
+                                    var copy = Model.RentalCopies[i];
+                                    <tr>
+                                        <td class="ps-md-2">
+                                            <div class="d-flex align-items-center">
+                                                <div class="symbol symbol-100px  overflow-hidden me-3">
+                                                    <div class="w-50px h-80px">
+                                                        <img class="rounded-1 object-fit-contain w-100 h-100 " src="@(copy.BookCopy!.BookThumbnailUrl ?? "/images/books/no-image-cover.png")" alt="@copy.BookCopy.BookTitle">
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex flex-column">
+                                                    <a asp-controller="Books" asp-action="Details" asp-route-id="@copy.BookCopy!.BookId"
+                                                       class="text-primary fs-6 fw-bold my-0">
+                                                        @copy.BookCopy.BookTitle
+                                                    </a>
+                                                    <span class="fs-7  text-grey-100 ">#Edition @copy.BookCopy.EditionNumber</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td data-label="Start Date">@copy.RentalDate.ToString("dd MMM, yyyy")</td>
+                                        <td data-label="End Date">@copy.EndDate.ToString("dd MMM, yyyy")</td>
+                                        <td data-label="Total Delay" class="@(copy.DelayInDays > 0 ? "text-danger" : string.Empty)">@copy.DelayInDays Day(s)</td>
+                                        <td data-label="Return Date">@(copy.ReturnDate.HasValue ? copy.ReturnDate.Value.ToString("dd MMM, yyyy") : string.Empty)</td>
+                                        <td data-label="Extend Date">@(copy.ExtendedOn.HasValue ? copy.ExtendedOn.Value.ToString("dd MMM, yyyy") : string.Empty) </td>
+                                        <td>
+                                            <div class="form-check form-check-custom form-check-success form-check-solid">
+                                                <input class="form-check-input" type="radio" value="true" asp-for="SelectedCopies[i].IsReturned" id="@($"{Model.SelectedCopies[i].Id}_true")" />
+                                                <input type="hidden" asp-for="SelectedCopies[i].Id" id="@($"{Model.SelectedCopies[i].Id}_true_id")" />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="form-check form-check-custom form-check-solid">
+                                                <input class="form-check-input" type="radio" value="false" asp-for="SelectedCopies[i].IsReturned" id="@($"{Model.SelectedCopies[i].Id}_false")"
+                                                       disabled="@(Model.AllowExtend ? null : "disabled")" />
+                                                <input type="hidden" asp-for="SelectedCopies[i].Id" id="@($"{Model.SelectedCopies[i].Id}_false_id")" />
+
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <!--end::Table body-->
+                        </table>
+                        <!--end::Table-->
+                    </div>
+                </div>
+                @if (Model.TotalDelayInDays > 0)
+                {
+                    <div class="ps-2 ">
+                        <div class=" form-check form-check-custom form-check-solid me-10">
+                            <input class="form-check-input " type="checkbox"  asp-for="PenalityPaid" />
+                            <input type="hidden" asp-for="TotalDelayInDays" />
+                            <label class="form-check-label" asp-for="PenalityPaid">
+                            </label>
+                        </div>
+                    </div>
+                }
+                <div asp-validation-summary="All" class="text-danger mt-2">
+                </div>
+
+            </div>
+            <!--end::Card body-->
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary btn-md js-save">
+                    <span class="indicator-label">
+                        Save
+                    </span>
+                    <span class="indicator-progress">
+                        Please wait... <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+        <!--end::Card-->
+    </form>
+}
+
+@section Scripts {
+    <partial name="_validationscriptspartial" />
+}

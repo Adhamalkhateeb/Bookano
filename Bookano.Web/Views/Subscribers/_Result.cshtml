@@ -2,10 +2,10 @@
 
 <div class="card shadow-sm">
     <div class="card-body">
-        
+
         @if (Model is null)
         {
-            <div class="alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex  flex-column flex-sm-row  w-100 p-5 justify-content-between ">   
+            <div class="alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex  flex-column flex-sm-row  w-100 p-5 justify-content-between ">
                 <div class="d-flex flex-row justify-content-center justify-content-sm-start pe-0 pe-sm-10">
                     <i class="bi bi-exclamation-octagon-fill me-2 me-sm-5 text-warning align-self-center fs-1"></i>
                     <h5 class="mt-2 align-self-center">No subscribers were found!</h5>
@@ -17,7 +17,7 @@
         else
         {
             <div class="flex-column mx-auto flex-lg-row-auto w-100 w-xl-350px mb-10">
-        
+
                 <!--begin::Card-->
                 <div class="card mb-5 mb-xl-8">
                     <!--begin::Card body-->
@@ -26,7 +26,12 @@
                         <div class="d-flex flex-center flex-column mb-5">
                             <!--begin::Avatar-->
                             <div class="symbol symbol-150px  mb-7">
-                                <img src="@Model.ImageThumbnailUrl" alt="subscriber image">
+                                <a class="d-block overlay" data-fslightbox href="@Model.ImageUrl">
+                                    <img class="overlay-wrapper rounded-1" src="@Model.ImageThumbnailUrl" alt="image">
+                                    <div class="overlay-layer card-rounded bg-dark bg-opacity-25 shadow">
+                                        <i class="bi bi-eye-fill text-white fs-3x"></i>
+                                    </div>
+                                </a>
                             </div>
                             <!--end::Avatar-->
                             <!--begin::Name-->

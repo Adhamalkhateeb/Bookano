@@ -6,33 +6,30 @@ namespace Bookano.Web.Tasks
     public class SubscriptionJobs
     {
         private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly IWhatsAppClient _whatsAppClient;
         private readonly IEmailBodyBuilder _emailBodyBuilder;
         private readonly IEmailSender _emailSender;
+        private readonly WhatsAppHelper _whatsAppHelper;
 
         public SubscriptionJobs(
             ApplicationDbContext context,
-            IWebHostEnvironment webHostEnvironment,
-            IWhatsAppClient whatsAppClient,
             IEmailBodyBuilder emailBodyBuilder,
-            IEmailSender emailSender
+            IEmailSender emailSender,
+            WhatsAppHelper whatsAppHelper
         )
         {
             _context = context;
-            _webHostEnvironment = webHostEnvironment;
-            _whatsAppClient = whatsAppClient;
             _emailBodyBuilder = emailBodyBuilder;
             _emailSender = emailSender;
+            _whatsAppHelper = whatsAppHelper;
         }
 
         public async Task PrepareExpirationAlerts()
         {
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var soonThreshold = today.AddDays(5);
 
             var relevant = await _context
-                .Subscribers.Include(s => s.Subscriptions)
+                .Subscribers.AsNoTracking()
                 .Where(s => !s.IsBlackListed && s.Subscriptions.Any())
                 .Select(s => new
                 {
@@ -42,26 +39,27 @@ namespace Bookano.Web.Tasks
                 .Where(x => x.LatestEnd >= today && x.LatestEnd <= soonThreshold)
                 .ToListAsync();
 
-            var expiredToday = relevant
-                .Where(x => x.LatestEnd.Date == today)
-                .Select(x => x.Subscriber)
-                .ToList();
-
             var expiringSoon = relevant
                 .Where(x => x.LatestEnd.Date == soonThreshold)
-                .Select(x => x.Subscriber)
+                .Select(x => (x.Subscriber, x.LatestEnd))
+                .ToList();
+
+            var expiredToday = relevant
+                .Where(x => x.LatestEnd.Date == today)
+                .Select(x => (x.Subscriber, x.LatestEnd))
                 .ToList();
 
             await SendExpiringSoonAlerts(expiringSoon);
             await SendExpiredTodayAlerts(expiredToday);
         }
 
-        private async Task SendExpiringSoonAlerts(List<Subscriber> subscribers)
+        private async Task SendExpiringSoonAlerts(
+            List<(Subscriber Subscriber, DateTime LatestEnd)> alerts
+        )
         {
-            foreach (var subscriber in subscribers)
+            foreach (var (subscriber, latestEnd) in alerts)
             {
-                var endDate = subscriber.Subscriptions.Max(sb => sb.EndDate);
-                var endDateFormatted = endDate.ToString("d MMM, yyyy");
+                var endDateFormatted = latestEnd.ToString("d MMM, yyyy");
 
                 var placeholders = new Dictionary<string, string>
                 {
@@ -88,7 +86,7 @@ namespace Bookano.Web.Tasks
                 );
 
                 if (subscriber.HasWhatsApp)
-                    await SendWhatsApp(
+                    await _whatsAppHelper.SendWhatsApp(
                         subscriber,
                         WhatsAppTemplates.SubscriptionExpiration,
                         new List<object>
@@ -100,12 +98,13 @@ namespace Bookano.Web.Tasks
             }
         }
 
-        private async Task SendExpiredTodayAlerts(List<Subscriber> subscribers)
+        private async Task SendExpiredTodayAlerts(
+            List<(Subscriber Subscriber, DateTime LatestEnd)> alerts
+        )
         {
-            foreach (var subscriber in subscribers)
+            foreach (var (subscriber, latestEnd) in alerts)
             {
-                var endDate = subscriber.Subscriptions.Max(sb => sb.EndDate);
-                var endDateFormatted = endDate.ToString("d MMM, yyyy");
+                var endDateFormatted = latestEnd.ToString("d MMM, yyyy");
 
                 var placeholders = new Dictionary<string, string>
                 {
@@ -128,7 +127,7 @@ namespace Bookano.Web.Tasks
                 await _emailSender.SendEmailAsync(subscriber.Email, "Subscription Expired", body);
 
                 if (subscriber.HasWhatsApp)
-                    await SendWhatsApp(
+                    await _whatsAppHelper.SendWhatsApp(
                         subscriber,
                         WhatsAppTemplates.SubscriptionExpired,
                         new List<object>
@@ -138,29 +137,6 @@ namespace Bookano.Web.Tasks
                         }
                     );
             }
-        }
-
-        private async Task SendWhatsApp(
-            Subscriber subscriber,
-            string template,
-            List<object> parameters
-        )
-        {
-            var component = new List<WhatsAppComponent>
-            {
-                new WhatsAppComponent { Type = "body", Parameters = parameters },
-            };
-
-            var mobileNumber = _webHostEnvironment.IsDevelopment()
-                ? "01021094971"
-                : subscriber.MobileNumber;
-
-            await _whatsAppClient.SendMessage(
-                $"2{mobileNumber}",
-                WhatsAppLanguageCode.English,
-                template,
-                component
-            );
         }
     }
 }

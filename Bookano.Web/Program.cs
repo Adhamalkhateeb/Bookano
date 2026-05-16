@@ -61,6 +61,7 @@ builder.Services.Configure<AuthorizationOptions>(options =>
 });
 
 builder.Services.AddScoped<SubscriptionJobs>();
+builder.Services.AddScoped<RentalJobs>();
 builder.Services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloudinary");
 builder.Services.AddKeyedTransient<IImageService, LocalImageService>("local");
 builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -77,6 +78,7 @@ builder.Services.Configure<CloudinarySettings>(
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
 
 builder.Services.AddWhatsAppApiClient(builder.Configuration);
+builder.Services.AddScoped<WhatsAppHelper>();
 
 var app = builder.Build();
 
@@ -117,7 +119,7 @@ app.UseHangfireDashboard(
     new DashboardOptions()
     {
         DashboardTitle = "Bookano Dashboard",
-        IsReadOnlyFunc = (context => true),
+        //IsReadOnlyFunc = (context => true),
         Authorization = [new HangfireAuthorizationFilter("AdminsOnly")],
     }
 );
@@ -125,6 +127,12 @@ app.UseHangfireDashboard(
 RecurringJob.AddOrUpdate<SubscriptionJobs>(
     "prepare-expiration-alerts",
     jobs => jobs.PrepareExpirationAlerts(),
+    "0 12 * * *"
+);
+
+RecurringJob.AddOrUpdate<RentalJobs>(
+    "prepare-rental-alerts",
+    jobs => jobs.SendExpiringSoonAlerts(),
     "0 12 * * *"
 );
 

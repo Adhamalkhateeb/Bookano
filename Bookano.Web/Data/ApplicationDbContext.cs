@@ -45,6 +45,9 @@ namespace Bookano.Web.Data
 
             builder.Entity<Book>().Property(b => b.RowVersion).IsRowVersion().IsConcurrencyToken();
 
+            builder.Entity<Rental>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<RentalCopy>().HasQueryFilter(e => !e.Rental!.IsDeleted);
+
             var cascadeFks = builder
                 .Model.GetEntityTypes()
                 .SelectMany(t => t.GetForeignKeys())
