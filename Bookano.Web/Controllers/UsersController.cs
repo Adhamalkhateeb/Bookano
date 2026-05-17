@@ -164,13 +164,19 @@ namespace Bookano.Web.Controllers
                     protocol: Request.Scheme
                 );
 
-                var body = _emailBodyBuilder.GetEmailBody(
-                    "https://res.cloudinary.com/bookano/image/upload/v1777605605/icon-positive-vote-1_zw88ur.svg",
-                    $"Hey {user.FullName}, thanks for joining us!",
-                    "Please confirm your email",
-                    HtmlEncoder.Default.Encode(callbackUrl!),
-                    "Active Account!"
-                );
+                var placeholders = new Dictionary<string, string>
+                {
+                    {
+                        "imageUrl",
+                        "https://res.cloudinary.com/bookano/image/upload/v1777605605/icon-positive-vote-1_zw88ur.svg"
+                    },
+                    { "header", $"Hey {user.FullName}, thanks for joining us!" },
+                    { "body", "Please confirm your email" },
+                    { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
+                    { "linkTitle", "Active Account!" },
+                };
+
+                var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
 
                 await _emailSender.SendEmailAsync(user.Email, "Confirm your email", body);
                 return Ok();

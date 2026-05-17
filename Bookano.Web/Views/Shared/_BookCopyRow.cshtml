@@ -13,6 +13,12 @@
         </span>
     </td>
     <td data-label="Created On" class="js-created-on" data-utc="@Model.CreatedOnUtc.ToString("o")" data-order="@Model.CreatedOnUtc.ToString("o")"></td>
+    <td class="ps-5">
+        <a asp-controller="BookCopies" asp-action="RentalHistory" asp-route-id="@Model.Id"
+           class="btn btn-light-primary  btn-flex d-block d-md-inline-block  btn-center btn-sm text-nowrap w-100 w-md-auto">
+           History
+       </a>
+    </td>
     <td class="text-center">
         <a href="#"
                class="btn btn-light btn-active-light-primary btn-flex d-block d-md-inline-block  btn-center btn-sm text-nowrap w-100 w-md-auto"

@@ -3,9 +3,12 @@ using Bookano.Web.Helpers;
 using Bookano.Web.Seeds;
 using Bookano.Web.Services.Image;
 using Bookano.Web.Services.Mail;
+using Bookano.Web.Tasks;
+using Hangfire;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
+using WhatsAppCloudApi.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,10 +16,10 @@ builder.Services.Configure<SecurityStampValidatorOptions>(options =>
     options.ValidationInterval = TimeSpan.FromMinutes(5)
 );
 
-// Add services to the container.
 var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString)
 );
@@ -35,11 +38,30 @@ builder
     .AddDefaultUI()
     .AddDefaultTokenProviders();
 
+builder.Services.AddDataProtection().SetApplicationName(nameof(Bookano));
+
 builder.Services.AddScoped<
     IUserClaimsPrincipalFactory<ApplicationUser>,
     ApplicationUserClaimsPrincipalFactory
 >();
 
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(connectionString));
+builder.Services.AddHangfireServer();
+
+builder.Services.Configure<AuthorizationOptions>(options =>
+{
+    options.AddPolicy(
+        "AdminsOnly",
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.RequireRole(AppRoles.Admin);
+        }
+    );
+});
+
+builder.Services.AddScoped<SubscriptionJobs>();
+builder.Services.AddScoped<RentalJobs>();
 builder.Services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloudinary");
 builder.Services.AddKeyedTransient<IImageService, LocalImageService>("local");
 builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -53,8 +75,10 @@ builder.Services.AddExpressiveAnnotations();
 builder.Services.Configure<CloudinarySettings>(
     builder.Configuration.GetSection(nameof(CloudinarySettings))
 );
-
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof(MailSettings)));
+
+builder.Services.AddWhatsAppApiClient(builder.Configuration);
+builder.Services.AddScoped<WhatsAppHelper>();
 
 var app = builder.Build();
 
@@ -89,6 +113,28 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.MapStaticAssets();
+
+app.UseHangfireDashboard(
+    "/hangfire",
+    new DashboardOptions()
+    {
+        DashboardTitle = "Bookano Dashboard",
+        //IsReadOnlyFunc = (context => true),
+        Authorization = [new HangfireAuthorizationFilter("AdminsOnly")],
+    }
+);
+
+RecurringJob.AddOrUpdate<SubscriptionJobs>(
+    "prepare-expiration-alerts",
+    jobs => jobs.PrepareExpirationAlerts(),
+    "0 12 * * *"
+);
+
+RecurringJob.AddOrUpdate<RentalJobs>(
+    "prepare-rental-alerts",
+    jobs => jobs.SendExpiringSoonAlerts(),
+    "0 12 * * *"
+);
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Home}/{action=Index}/{id?}");
 

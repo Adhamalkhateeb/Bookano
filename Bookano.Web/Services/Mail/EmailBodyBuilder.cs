@@ -11,24 +11,23 @@ namespace Bookano.Web.Services.Mail
             _webHostEnvironment = webHostEnvironment;
         }
 
-        public string GetEmailBody(
-            string imageUrl,
-            string header,
-            string body,
-            string url,
-            string linkTitle
-        )
+        public string GetEmailBody(string template, Dictionary<string, string> placeholders)
         {
-            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "templates", "email.html");
+            var filePath = Path.Combine(
+                _webHostEnvironment.WebRootPath,
+                "templates",
+                $"{template}.html"
+            );
             using var sr = new StreamReader(filePath);
-            var template = sr.ReadToEnd();
+            var templateContent = sr.ReadToEnd();
 
-            return template
-                .Replace("[imageUrl]", imageUrl)
-                .Replace("[header]", header)
-                .Replace("[body]", body)
-                .Replace("[url]", url)
-                .Replace("[linkTitle]", linkTitle);
+            foreach (var placeholder in placeholders)
+                templateContent = templateContent.Replace(
+                    $"[{placeholder.Key}]",
+                    placeholder.Value
+                );
+
+            return templateContent;
         }
     }
 }

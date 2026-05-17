@@ -71,13 +71,22 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
                     protocol: Request.Scheme
                 );
 
-                var body = _emailBodyBuilder.GetEmailBody(
-                    "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg",
-                    $"Hey {user.FullName}",
-                    "We received a request to reset your password. You can do so by clicking the button below:",
-                    HtmlEncoder.Default.Encode(callbackUrl!),
-                    "Reset Password!"
-                );
+                var placeholders = new Dictionary<string, string>
+                {
+                    {
+                        "imageUrl",
+                        "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg"
+                    },
+                    { "header", $"Hey {user.FullName}" },
+                    {
+                        "body",
+                        "We received a request to reset your password. You can do so by clicking the button below:"
+                    },
+                    { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
+                    { "linkTitle", "Reset Password!" },
+                };
+
+                var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
 
                 await _emailSender.SendEmailAsync(Input.Email, "Reset Password", body);
 

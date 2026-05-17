@@ -38,9 +38,16 @@
                 </div>
                 <!--end::Input group-->
                 <!--begin:Action-->
-                <div class="d-flex align-items-center">
-                    <button type="submit" class="btn btn-primary">Search</button>
-                </div>
+                <button type="submit" class="btn btn-primary">
+                    <span class="indicator-label">
+                        Search
+                    </span>
+
+                    <span class="indicator-progress">
+                        Please wait...
+                        <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
+                </button>
                 <!--end:Action-->
             </div>
             <!--end::Compact form-->
@@ -54,4 +61,8 @@
 
 @section Scripts{
     <partial name="_ValidationScriptsPartial" />
+}
+
+@section Plugins {
+    <script src="~/assets/plugins/fslightbox/fslightbox.bundle.js"></script>
 }

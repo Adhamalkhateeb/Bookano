@@ -1,0 +1,87 @@
+﻿@model IEnumerable<CopyHistoyViewModel>
+@{
+    ViewData["Title"] = "Rental History";
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-dismissible bg-light-warning border border-warning border-3 border-dashed d-flex  flex-column flex-sm-row  w-100 p-5 justify-content-between">
+        <div class="d-flex flex-row justify-content-center justify-content-sm-start pe-0 pe-sm-10">
+            <i class="bi bi-exclamation-octagon-fill me-5  text-warning align-self-center fs-1"></i>
+            <h5 class="mt-2 align-self-center">No rental history for this copy</h5>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
+        <div class="d-flex align-items-center">
+            <!--begin::Icon-->
+            <div class="symbol symbol-50px me-4 ">
+                <div class="symbol-label fs-2 fw-semibold text-success">
+                    <i class="bi bi-hourglass-split fa-lg text-dark"></i>
+                </div>
+            </div>
+            <!--end::Icon-->
+            <!--begin::Content-->
+            <div class="d-flex flex-column  justify-content-center pe-0 pe-sm-10">
+                <h3 class="mb-1">Rental Details</h3>
+            </div>
+        </div>
+    </div>
+
+    <!--begin::Card-->
+    <div class="card pt-4 mb-6 mb-xl-9">
+        <!--begin::Card header-->
+        <div class="card-header border-0 py-5">
+            <h3 class="card-title align-items-start flex-column">
+                <span class="card-label fw-bold fs-3 mb-1">History</span>
+            </h3>
+        </div>
+        <!--end::Card header-->
+        <!--begin::Card body-->
+        <div class="card-body pt-0 pb-5">
+            <!--begin::Table-->
+            <div id="kt_table_customers_payment_wrapper" class="dt-container dt-bootstrap5 dt-empty-footer">
+                <div class="table-responsive">
+                    <!--begin::Table-->
+                    <table class="table align-middle gs-0 gy-4">
+                        <!--begin::Table head-->
+                        <thead>
+                            <tr class="fw-bold text-muted bg-light">
+                                <th class="ps-4 min-w-150px rounded-start">Subscriber</th>
+                                <th class="ps-4 min-w-150px ">Subscriber Mobile</th>
+                                <th class="min-w-125px">Start Date</th>
+                                <th class="min-w-125px">End Date</th>
+                                <th class="min-w-125px">Total Delay (Days)</th>
+                                <th class="min-w-125px">Return Date</th>
+                                <th class="min-w-125px rounded-end">Extend Date</th>
+                            </tr>
+                        </thead>
+                        <!--end::Table head-->
+                        <!--begin::Table body-->
+                        <tbody>
+                            @foreach (var rental in Model)
+                            {
+                                <tr>
+                                    <td data-label="Subscriber" class="ps-md-2">@rental.SubscriberName</td>
+                                    <td data-label="Mobile No" class="ps-md-2">@rental.SubscriberMobile</td>
+                                    <td data-label="Start Date">@rental.StartDate.ToString("dd MMM, yyyy")</td>
+                                    <td data-label="End Date">@rental.EndDate.ToString("dd MMM, yyyy")</td>
+                                    <td data-label="Total Delay" class="@(rental.DelayInDays > 0 ? "text-danger" : string.Empty)">@rental.DelayInDays Day(s)</td>
+                                    <td data-label="Return Date">@(rental.ReturnDate.HasValue ? rental.ReturnDate.Value.ToString("dd MMM, yyyy") : string.Empty)</td>
+                                    <td data-label="Extend Date">@(rental.ExtendedOn.HasValue ? rental.ExtendedOn.Value.ToString("dd MMM, yyyy") : string.Empty) </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <!--end::Table body-->
+                    </table>
+                    <!--end::Table-->
+                </div>
+            </div>
+
+        </div>
+        <!--end::Card body-->
+    </div>
+    <!--end::Card-->
+}

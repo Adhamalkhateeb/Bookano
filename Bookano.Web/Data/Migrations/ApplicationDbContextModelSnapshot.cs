@@ -489,6 +489,76 @@ namespace Bookano.Web.Data.Migrations
                     b.ToTable("Publishers");
                 });
 
+            modelBuilder.Entity("Bookano.Web.Core.Models.Rental", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset>("CreatedOnUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LastUpdatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset?>("LastUpdatedOnUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<bool>("PenaltyPaid")
+                        .HasColumnType("bit");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("SubscriberId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("LastUpdatedById");
+
+                    b.HasIndex("SubscriberId");
+
+                    b.ToTable("Rentals");
+                });
+
+            modelBuilder.Entity("Bookano.Web.Core.Models.RentalCopy", b =>
+                {
+                    b.Property<int>("RentalId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BookCopyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("ExtendedOn")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("RentalDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("ReturnDate")
+                        .HasColumnType("date");
+
+                    b.HasKey("RentalId", "BookCopyId");
+
+                    b.HasIndex("BookCopyId");
+
+                    b.ToTable("RentalCopies");
+                });
+
             modelBuilder.Entity("Bookano.Web.Core.Models.Subscriber", b =>
                 {
                     b.Property<int>("Id")
@@ -591,6 +661,38 @@ namespace Bookano.Web.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Subscribers");
+                });
+
+            modelBuilder.Entity("Bookano.Web.Core.Models.Subscription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CreatedById")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTimeOffset>("CreatedOnUtc")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("SubscriberId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("SubscriberId");
+
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -893,6 +995,48 @@ namespace Bookano.Web.Data.Migrations
                     b.Navigation("LastUpdatedBy");
                 });
 
+            modelBuilder.Entity("Bookano.Web.Core.Models.Rental", b =>
+                {
+                    b.HasOne("Bookano.Web.Core.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("Bookano.Web.Core.Models.ApplicationUser", "LastUpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("LastUpdatedById");
+
+                    b.HasOne("Bookano.Web.Core.Models.Subscriber", "Subscriber")
+                        .WithMany("Rentals")
+                        .HasForeignKey("SubscriberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("LastUpdatedBy");
+
+                    b.Navigation("Subscriber");
+                });
+
+            modelBuilder.Entity("Bookano.Web.Core.Models.RentalCopy", b =>
+                {
+                    b.HasOne("Bookano.Web.Core.Models.BookCopy", "BookCopy")
+                        .WithMany("Rentals")
+                        .HasForeignKey("BookCopyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Bookano.Web.Core.Models.Rental", "Rental")
+                        .WithMany("RentalCopies")
+                        .HasForeignKey("RentalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BookCopy");
+
+                    b.Navigation("Rental");
+                });
+
             modelBuilder.Entity("Bookano.Web.Core.Models.Subscriber", b =>
                 {
                     b.HasOne("Bookano.Web.Core.Models.Area", "Area")
@@ -922,6 +1066,23 @@ namespace Bookano.Web.Data.Migrations
                     b.Navigation("Governorate");
 
                     b.Navigation("LastUpdatedBy");
+                });
+
+            modelBuilder.Entity("Bookano.Web.Core.Models.Subscription", b =>
+                {
+                    b.HasOne("Bookano.Web.Core.Models.ApplicationUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById");
+
+                    b.HasOne("Bookano.Web.Core.Models.Subscriber", "Subscriber")
+                        .WithMany("Subscriptions")
+                        .HasForeignKey("SubscriberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Subscriber");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -989,6 +1150,11 @@ namespace Bookano.Web.Data.Migrations
                     b.Navigation("Copies");
                 });
 
+            modelBuilder.Entity("Bookano.Web.Core.Models.BookCopy", b =>
+                {
+                    b.Navigation("Rentals");
+                });
+
             modelBuilder.Entity("Bookano.Web.Core.Models.Category", b =>
                 {
                     b.Navigation("Books");
@@ -997,6 +1163,18 @@ namespace Bookano.Web.Data.Migrations
             modelBuilder.Entity("Bookano.Web.Core.Models.Publisher", b =>
                 {
                     b.Navigation("Books");
+                });
+
+            modelBuilder.Entity("Bookano.Web.Core.Models.Rental", b =>
+                {
+                    b.Navigation("RentalCopies");
+                });
+
+            modelBuilder.Entity("Bookano.Web.Core.Models.Subscriber", b =>
+                {
+                    b.Navigation("Rentals");
+
+                    b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618
         }

@@ -142,22 +142,53 @@ body {
 }
 
 
+.glass {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.18);
+}
+
+.w-fit-content {
+    width: fit-content;
+}
+
+.custom-header {
+    font-family: 'Satisfy', cursive;
+    letter-spacing: 1px;
+}
+
+
+
+.transition-all {
+    transition: all .3s ease;
+}
+
+    .transition-all:hover {
+        transform: translateY(-6px);
+    }
+
+        /*.transition-all:hover img {
+            transform: scale(1.05);
+        }*/
 
 /* End   Override theme  */
 
 @media (max-width: 767.98px) {
-    
-    #Auth{
-        display:none;
+
+    #Auth {
+        display: none;
     }
 
-    .js-datatable thead {
+    table thead {
         display: none;
     }
 
 
 
-    .js-datatable tbody td {
+    table tbody td {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -166,18 +197,7 @@ body {
         padding: 0.7rem 0 !important;
     }
 
-    .js-datatable tbody td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #5e6278;
-        flex-shrink: 0;
-        margin-right: 0.5rem;
-    }
-
-        .js-datatable tbody td::before {
+        table tbody td::before {
             content: attr(data-label);
             font-weight: 600;
             font-size: 0.75rem;
@@ -188,17 +208,28 @@ body {
             margin-right: 0.5rem;
         }
 
-        .js-datatable tbody td:last-child::before {
+        table tbody td::before {
+            content: attr(data-label);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #5e6278;
+            flex-shrink: 0;
+            margin-right: 0.5rem;
+        }
+
+        table tbody td:last-child::before {
             display: none;
         }
 
-    .js-datatable tbody td.text-end {
-        justify-content: flex-end;
-    }
+        table tbody td.text-end {
+            justify-content: flex-end;
+        }
 
-    .js-datatable tbody td.text-end::before {
-        display: none;
-    }
+            table tbody td.text-end::before {
+                display: none;
+            }
 
     .dataTables_paginate .page-link {
         padding: 0.5rem 0.5rem;
@@ -219,7 +250,4 @@ body {
             max-width: none !important;
             flex: 0 0 auto !important;
         }
-
-      
-
 }

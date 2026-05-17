@@ -16,7 +16,10 @@ namespace Bookano.Web.Data
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Governorate> Governorates => Set<Governorate>();
         public DbSet<Publisher> Publishers => Set<Publisher>();
+        public DbSet<Rental> Rentals => Set<Rental>();
+        public DbSet<RentalCopy> RentalCopies => Set<RentalCopy>();
         public DbSet<Subscriber> Subscribers => Set<Subscriber>();
+        public DbSet<Subscription> Subscriptions => Set<Subscription>();
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -27,14 +30,11 @@ namespace Bookano.Web.Data
                 .Property(bc => bc.SerialNumber)
                 .HasDefaultValueSql("NEXT VALUE FOR Shared.SerialNumber");
 
-            builder.Entity<BookCategory>().HasKey(x => new { x.BookId, x.CategoryId });
             builder.Entity<BookAuthor>().HasKey(x => new { x.BookId, x.AuthorId });
-            //builder.Entity<BookCopy>().HasKey(x => new { x.BookId, x.Id });
-            builder
-                .Entity<Book>()
-                .HasIndex(b => b.Isbn)
-                .IsUnique()
-                .HasFilter("[Isbn] IS NOT NULL");
+            builder.Entity<BookCategory>().HasKey(x => new { x.BookId, x.CategoryId });
+            builder.Entity<RentalCopy>().HasKey(x => new { x.RentalId, x.BookCopyId });
+
+            builder.Entity<Book>().HasIndex(b => b.Isbn).IsUnique().HasFilter("[Isbn] IS NOT NULL");
 
             builder.Entity<Book>().Property(b => b.IdempotencyKey).HasMaxLength(36);
             builder
@@ -44,6 +44,9 @@ namespace Bookano.Web.Data
                 .HasFilter("[IdempotencyKey] IS NOT NULL");
 
             builder.Entity<Book>().Property(b => b.RowVersion).IsRowVersion().IsConcurrencyToken();
+
+            builder.Entity<Rental>().HasQueryFilter(e => !e.IsDeleted);
+            builder.Entity<RentalCopy>().HasQueryFilter(e => !e.Rental!.IsDeleted);
 
             var cascadeFks = builder
                 .Model.GetEntityTypes()

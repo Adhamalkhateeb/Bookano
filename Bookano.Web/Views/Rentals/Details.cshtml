@@ -1,0 +1,120 @@
+﻿@model RentalViewModel
+@{
+    ViewData["Title"] = "Rental Details";
+}
+
+<!--begin::header-->
+<div class="alert alert-dismissible bg-light-primary border border-primary border-3 border-dashed d-flex justify-content-between w-100 p-5 mb-10">
+    <div class="d-flex align-items-center">
+        <!--begin::Icon-->
+        <div class="symbol symbol-50px me-4 ">
+            <div class="symbol-label fs-2 fw-semibold text-success">
+                <i class="fa-solid fa-book-bookmark fa-lg text-dark"></i>
+            </div>
+        </div>
+        <!--end::Icon-->
+        <!--begin::Content-->
+        <div class="d-flex flex-column  justify-content-center pe-0 pe-sm-10">
+            <h3 class="mb-1">Rental Details</h3>
+        </div>
+    </div>
+    <!--end::Content-->
+    @if (Model.CreatedOnUtc.Date == DateTime.UtcNow.Date)
+    {
+        <!--begin::Edit-->
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-md btn-primary  fs-5 w-100">
+                <i class="fa-solid fa-pen-to-square fs-3"></i>
+                Edit
+            </a>
+        </div>
+        <!--end::Edit-->
+    }else if (Model.RentalCopies.Any(rc => !rc.ReturnDate.HasValue))
+    {
+        <!--begin::Edit-->
+        <div>
+            <a asp-action="Return" asp-route-id="@Model.Id" class="btn btn-md btn-primary  fs-5 w-100">
+               <i class="bi bi-journal-arrow-up fs-3"></i>
+                Return
+            </a>
+        </div>
+        <!--end::Edit-->
+    }
+
+</div>
+<!--end::header-->
+<!--begin::Card-->
+<div class="card pt-4 mb-6 mb-xl-9">
+    <!--begin::Card header-->
+    <div class="card-header border-0 py-5">
+        <h3 class="card-title align-items-start flex-column">
+            <span class="card-label fw-bold fs-3 mb-1">Books</span>
+        </h3>
+    </div>
+    <!--end::Card header-->
+    <!--begin::Card body-->
+    <div class="card-body pt-0 pb-5">
+        <!--begin::Table-->
+        <div id="kt_table_customers_payment_wrapper" class="dt-container dt-bootstrap5 dt-empty-footer">
+            <div class="table-responsive">
+                <!--begin::Table-->
+                <table id="subscriptionTable" class="table align-middle gs-0 gy-4">
+                    <!--begin::Table head-->
+                    <thead>
+                        <tr class="fw-bold text-muted bg-light">
+                            <th class="ps-4 min-w-150px rounded-start">Book</th>
+                            <th class="min-w-125px">Start Date</th>
+                            <th class="min-w-125px">End Date</th>
+                            <th class="min-w-125px">Total Delay (Days)</th>
+                            <th class="min-w-125px">Return Date</th>
+                            <th class="min-w-125px rounded-end">Extend Date</th>
+                        </tr>
+                    </thead>
+                    <!--end::Table head-->
+                    <!--begin::Table body-->
+                    <tbody>
+                        @foreach (var copy in Model.RentalCopies)
+                        {
+                            <tr>
+                                <td class="ps-md-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="symbol symbol-100px  overflow-hidden me-3">
+                                            <a class="d-block overlay" data-fslightbox href="@(copy.BookCopy!.BookImageUrl ?? "/images/books/no-image-cover.png")">
+                                                <div class="w-50px h-80px">
+                                                    <img class="overlay-wrapper rounded-1 object-fit-contain w-100 h-100 " src="@(copy.BookCopy!.BookThumbnailUrl ?? "/images/books/no-image-cover.png")" alt="@copy.BookCopy.BookTitle">
+                                                    <div class="overlay-layer card-rounded bg-dark bg-opacity-25 shadow">
+                                                        <i class="bi bi-eye-fill text-white fs-2x"></i>
+                                                    </div>
+                                                </div>
+                                            </a>
+                                        </div>
+                                        <div class="d-flex flex-column">
+                                            <a asp-controller="Books" asp-action="Details" asp-route-id="@copy.BookCopy!.BookId"
+                                               class="text-primary fs-6 fw-bold my-0">
+                                                @copy.BookCopy.BookTitle
+                                            </a>
+                                            <span class="fs-7  text-grey-100 ">#Edition @copy.BookCopy.EditionNumber</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td data-label="Start Date">@copy.RentalDate.ToString("dd MMM, yyyy")</td>
+                                <td data-label="End Date">@copy.EndDate.ToString("dd MMM, yyyy")</td>
+                                <td data-label="Total Delay" class="@(copy.DelayInDays > 0 ? "text-danger" : string.Empty)">@copy.DelayInDays Day(s)</td>
+                                <td data-label="Return Date">@(copy.ReturnDate.HasValue ? copy.ReturnDate.Value.ToString("dd MMM, yyyy") : string.Empty)</td>
+                                <td data-label="Extend Date">@(copy.ExtendedOn.HasValue ? copy.ExtendedOn.Value.ToString("dd MMM, yyyy") : string.Empty) </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <!--end::Table body-->
+                </table>
+                <!--end::Table-->
+            </div>
+        </div>
+        <!--end::Table-->
+    </div>
+    <!--end::Card body-->
+</div>
+<!--end::Card-->
+@section Plugins {
+    <script src="~/assets/plugins/fslightbox/fslightbox.bundle.js"></script>
+}

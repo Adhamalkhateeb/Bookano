@@ -2,11 +2,15 @@
 global using System.Security.Claims;
 global using AutoMapper;
 global using Bookano.Web.Core.Consts;
+global using Bookano.Web.Core.Enums;
 global using Bookano.Web.Core.Models;
 global using Bookano.Web.Core.ViewModels;
 global using Bookano.Web.Data;
 global using Bookano.Web.Filters;
 global using Bookano.Web.Settings;
 global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Identity.UI.Services;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore;
+global using WhatsAppCloudApi;
+global using WhatsAppCloudApi.Services;

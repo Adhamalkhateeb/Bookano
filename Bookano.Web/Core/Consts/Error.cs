@@ -1,4 +1,5 @@
-﻿using NuGet.Protocol.Plugins;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+using NuGet.Protocol.Plugins;
 
 namespace Bookano.Web.Core.Consts
 {
@@ -28,9 +29,19 @@ namespace Bookano.Web.Core.Consts
         public const string InvalidMobileNumber = "Invalid mobile number.";
         public const string InvalidNationalId = "Invalid national ID.";
         public const string InvalidSerialNumber = "Invalid serial number.";
+        public const string NotAvailableForRental = "This Book/Copy is not available for rental.";
         public const string InvalidAreaName =
             "Only Arabic or English letters, digits, spaces, and hyphens are allowed.";
         public const string AreaAlreadyExists = "Area already exist in that governorate";
         public const string EmptyImage = "Please select an image";
+        public const string BlackListedSubscriber = "This subscriber is black listed.";
+        public const string InactiveSubscriber = "This subscriber is inactive.";
+        public const string MaxAllowedCopiesReached =
+            "This Subscriber has reached maximum allowed rentals";
+        public const string CopyIsInRental = "This copy is already rented.";
+        public const string ExtendNotAllowedForBlackListed = "Rental cannot be extended for blacklisted subscribers.";
+        public const string ExtendNotAllowedForInactive = "Rental cannot be extended for this subscriber before renewal.";
+        public const string ExtendNotAllowed = "Rental cannot be extended.";
+        public const string PenalityShouldBePaid = "Penality should be paid.";
     }
 }

@@ -3,6 +3,7 @@
     public class SubscriberViewModel
     {
         public int Id { get; set; }
+        public string? Key { get; set; }
         public string? FullName { get; set; }
         public DateTime DateOfBirth { get; set; }
         public string? NationalId { get; set; }
@@ -16,5 +17,7 @@
         public string? Address { get; set; }
         public bool IsBlackListed { get; set; }
         public DateTimeOffset CreatedOnUtc { get; set; }
+        public IEnumerable<SubscriptionViewModel> Subscriptions { get; set; } = [];
+        public IEnumerable<RentalViewModel> Rentals { get; set; } = [];
     }
 }

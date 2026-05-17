@@ -1,7 +1,7 @@
 ﻿@model SubscriberFormViewModel
 @* @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery *@
 @{
-    ViewData["Title"] = $" {(Model.Id > 0 ? "Edit" : "Create")} Book";
+    ViewData["Title"] = $" {(!string.IsNullOrEmpty(Model.Key)? "Edit" : "Create")} Book";
 
     var imageUrl = !string.IsNullOrEmpty(Model.ImageUrl) ? Model.ImageUrl : "/assets/imgs/avatar-blank.svg";
 }
@@ -9,13 +9,13 @@
 <form method="post" asp-controller="Subscribers" enctype="multipart/form-data">
     <div class="card shadow-sm ">
         <div class="card-header">
-            <h3 class="card-title">@(Model.Id > 0 ? "Edit" : "Add") Subscriber</h3>
+            <h3 class="card-title">@(!string.IsNullOrEmpty(Model.Key) ? "Edit" : "Add") Subscriber</h3>
         </div>
         <div class="card-body">
         
-            @if (Model.Id > 0)
+            @if (!string.IsNullOrEmpty(Model.Key))
             {
-                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="Key" />
                 <input type="hidden" asp-for="ImageUrl" />
                 <input type="hidden" asp-for="ImageThumbnailUrl" />
             }
@@ -141,7 +141,7 @@
                         <!--end::Col-->
                         <!--begin::Col-->
                         <div class="fv-row col-6  fv-plugins-icon-container">
-                            <input asp-for="MobileNumber" type="tel" class="form-control form-control-solid  form-control-lg mb-3 mb-lg-0" placeholder="Mpbile Number">
+                            <input asp-for="MobileNumber" type="tel" class="form-control form-control-solid  form-control-lg mb-3 mb-lg-0" placeholder="Mobile Number">
                             <span asp-validation-for="MobileNumber" class="text-danger"></span>
                         </div>
                         <!--end::Col-->
