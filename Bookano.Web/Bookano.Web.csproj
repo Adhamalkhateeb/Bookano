@@ -11,14 +11,8 @@
     <PackageReference Include="CloudinaryDotNet" Version="1.29.0" />
     <PackageReference Include="dotenv.net" Version="4.0.2" />
     <PackageReference Include="Hangfire" Version="1.8.23" />
-    <PackageReference
-      Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore"
-      Version="10.0.7"
-    />
-    <PackageReference
-      Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore"
-      Version="10.0.7"
-    />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.7" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
       <PrivateAssets>all</PrivateAssets>

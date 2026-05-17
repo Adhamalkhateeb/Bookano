@@ -9,11 +9,11 @@
                 <!--begin:Menu item-->
                 <div class="menu-item">
                     <!--begin:Menu link-->
-                    <a class="menu-link" asp-controller="Home" asp-action="Index" active-when="Home">
+                    <a class="menu-link" asp-controller="Dashboard" asp-action="Index" active-when="Dashboard">
                         <span class="menu-icon">
-                            <i class="fa-solid fa-house fa-lg"></i>
+                            <i class="fa-solid fa-chart-pie fa-lg"></i>
                         </span>
-                        <span class="menu-title">Home</span>
+                        <span class="menu-title">Dashboard</span>
                     </a>
                     <!--end:Menu link-->
                     @if (User.IsInRole(AppRoles.Archive))
