@@ -4,6 +4,7 @@ global using AutoMapper;
 global using Bookano.Web.Core.Consts;
 global using Bookano.Web.Core.Enums;
 global using Bookano.Web.Core.Models;
+global using Bookano.Web.Core.Utilities;
 global using Bookano.Web.Core.ViewModels;
 global using Bookano.Web.Data;
 global using Bookano.Web.Filters;

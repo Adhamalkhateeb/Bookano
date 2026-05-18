@@ -1,0 +1,134 @@
+﻿@model BooksReportViewModel
+@{
+    ViewData["Title"] = "Books Report";
+}
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form id="Filters" method="get" asp-controller="Reports">
+            <input type="hidden" id="PageNumber" name="PageNumber" value="1" />
+            <div class="row">
+                <div class="col">
+                    <div class="mb-5">
+                        <div class="form-floating mb-2">
+                            <select class="form-select form-select-solid js-select2" asp-for="SelectedAuthors" asp-items="Model.Authors" data-placeholder="Select authors">
+                                <option value="">Select Authors</option>
+                            </select>
+                            <label asp-for="SelectedAuthors"></label>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="mb-5">
+                        <div class="form-floating mb-2">
+                            <select class="form-select form-select-solid js-select2" asp-for="SelectedCategories" asp-items="Model.Categories" data-placeholder="Select categories">
+                                <option value="">Select Categories</option>
+                            </select>
+                            <label asp-for="SelectedCategories"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Show Report</button>
+        </form>
+    </div>
+</div>
+@if (Model.Books is not null)
+{
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="card-title">
+                <span>Books</span>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.Books.TotalPages > 0)
+            {
+
+                <ul class="pagination pagination-circle pagination-outline justify-content-start mb-4">
+                    @if (Model.Books.HasPreviousPage)
+                    {
+                        <li class="page-item first m-1">
+                            <a href="javascript:;" class="page-link px-0" data-page-number="1">
+                                <i class="fa-solid fa-angles-left fs-2"></i>
+                            </a>
+                        </li>
+                        <li class="page-item previous m-1">
+                            <a href="javascript:;" class="page-link px-0" data-page-number="@(Model.Books.PageNumber - 1)">
+                                <i class="fa-solid fa-chevron-left fs-2"></i>
+                            </a>
+                        </li>
+                    }
+                    @for (int i =Math.Max(Model.Books.PageNumber - 2,1); i <= Math.Min(Model.Books.TotalPages, Model.Books.PageNumber + 2); i++)
+                    {
+                        <li class="page-item m-1 @(Model.Books.PageNumber == i ? "active" : "")">
+                            <a href="#" class="page-link" data-page-number="@i">@i</a>
+                        </li>
+                    }
+                    @if (Model.Books.HasNextPage)
+                    {
+                        <li class="page-item next m-1">
+                            <a href="javascript:;" class="page-link px-0" data-page-number="@(Model.Books.PageNumber + 1)">
+                                <i class="fa-solid fa-chevron-right fs-2"></i>
+                            </a>
+                        </li>
+                        <li class="page-item last m-1">
+                            <a href="javascript:;" class="page-link px-0" data-page-number="@Model.Books.TotalPages">
+                                <i class="fa-solid fa-angles-right fs-2"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+            @if (Model.Books.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle">
+                        <thead>
+                            <tr class="fw-bold fs-6 text-white bg-black">
+                                <th class="ps-2">ISBN</th>
+                                <th>Title</th>
+                                <th>Authors</th>
+                                <th>Categories</th>
+                                <th>Publisher</th>
+                                <th>Publishing Date</th>
+                                <th>Hall</th>
+                                <th>Available for rental</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var book in Model.Books)
+                            {
+                                <tr>
+                                    <td>@book.Isbn</td>
+                                    <td>@book.Title</td>
+                                    <td>@string.Join(", ", book.Authors.Select(c => c.Author!.Name))</td>
+                                    <td>@string.Join(", ", book.Categories.Select(c => c.Category!.Name))</td>
+                                    <td>@book.Publisher</td>
+                                    <td>@book.PublishingDate.ToString("d MMM, yyyy")</td>
+                                    <td>@book.Hall</td>
+                                    <td>@(book.IsAvailableForRental ? "Yes" : "No")</td>
+                                    <td>@(book.IsDeleted ? "Deleted" : "Available")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+
+                <h5>No books were found!</h5>
+            }
+
+        </div>
+    </div>
+}
+
+@section Scripts{
+    <script src="~/js/reports.js" asp-append-version="true"></script>
+}
