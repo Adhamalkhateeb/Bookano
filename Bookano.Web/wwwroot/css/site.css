@@ -166,13 +166,53 @@ body {
     transition: all .3s ease;
 }
 
-    .transition-all:hover {
-        transform: translateY(-6px);
-    }
+.transition-all:hover {
+    transform: translateY(-6px);
+}
 
-        /*.transition-all:hover img {
-            transform: scale(1.05);
-        }*/
+
+.page-bg {
+    background-size: cover;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-image: url('../assets/imgs/home_bg.jpg');
+}
+
+.launcher .sidebar {
+    position: fixed;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 425px;
+    top: 50px;
+    right: 50px;
+    bottom: 50px;
+    background-color: rgba(19, 0, 97, .7);
+    border-radius: 1.75rem;
+}
+
+.launcher .sidebar .hover-scroll-y {
+    scrollbar-color: rgba(255, 255, 255, .15) transparent;
+}
+
+
+.twitter-typeahead{
+    width:100%;
+}
+
+
+.twitter-typeahead input:first-child {
+    display: none;
+}
+
+.tt-suggestion{
+    font-size:16px;
+}
+
+.tt-suggestion:not(:last-child) {
+    border-bottom: dashed 1px #dcdcdc;
+}
 
 /* End   Override theme  */
 

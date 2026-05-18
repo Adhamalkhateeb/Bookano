@@ -5,17 +5,25 @@ function onRowAdded() {
     const alertEl = document.querySelector('#Copies .js-alert');
     const tableEl = document.querySelector('#Copies .table-responsive');
 
+    const datatable = getAppDatatable();
+
     if (!copiesCountEl || !alertEl || !tableEl || !datatable) return;
 
     const count = datatable.rows().count();
     copiesCountEl.textContent = count;
 
     if (count > 0) {
-        alertEl.classList.add('d-none');
-        tableEl.classList.remove('d-none');
+        $(alertEl).fadeOut(200, function () {
 
-        requestAnimationFrame(() => {
-            datatable.columns.adjust().draw(false);
+            alertEl.classList.add('d-none');
+
+            tableEl.classList.remove('d-none');
+
+            $(tableEl).hide().fadeIn(200);
+
+            requestAnimationFrame(() => {
+                datatable.columns.adjust().draw(false);
+            });
         });
     }
 

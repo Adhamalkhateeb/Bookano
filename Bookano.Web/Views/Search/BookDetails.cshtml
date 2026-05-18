@@ -1,5 +1,4 @@
 ﻿@model BookViewModel
-@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery
 
 @{
     ViewData["Title"] = Model.Title;
@@ -9,7 +8,21 @@
     <link rel="stylesheet" href="~/assets/plugins/datatables/datatables.bundle.css" />
 }
 
-<div class="content flex-column-fluid" id="kt_content">
+<div class="content flex-column-fluid p-10" id="kt_content">
+    @if (!User.Identity!.IsAuthenticated)
+    {
+        <ul class="breadcrumb breadcrumb-dot fw-semibold text-gray-600 fs-7 mb-5">
+            <li class="breadcrumb-item text-gray-600">
+                <a href="/" class="text-gray-600 text-hover-primary">Home</a>
+            </li>
+            <li class="breadcrumb-item text-gray-600">
+                <a asp-controller="Search" asp-action="Index" class="text-gray-600 text-hover-primary">Find a book</a>
+            </li>
+            <li class="breadcrumb-item text-gray-500">
+                @Model.Title
+            </li>
+        </ul>
+    }
 
     <!--begin::Navbar-->
     <div class="card mb-9">
@@ -44,7 +57,7 @@
                                 }
                                 <span class="badge badge-light-@badge my-1">@text</span>
                             </div>
-                            
+
                             <!--begin::Description-->
                             <div class="d-flex flex-wrap fw-semibold mb-1 fs-5 text-gray-500">
                                 <i class="fa-solid fa-user-pen align-self-center fs-7"></i>
@@ -58,12 +71,6 @@
                             </div>
                         </div>
 
-                        <!--begin::Actions-->
-                        <div class="d-flex mb-4  w-100  justify-content-end">
-                            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-md btn-primary flex-grow-1 flex-md-grow-0 me-2 w-100px ">
-                                <i class="fa-solid fa-pen-to-square"></i> Edit
-                            </a>
-                        </div>
                     </div>
 
                     <!--begin::Stats-->
@@ -121,7 +128,7 @@
             <div class="separator"></div>
 
             <!--begin::Nav-->
-            <ul class="nav nav-stretch nav-line-tabs nav-line-tabs-2x border-transparent fs-5 fw-bold overflow-auto flex-nowrap">
+            <ul class="nav nav-stretch nav-line-tabs nav-line-tabs-2x border-transparent fs-5 fw-bold  flex-nowrap">
                 <li class="nav-item">
                     <a class="nav-link text-active-primary py-5 me-6 active" data-bs-toggle="tab" href="#Description">Description</a>
                 </li>
@@ -133,7 +140,7 @@
     </div>
 
     <!--begin::Tab Content-->
-    <div class="tab-content" style="max-width: 1510px">
+    <div class="tab-content mw-100">
         <div id="Description" class="card tab-pane fade show active">
             <div class="card-header">
                 <div class="card-title fs-3 fw-bold">Description</div>
@@ -145,14 +152,6 @@
         <div id="Copies" class="card tab-pane fade">
             <div class="card-header">
                 <div class="card-title fs-3 fw-bold">Copies</div>
-                @if (!Model.IsDeleted)
-                {
-                    <div class="card-toolbar">
-                        <a href="javascript:;" class="btn btn-sm btn-primary js-render-modal fs-5" data-title="Add Copy" data-url="/BookCopies/Create?bookId=@Model.Id">
-                            <i class="bi bi-plus-square-dotted fs-6"></i> Add
-                        </a>
-                    </div>
-                }
             </div>
             <div class="card-body">
                 <div class="@(!Model.Copies.Any() ? "d-none" : string.Empty) table-responsive">
@@ -162,16 +161,20 @@
                                 <th>Serial Number</th>
                                 <th>Edition</th>
                                 <th>Rental</th>
-                                <th>Status</th>
-                                <th class="d-none d-md-table-cell">Created on</th>
-                                <th >Rental History</th>
-                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var copy in Model.Copies)
                             {
-                                <partial name="_BookCopyRow" model="copy" />
+                                <tr>
+                                    <td>@copy.SerialNumber</td>
+                                    <td>@copy.SerialNumber</td>
+                                    <td>
+                                        <span class="badge badge-light-@(copy.IsAvailableForRental ? "success" : "warning")">
+                                            @(copy.IsAvailableForRental ? "Available" : "Not Available")
+                                        </span>
+                                    </td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -187,15 +190,12 @@
     </div>
 </div>
 
-<input type="hidden" name="__RequestVerificationToken" value="@antiforgery.GetAndStoreTokens(Context).RequestToken" />
 
 @section Plugins {
     <script src="~/assets/plugins/fslightbox/fslightbox.bundle.js"></script>
     <script src="~/assets/plugins/datatables/datatables.bundle.js"></script>
-    <script src="~/assets/plugins/datatables/vfs_fonts.js"></script>
 }
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
     <script src="~/js/book-details.js" asp-append-version="true"></script>
 }

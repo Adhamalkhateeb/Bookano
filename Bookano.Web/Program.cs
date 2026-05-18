@@ -5,6 +5,7 @@ using Bookano.Web.Services.Image;
 using Bookano.Web.Services.Mail;
 using Bookano.Web.Tasks;
 using Hangfire;
+using HashidsNet;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
@@ -79,6 +80,8 @@ builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof
 
 builder.Services.AddWhatsAppApiClient(builder.Configuration);
 builder.Services.AddScoped<WhatsAppHelper>();
+
+builder.Services.AddSingleton<IHashids>(_ => new Hashids(salt: "f1nd1ngn3m0",minHashLength: 11));
 
 var app = builder.Build();
 

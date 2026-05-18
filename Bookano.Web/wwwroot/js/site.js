@@ -65,11 +65,49 @@ function attachExportButtons(tableEl) {
         .filter(({ th }) => !th.classList.contains('js-no-export'))
         .map(({ i }) => i);
 
-    const buttons = ['copyHtml5', 'excelHtml5', 'csvHtml5', 'pdfHtml5'].map(t => ({
-        extend: t,
-        title,
-        exportOptions: { columns: cols },
-    }));
+    const buttons = [
+        {
+            extend: 'copyHtml5',
+            title,
+            exportOptions: {
+                columns: cols
+            }
+        },
+        {
+            extend: 'excelHtml5',
+            title,
+            exportOptions: {
+                columns: cols
+            }
+        },
+        {
+            extend: 'csvHtml5',
+            title,
+            exportOptions: {
+                columns: cols
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            title,
+            exportOptions: {
+                columns: cols
+            },
+
+            customize: function (doc) {
+                pdfMake.fonts = {
+                    Arial: {
+                        normal: "arial",
+                        bold: "arial",
+                        italics: "arial",
+                        bolditalics: "arial"
+                    }
+                }
+                doc.defaultStyle.font = 'Arial';
+            }
+        }
+    ];
+
 
     new DataTable.Buttons(window.appDatatable, { buttons })
         .container()
@@ -212,7 +250,7 @@ function onModalSuccess(rowHtml) {
         dt.ajax.reload(null, false);
     } else {
         upsertRow(rowHtml, pendingRow);
-        if (typeof onRowAdded === 'function' && !pendingRow) onRowAdded();
+        if (!pendingRow) onRowAdded();
     }
 
     pendingRow = null;
@@ -237,7 +275,7 @@ function onSearchComplete() {
     const form = document.querySelector('form[data-ajax="true"]');
     resetFormState(form);
     if (typeof refreshFsLightbox === 'function') refreshFsLightbox();
-    
+
 }
 
 // ============================================================
@@ -575,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirmBtn = e.target.closest('.js-confirm')
         if (modalBtn) openModal(modalBtn);
         if (toggleBtn) toggleStatus(toggleBtn);
-        if (confirmBtn) confirmMessage(confirmBtn); 
+        if (confirmBtn) confirmMessage(confirmBtn);
     });
 
     // Select2
