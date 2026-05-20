@@ -43,53 +43,33 @@
             <div class="card-title">
                 <span>Books</span>
             </div>
+            @if (Model.Books.Any())
+            {
+                <div class="card-toolbar gap-3">
+                    <a class="btn btn-light-success" asp-action="ExportBooksToExcel"
+                       asp-route-authors="@Context.Request.Query["SelectedAuthors"]"
+                       asp-route-categories="@Context.Request.Query["SelectedCategories"]">
+                        <i class="fa-solid fa-file-excel"></i>
+                        Export to Excel
+                    </a>
+                    <a class="btn btn-light-danger" asp-action="ExportBooksToPDF"
+                       asp-route-authors="@Context.Request.Query["SelectedAuthors"]"
+                       asp-route-categories="@Context.Request.Query["SelectedCategories"]">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        Export to PDF
+                    </a>
+                </div>
+            }
         </div>
         <div class="card-body">
-            @if (Model.Books.TotalPages > 0)
-            {
-
-                <ul class="pagination pagination-circle pagination-outline justify-content-start mb-4">
-                    @if (Model.Books.HasPreviousPage)
-                    {
-                        <li class="page-item first m-1">
-                            <a href="javascript:;" class="page-link px-0" data-page-number="1">
-                                <i class="fa-solid fa-angles-left fs-2"></i>
-                            </a>
-                        </li>
-                        <li class="page-item previous m-1">
-                            <a href="javascript:;" class="page-link px-0" data-page-number="@(Model.Books.PageNumber - 1)">
-                                <i class="fa-solid fa-chevron-left fs-2"></i>
-                            </a>
-                        </li>
-                    }
-                    @for (int i =Math.Max(Model.Books.PageNumber - 2,1); i <= Math.Min(Model.Books.TotalPages, Model.Books.PageNumber + 2); i++)
-                    {
-                        <li class="page-item m-1 @(Model.Books.PageNumber == i ? "active" : "")">
-                            <a href="#" class="page-link" data-page-number="@i">@i</a>
-                        </li>
-                    }
-                    @if (Model.Books.HasNextPage)
-                    {
-                        <li class="page-item next m-1">
-                            <a href="javascript:;" class="page-link px-0" data-page-number="@(Model.Books.PageNumber + 1)">
-                                <i class="fa-solid fa-chevron-right fs-2"></i>
-                            </a>
-                        </li>
-                        <li class="page-item last m-1">
-                            <a href="javascript:;" class="page-link px-0" data-page-number="@Model.Books.TotalPages">
-                                <i class="fa-solid fa-angles-right fs-2"></i>
-                            </a>
-                        </li>
-                    }
-                </ul>
-            }
+            <partial name="_Pagination" model="new PaginatedViewModel {PageNumber = Model.Books.PageNumber, TotalPages = Model.Books.TotalPages}" />
             @if (Model.Books.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle">
                         <thead>
-                            <tr class="fw-bold fs-6 text-white bg-black">
-                                <th class="ps-2">ISBN</th>
+                            <tr class="fw-bold fs-5 text-white bg-black ">
+                                <th class="ps-4 rounded-start">ISBN</th>
                                 <th>Title</th>
                                 <th>Authors</th>
                                 <th>Categories</th>
@@ -97,22 +77,22 @@
                                 <th>Publishing Date</th>
                                 <th>Hall</th>
                                 <th>Available for rental</th>
-                                <th>Status</th>
+                                <th class="pe-4 rounded-end">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var book in Model.Books)
                             {
                                 <tr>
-                                    <td>@book.Isbn</td>
+                                    <td class="ps-4">@book.Isbn</td>
                                     <td>@book.Title</td>
-                                    <td>@string.Join(", ", book.Authors.Select(c => c.Author!.Name))</td>
-                                    <td>@string.Join(", ", book.Categories.Select(c => c.Category!.Name))</td>
+                                    <td>@string.Join(", ", book.Authors)</td>
+                                    <td>@string.Join(", ", book.Categories)</td>
                                     <td>@book.Publisher</td>
                                     <td>@book.PublishingDate.ToString("d MMM, yyyy")</td>
                                     <td>@book.Hall</td>
                                     <td>@(book.IsAvailableForRental ? "Yes" : "No")</td>
-                                    <td>@(book.IsDeleted ? "Deleted" : "Available")</td>
+                                    <td class="pe-4">@(book.IsDeleted ? "Deleted" : "Available")</td>
                                 </tr>
                             }
                         </tbody>
@@ -129,6 +109,6 @@
     </div>
 }
 
-@section Scripts{
+@section Scripts {
     <script src="~/js/reports.js" asp-append-version="true"></script>
 }

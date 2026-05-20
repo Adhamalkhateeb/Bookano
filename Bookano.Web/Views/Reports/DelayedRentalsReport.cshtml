@@ -1,0 +1,36 @@
+﻿@model IEnumerable<DelayedRentalItemViewModel>
+@{
+    Layout = "_ReportsLayout";
+}
+
+<table>
+    <thead>
+        <tr>
+            <th>Subscriber ID</th>
+            <th>Subscriber Name</th>
+            <th>Subscriber Mobile</th>
+            <th>Book Title</th>
+            <th>Book Serial</th>
+            <th>Rental Date</th>
+            <th>End Date</th>
+            <th>Extended On</th>
+            <th>Delay In Days</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var rental in Model)
+        {
+            <tr>
+                <td>@rental.SubscriberId</td>
+                <td>@rental.SubscriberName</td>
+                <td>@rental.SubscriberMobile</td>
+                <td>@rental.BookTitle</td>
+                <td>@rental.BookSerialNumber</td>
+                <td>@rental.RentalDate.ToString("d MMM, yyyy")</td>
+                <td>@rental.EndDate.ToString("d MMM, yyyy")</td>
+                <td>@(rental.ExtendedOn is null ? "-" : rental.ExtendedOn.Value.ToString("d MMM, yyyy"))</td>
+                <td>@rental.DelayInDays</td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -39,9 +39,14 @@ namespace Bookano.Web.Core.Consts
         public const string MaxAllowedCopiesReached =
             "This Subscriber has reached maximum allowed rentals";
         public const string CopyIsInRental = "This copy is already rented.";
-        public const string ExtendNotAllowedForBlackListed = "Rental cannot be extended for blacklisted subscribers.";
-        public const string ExtendNotAllowedForInactive = "Rental cannot be extended for this subscriber before renewal.";
+        public const string ExtendNotAllowedForBlackListed =
+            "Rental cannot be extended for blacklisted subscribers.";
+        public const string ExtendNotAllowedForInactive =
+            "Rental cannot be extended for this subscriber before renewal.";
         public const string ExtendNotAllowed = "Rental cannot be extended.";
         public const string PenalityShouldBePaid = "Penality should be paid.";
+        public const string InvalidDuration = "Invalid duration.";
+        public const string InvalidEndDate = "Invalid end date.";
+        public const string InvalidStartDate = "Invalid start date.";
     }
 }

@@ -3,6 +3,7 @@ using Bookano.Web.Helpers;
 using Bookano.Web.Seeds;
 using Bookano.Web.Services.Image;
 using Bookano.Web.Services.Mail;
+using Bookano.Web.Services.PDF;
 using Bookano.Web.Tasks;
 using Hangfire;
 using HashidsNet;
@@ -67,6 +68,7 @@ builder.Services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloud
 builder.Services.AddKeyedTransient<IImageService, LocalImageService>("local");
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddTransient<IEmailBodyBuilder, EmailBodyBuilder>();
+builder.Services.AddScoped<IViewRendererService, ViewRendererService>();
 
 builder.Services.AddControllersWithViews();
 
@@ -81,7 +83,7 @@ builder.Services.Configure<MailSettings>(builder.Configuration.GetSection(nameof
 builder.Services.AddWhatsAppApiClient(builder.Configuration);
 builder.Services.AddScoped<WhatsAppHelper>();
 
-builder.Services.AddSingleton<IHashids>(_ => new Hashids(salt: "f1nd1ngn3m0",minHashLength: 11));
+builder.Services.AddSingleton<IHashids>(_ => new Hashids(salt: "f1nd1ngn3m0", minHashLength: 11));
 
 var app = builder.Build();
 

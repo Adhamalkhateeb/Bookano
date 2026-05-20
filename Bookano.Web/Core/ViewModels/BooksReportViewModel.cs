@@ -5,7 +5,7 @@ namespace Bookano.Web.Core.ViewModels
 {
     public class BooksReportViewModel
     {
-        public PaginatedList<Book> Books { get; set; }
+        public PaginatedList<BookViewModel> Books { get; set; }
         public IEnumerable<SelectListItem> Authors { get; set; } = [];
 
         [Display(Name = "Authors")]

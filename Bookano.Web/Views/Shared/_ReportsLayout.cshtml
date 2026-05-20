@@ -1,0 +1,54 @@
+﻿
+@inject IWebHostEnvironment webHostEnvironment;
+@{
+    var path = System.IO.Path.Combine(
+        webHostEnvironment.WebRootPath,
+        "assets",
+        "imgs",
+        "logo.png");
+
+    var bytes = await File.ReadAllBytesAsync(path);
+
+    var imgSrc = Convert.ToBase64String(bytes);
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+            table {
+                font-family: Arial, Helvetica, sans-serif;
+                border-collapse: collapse;
+                width: 100%;
+                font-size: 12px;
+            }
+
+            td, th {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+
+            tr:nth-child(even) {
+                background-color: #f2f2f2;
+            }
+
+            th {
+                padding-top: 12px;
+                padding-bottom: 12px;
+                text-align: left;
+                background-color: black;
+                color: white;
+            }
+
+            #Logo{
+                width: 140px;
+            }
+    </style>
+</head>
+<body>
+    <img id="Logo" src="data:image/png;base64,@imgSrc" />
+    @RenderBody()
+</body>
+</html>
+
+
