@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Collections.Specialized;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.AspNetCore.Mvc;
 using SQLitePCL;
-using System.Collections.Specialized;
 
 namespace Bookano.Web.Controllers
 {
@@ -23,30 +24,29 @@ namespace Bookano.Web.Controllers
 
             var subscribersCount = await _context.Subscribers.CountAsync(s => !s.IsDeleted);
 
-            var recentlyAddedBooks = await _context.Books
-                 .AsNoTracking()
-                 .Where(b => !b.IsDeleted)
-                 .OrderByDescending(b => b.CreatedOnUtc)
-                 .Take(8)
-                 .Select(b => new BookViewModel
-                 {
-                     Id = b.Id,
-                     Title = b.Title,
-                     ImageUrl = b.ImageUrl,
-                     Authors = b.Authors.Select(a => a.Author!.Name).ToList()
-                 })
-                 .ToListAsync();
+            var recentlyAddedBooks = await _context
+                .Books.AsNoTracking()
+                .Where(b => !b.IsDeleted)
+                .OrderByDescending(b => b.CreatedOnUtc)
+                .Take(8)
+                .Select(b => new BookViewModel
+                {
+                    Id = b.Id,
+                    Title = b.Title,
+                    ImageUrl = b.ImageUrl,
+                    Authors = b.Authors.Select(a => a.Author!.Name).ToList(),
+                })
+                .ToListAsync();
 
-
-            var topBookIds = await _context.RentalCopies
-                .GroupBy(rc => rc.BookCopy!.BookId)
+            var topBookIds = await _context
+                .RentalCopies.GroupBy(rc => rc.BookCopy!.BookId)
                 .OrderByDescending(g => g.Count())
                 .Take(6)
                 .Select(g => g.Key)
                 .ToListAsync();
 
-            var topRentedBooks = await _context.Books
-                .AsNoTracking()
+            var topRentedBooks = await _context
+                .Books.AsNoTracking()
                 .Where(b => topBookIds.Contains(b.Id) && !b.IsDeleted)
                 .Include(b => b.Authors)
                     .ThenInclude(ba => ba.Author)
@@ -55,38 +55,29 @@ namespace Bookano.Web.Controllers
                     Id = b.Id,
                     Title = b.Title,
                     ImageUrl = b.ImageUrl,
-                    Authors = b.Authors
-                        .Select(a => a.Author!.Name)
-                        .ToList()
+                    Authors = b.Authors.Select(a => a.Author!.Name).ToList(),
                 })
                 .ToListAsync();
 
             var orderedBooks = topBookIds
-                .Join(
-                    topRentedBooks,
-                    id => id,
-                    book => book.Id,
-                    (id, book) => book
-                )
+                .Join(topRentedBooks, id => id, book => book.Id, (id, book) => book)
                 .ToList();
-
 
             var viewModel = new DashboardViewModel
             {
                 NumberOfCopies = copiesCount,
                 NumberOfSubscribers = subscribersCount,
                 RecentlyAddedBooks = recentlyAddedBooks,
-                TopRentedBooks = orderedBooks
+                TopRentedBooks = orderedBooks,
             };
             return View(viewModel);
         }
 
-
-
         [HttpGet]
         public async Task<IActionResult> GetRentalsPerDay(
             [FromQuery] string? startDate = null,
-            [FromQuery] string? endDate = null)
+            [FromQuery] string? endDate = null
+        )
         {
             var start = startDate is not null
                 ? DateOnly.ParseExact(startDate, "yyyy-MM-dd")
@@ -96,8 +87,8 @@ namespace Bookano.Web.Controllers
                 ? DateOnly.ParseExact(endDate, "yyyy-MM-dd")
                 : DateOnly.FromDateTime(DateTime.UtcNow);
 
-            var data = await _context.RentalCopies
-                .Where(rc => rc.RentalDate >= start && rc.RentalDate <= end)
+            var data = await _context
+                .RentalCopies.Where(rc => rc.RentalDate >= start && rc.RentalDate <= end)
                 .GroupBy(rc => rc.RentalDate)
                 .Select(g => new { Date = g.Key, Count = g.Count() })
                 .ToListAsync();
@@ -107,11 +98,13 @@ namespace Bookano.Web.Controllers
             for (var day = start; day <= end; day = day.AddDays(1))
             {
                 var count = data.FirstOrDefault(d => d.Date == day)?.Count ?? 0;
-                figures.Add(new ChartItemViewModel
-                {
-                    Label = day.ToString("d MMM"),
-                    Value = count.ToString()
-                });
+                figures.Add(
+                    new ChartItemViewModel
+                    {
+                        Label = day.ToString("d MMM"),
+                        Value = count.ToString(),
+                    }
+                );
             }
 
             return Ok(figures);
@@ -119,16 +112,17 @@ namespace Bookano.Web.Controllers
 
         public async Task<IActionResult> GetSubscribersPerGovernorate()
         {
-            var data = await _context.Subscribers
-                .Where(s => !s.IsDeleted)
+            var data = await _context
+                .Subscribers.Where(s => !s.IsDeleted)
                 .GroupBy(s => new { GovernorateName = s.Governorate!.Name })
                 .Select(g => new ChartItemViewModel
                 {
                     Label = g.Key.GovernorateName,
-                    Value = g.Count().ToString()
-                }).ToListAsync();
+                    Value = g.Count().ToString(),
+                })
+                .ToListAsync();
 
             return Ok(data);
         }
     }
-    }
+}

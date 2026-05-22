@@ -36,7 +36,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AreaFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -73,7 +72,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(AreaFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -97,7 +95,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var area = await _context.Areas.FindAsync(id);

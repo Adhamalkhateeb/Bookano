@@ -6,32 +6,56 @@
         processingId: 'UsersProcessing',
         columns: [
             { data: 'id', name: 'Id', className: 'd-none' },
-            { data: 'fullName', name: 'FullName' },
-            { data: 'userName', name: 'UserName' },
-            { data: 'email', name: 'Email' },
             {
+                data: 'fullName', name: 'FullName',
+                createdCell: function (td, cellData, rowData, row, col) {
+                    $(td).attr('data-label', 'Full Name');
+                }
+            },
+            {
+                data: 'userName', name: 'UserName',
+                createdCell: function (td, cellData, rowData, row, col) {
+                    $(td).attr('data-label', 'User Name');
+                }
+            },
+            {
+                data: 'email', name: 'Email', createdCell: function (td, cellData, rowData, row, col) {
+                    $(td).attr('data-label', 'Email');
+                }
+            },
+            {
+                data: 'isDeleted',
                 name: 'IsDeleted',
                 render: (_data, _type, row) =>
                     renderStatusBadge(row.isDeleted, 'Deleted', 'Available'),
+                createdCell: function (td, cellData, rowData, row, col) {
+                    $(td).attr('data-label', 'Deleted');
+                }
             },
             {
                 data: 'createdOn',
                 name: 'CreatedOnUtc',
                 render: renderDateTime,
+                createdCell: function (td, cellData, rowData, row, col) {
+                    $(td).attr('data-label', 'Created On');
+                }
             },
             {
                 data: 'lastUpdatedOn',
                 name: 'LastUpdatedOnUtc',
                 className: 'js-updated-on',
                 render: renderDateTime,
+                createdCell: function (td, cellData, rowData, row, col) {
+                    $(td).attr('data-label', 'Last Updated On');
+                }
             },
             {
                 name: 'Actions',
                 orderable: false,
-                className: 'text-center',
+                className: 'text-center hide-before',
                 render: (_data, _type, row) => `
                     <a href="#"
-                       class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm"
+                       class="btn btn-light btn-active-light-primary btn-flex btn-center btn-sm w-100 justify-content-center"
                        data-kt-menu-trigger="click"
                        data-kt-menu-placement="bottom-end">
                         Actions
@@ -78,5 +102,4 @@
             },
         ],
     });
-
 });

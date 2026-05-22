@@ -73,14 +73,13 @@
     <script src="~/assets/plugins/datatables/vfs_fonts.js" asp-append-version="true"></script>
 }
 
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.body.addEventListener('click', e => {
-          $("#GovernorateId").on("change", function () {
-            $("#Name").valid();
-        });
+              $("#GovernorateId").on("change", function () {
+                $("#Name").valid();
+            });
         })
       
     </script>

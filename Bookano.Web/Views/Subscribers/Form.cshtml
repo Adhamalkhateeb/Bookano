@@ -1,7 +1,7 @@
 ﻿@model SubscriberFormViewModel
-@* @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery *@
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery antiforgery 
 @{
-    ViewData["Title"] = $" {(!string.IsNullOrEmpty(Model.Key)? "Edit" : "Create")} Book";
+    ViewData["Title"] = $" {(!string.IsNullOrEmpty(Model.Key)? "Edit" : "Create")} Subscriber";
 
     var imageUrl = !string.IsNullOrEmpty(Model.ImageUrl) ? Model.ImageUrl : "/assets/imgs/avatar-blank.svg";
 }

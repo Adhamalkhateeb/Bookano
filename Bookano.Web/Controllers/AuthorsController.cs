@@ -29,7 +29,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AuthorFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -61,7 +60,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(AuthorFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -83,7 +81,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var author = await _context.Authors.FindAsync(id);

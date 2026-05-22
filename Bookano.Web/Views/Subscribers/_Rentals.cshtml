@@ -12,7 +12,7 @@
 <div id="kt_table_customers_payment_wrapper" class="dt-container dt-bootstrap5 dt-empty-footer">
     <div class="table-responsive">
         <!--begin::Table-->
-        <table id="rentalsTable" class=" table align-middle gs-0 gy-4" style="display: @(!Model.Any() ? "none" : string.Empty)">
+        <table id="rentalsTable" class=" table align-middle gs-0 gy-4 js-responsive-table" style="display: @(!Model.Any() ? "none" : string.Empty)">
             <!--begin::Table head-->
             <thead>
                 <tr class="fw-bold text-muted bg-light">
@@ -40,7 +40,7 @@
                         </td>
                         <td data-label="Created On" class="js-created-on" data-utc="@rental.CreatedOnUtc.ToString("o")">
                         </td>
-                        <td class="d-flex justify-content-between gap-3">
+                        <td class="d-flex justify-content-between gap-3 pt-3 mt-2 border-top js-actions">
                             <a class="btn btn-primary btn-sm w-100" asp-controller="Rentals" asp-action="Details" asp-route-id="@rental.Id">Details</a>
                             @if (rental.CreatedOnUtc.Date == DateTime.UtcNow.Date)
                             {

@@ -9,10 +9,17 @@ using Hangfire;
 using HashidsNet;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Serilog;
+using Serilog.Context;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 using WhatsAppCloudApi.Extensions;
+using static System.Net.Mime.MediaTypeNames;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Log.Logger = new LoggerConfiguration().ReadFrom.Configuration(builder.Configuration).CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
     options.ValidationInterval = TimeSpan.FromMinutes(5)
@@ -85,6 +92,11 @@ builder.Services.AddScoped<WhatsAppHelper>();
 
 builder.Services.AddSingleton<IHashids>(_ => new Hashids(salt: "f1nd1ngn3m0", minHashLength: 11));
 
+builder.Services.AddMvc(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -94,17 +106,45 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    app.UseExceptionHandler("/Home/Error");
+    app.UseStatusCodePagesWithReExecute("/Home/Error", "?statusCode={0}");
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+app.UseCookiePolicy(new CookiePolicyOptions { Secure = CookieSecurePolicy.Always });
+app.Use(
+    async (context, next) =>
+    {
+        context.Response.Headers.Append("X-Frame-Options", "Deny");
+        await next();
+    }
+);
+
+app.UseSerilogRequestLogging();
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.Use(
+    async (context, next) =>
+    {
+        using (
+            LogContext.PushProperty(
+                "UserId",
+                context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            )
+        )
+        using (LogContext.PushProperty("UserName", context.User.FindFirstValue(ClaimTypes.Name)))
+        {
+            await next();
+        }
+    }
+);
 
 using (var scope = app.Services.CreateScope())
 {

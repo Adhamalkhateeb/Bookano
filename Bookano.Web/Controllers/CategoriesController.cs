@@ -30,7 +30,6 @@ public class CategoriesController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CategoryFormViewModel model)
     {
         if (!ModelState.IsValid)
@@ -61,7 +60,6 @@ public class CategoriesController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(CategoryFormViewModel model)
     {
         if (!ModelState.IsValid)
@@ -84,7 +82,6 @@ public class CategoriesController : Controller
     }
 
     [HttpPost]
-    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleStatus(int id)
     {
         var category = await _context.Categories.FindAsync(id);

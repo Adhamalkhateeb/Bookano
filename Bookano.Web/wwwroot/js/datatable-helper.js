@@ -6,7 +6,8 @@ function initDataTable({
     ajaxUrl,
     columns,
     order = [[1, 'asc']],
-    processingId
+    processingId,
+    onDraw = null
 }) {
     const tableEl = document.getElementById(tableId);
     if (!tableEl) return null;
@@ -36,6 +37,12 @@ function initDataTable({
         drawCallback: function () {
             KTMenu?.createInstances();
             formatDates(this.api().table().node());
+            setTimeout(() => {
+                initMobileSortBars();
+                if (typeof onDraw === 'function') {
+                    onDraw(this.api());
+                }
+            }, 50);
         },
         order,
         columnDefs: [{

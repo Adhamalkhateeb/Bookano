@@ -6,10 +6,8 @@
       data-ajax-success="onModalSuccess"
       data-ajax-failure="showErrorMessage"
       data-ajax-complete="onModalComplete">
-    @if (!string.IsNullOrEmpty(Model.Id))
-    {
-        <input type="hidden" asp-for="Id" />
-    }
+   
+    <input type="hidden" asp-for="Id" />
     <div class="row">
         <div class="col">
             <div class="form-floating mb-7">

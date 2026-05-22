@@ -35,7 +35,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BookCopyFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -79,7 +78,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(BookCopyFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -106,7 +104,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var copy = await _context.BookCopies.FindAsync(id);
@@ -126,13 +123,13 @@
 
         public async Task<IActionResult> RentalHistory(int id)
         {
-
-            var viewModel = await _context.RentalCopies
-                .AsNoTracking()
+            var viewModel = await _context
+                .RentalCopies.AsNoTracking()
                 .Where(rc => rc.BookCopy!.Id == id)
                 .Select(c => new CopyHistoyViewModel
                 {
-                    SubscriberName = $"{c.Rental!.Subscriber!.FirstName} {c.Rental.Subscriber.LastName}",
+                    SubscriberName =
+                        $"{c.Rental!.Subscriber!.FirstName} {c.Rental.Subscriber.LastName}",
                     SubscriberMobile = c.Rental.Subscriber.MobileNumber,
 
                     StartDate = c.RentalDate.ToDateTime(TimeOnly.MinValue),
@@ -145,15 +142,14 @@
                     ExtendedOn = c.ExtendedOn.HasValue
                         ? c.ExtendedOn.Value.ToDateTime(TimeOnly.MinValue)
                         : null,
-                }).OrderByDescending(c => c.StartDate)
+                })
+                .OrderByDescending(c => c.StartDate)
                 .ToListAsync();
 
             if (!viewModel.Any() && !await _context.BookCopies.AnyAsync(c => c.Id == id))
                 return NotFound();
 
-
             return View(viewModel);
         }
-
     }
 }
