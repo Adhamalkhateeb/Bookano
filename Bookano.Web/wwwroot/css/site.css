@@ -1,5 +1,14 @@
+/* =========================================================
+   Base
+========================================================= */
 html {
+    position: relative;
+    min-height: 100%;
     font-size: 14px;
+}
+
+body {
+    margin-bottom: 60px;
 }
 
 @media (min-width: 768px) {
@@ -8,55 +17,61 @@ html {
     }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+/* =========================================================
+   Focus States
+========================================================= */
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem #fff, 0 0 0 0.25rem #258cfb;
 }
 
-html {
-    position: relative;
-    min-height: 100%;
-}
-
-body {
-    margin-bottom: 60px;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+/* =========================================================
+   Floating Labels
+========================================================= */
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
     color: var(--bs-secondary-color);
     text-align: end;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
 
-
-/* Start Override theme */
-
-
 .form-floating > .form-select {
     padding-top: 2.15rem;
-    padding-bottom: 0.300rem;
+    padding-bottom: 0.3rem;
 }
 
+/* =========================================================
+   Images
+========================================================= */
 .image-input {
-    background-size: cover !important;
     background-position: center;
     background-repeat: no-repeat;
-}
-
-@media (min-width: 992px) {
-    .header-fixed .wrapper {
-        padding-top: 92px;
-    }
+    background-size: cover !important;
 }
 
 .image-input-wrapper {
     width: 125px !important;
 }
 
-/* HTML: <div class="loader"></div> */
+/* =========================================================
+   Layout
+========================================================= */
+@media (min-width: 992px) {
+    .header-fixed .wrapper {
+        padding-top: 92px;
+    }
+}
 
+/* =========================================================
+   Loader
+========================================================= */
 .loader + div {
     display: none !important;
 }
@@ -66,62 +81,64 @@ body {
     --c2: #245C88;
     width: 40px;
     height: 80px;
-    border-top: 4px solid var(--c1);
-    border-bottom: 4px solid var(--c1);
-    background: linear-gradient(90deg, var(--c1) 2px, var(--c2) 0 5px,var(--c1) 0) 50%/7px 8px no-repeat;
     display: grid;
     overflow: visible;
-    animation: l5-0 2s infinite linear;
+    border-top: 4px solid var(--c1);
+    border-bottom: 4px solid var(--c1);
+    background: linear-gradient( 90deg, var(--c1) 2px, var(--c2) 0 5px, var(--c1) 0 ) 50% / 7px 8px no-repeat;
+    animation: loader-rotate 2s linear infinite;
 }
 
     .loader::before,
     .loader::after {
         content: "";
-        grid-area: 1/1;
+        grid-area: 1 / 1;
         width: 75%;
         height: calc(50% - 4px);
         margin: 0 auto;
         border: 2px solid var(--c1);
         border-top: 0;
-        box-sizing: content-box;
         border-radius: 0 0 40% 40%;
-        -webkit-mask: linear-gradient(#000 0 0) bottom/4px 2px no-repeat, linear-gradient(#000 0 0);
+        box-sizing: content-box;
+        background: linear-gradient(var(--d, 0deg), var(--c2) 50%, transparent 0) bottom / 100% 205%, linear-gradient(var(--c2) 0 0) center / 0 100%;
+        background-repeat: no-repeat;
+        -webkit-mask: linear-gradient(#000 0 0) bottom / 4px 2px no-repeat, linear-gradient(#000 0 0);
         -webkit-mask-composite: destination-out;
         mask-composite: exclude;
-        background: linear-gradient(var(--d,0deg),var(--c2) 50%,#0000 0) bottom /100% 205%, linear-gradient(var(--c2) 0 0) center/0 100%;
-        background-repeat: no-repeat;
         animation: inherit;
-        animation-name: l5-1;
+        animation-name: loader-fill;
     }
 
     .loader::after {
-        transform-origin: 50% calc(100% + 2px);
-        transform: scaleY(-1);
         --s: 3px;
         --d: 180deg;
+        transform: scaleY(-1);
+        transform-origin: 50% calc(100% + 2px);
     }
 
-@keyframes l5-0 {
+@keyframes loader-rotate {
     80% {
-        transform: rotate(0)
+        transform: rotate(0);
     }
 
     100% {
-        transform: rotate(0.5turn)
+        transform: rotate(0.5turn);
     }
 }
 
-@keyframes l5-1 {
-    10%,70% {
-        background-size: 100% 205%,var(--s,0) 100%
+@keyframes loader-fill {
+    10%, 70% {
+        background-size: 100% 205%, var(--s, 0) 100%;
     }
 
-    70%,100% {
-        background-position: top,center
+    70%, 100% {
+        background-position: top, center;
     }
 }
 
-
+/* =========================================================
+   DataTables
+========================================================= */
 .dataTables_processing,
 .dt-processing {
     display: none !important;
@@ -135,146 +152,216 @@ body {
     position: absolute;
     inset: 0;
     z-index: 20;
-    background-color: rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
+    background-color: rgba(255, 255, 255, 0.15);
 }
 
-
+/* =========================================================
+   Utilities
+========================================================= */
 .glass {
     background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 20px;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
 .w-fit-content {
     width: fit-content;
 }
 
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+    .transition-all:hover {
+        transform: translateY(-6px);
+    }
+
+/* =========================================================
+   Typography
+========================================================= */
 .custom-header {
-    font-family: 'Satisfy', cursive;
+    font-family: "Satisfy", cursive;
     letter-spacing: 1px;
 }
 
-
-
-.transition-all {
-    transition: all .3s ease;
-}
-
-.transition-all:hover {
-    transform: translateY(-6px);
-}
-
-
+/* =========================================================
+   Backgrounds
+========================================================= */
 .page-bg {
+    background-image: url("../assets/imgs/home_bg.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
     background-size: cover;
     background-attachment: fixed;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-image: url('../assets/imgs/home_bg.jpg');
 }
 
+/* =========================================================
+   Launcher Sidebar
+========================================================= */
 .launcher .sidebar {
     position: fixed;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    width: 425px;
     top: 50px;
     right: 50px;
     bottom: 50px;
-    background-color: rgba(19, 0, 97, .7);
+    width: 425px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background-color: rgba(19, 0, 97, 0.7);
     border-radius: 1.75rem;
 }
 
-.launcher .sidebar .hover-scroll-y {
-    scrollbar-color: rgba(255, 255, 255, .15) transparent;
+@media (max-width:991px){
+    .launcher .sidebar {
+        right: 0px;
+    }
+
 }
 
+    .launcher .sidebar .hover-scroll-y {
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
 
-.twitter-typeahead{
-    width:100%;
+/* =========================================================
+   Typeahead
+========================================================= */
+.twitter-typeahead {
+    width: 100%;
 }
 
+    .twitter-typeahead input:first-child {
+        display: none;
+    }
 
-.twitter-typeahead input:first-child {
-    display: none;
+.tt-suggestion {
+    font-size: 16px;
 }
 
-.tt-suggestion{
-    font-size:16px;
+    .tt-suggestion:not(:last-child) {
+        border-bottom: 1px dashed #dcdcdc;
+    }
+
+/* =========================================================
+   Responsive - Desktop
+========================================================= */
+@media (min-width: 768px) {
+    .mobile-sort-bar {
+        display: none;
+    }
 }
 
-.tt-suggestion:not(:last-child) {
-    border-bottom: dashed 1px #dcdcdc;
-}
-
-/* End   Override theme  */
-
+/* =========================================================
+   Responsive - Mobile
+========================================================= */
 @media (max-width: 767.98px) {
 
+    /* -----------------------------
+       Auth
+    ----------------------------- */
     #Auth {
         display: none;
     }
 
-    table thead {
-        display: none;
+    /* -----------------------------
+       Responsive Tables
+    ----------------------------- */
+    .js-responsive-table thead tr,
+    .js-datatable thead tr,
+    .dataTables_wrapper thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+        visibility: hidden;
+    }
+
+    .js-responsive-table tbody tr,
+    .js-datatable tbody tr,
+    .dataTables_wrapper tbody tr {
+        display: block;
+        margin-bottom: 1.5rem;
+        background: var(--kt-body-bg);
+        border: 1px solid var(--kt-gray-300) !important;
+        border-radius: 0.75rem;
+        padding: 1rem;
     }
 
 
-
-    table tbody td {
+    .js-responsive-table tbody td,
+    .js-datatable tbody td,
+    .dataTables_wrapper tbody td {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 1rem;
-        border: none !important;
         padding: 0.7rem 0 !important;
+        border: none !important;
+        border-bottom: 1px dashed var(--kt-gray-200) !important;
     }
 
-        table tbody td::before {
-            content: attr(data-label);
-            font-weight: 600;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #5e6278;
-            flex-shrink: 0;
-            margin-right: 0.5rem;
+        .js-responsive-table tbody td:last-child,
+        .js-datatable tbody td:last-child,
+        .dataTables_wrapper tbody td:last-child {
+            border-bottom: none !important;
         }
 
-        table tbody td::before {
+        .js-responsive-table tbody td::before,
+        .js-datatable tbody td::before,
+        .dataTables_wrapper tbody td::before {
             content: attr(data-label);
-            font-weight: 600;
+            flex-shrink: 0;
+            color: #5e6278;
             font-size: 0.75rem;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            color: #5e6278;
-            flex-shrink: 0;
-            margin-right: 0.5rem;
         }
 
-        table tbody td:last-child::before {
+        .js-responsive-table td.js-actions::before,
+        .js-datatable tbody td.js-actions::before,
+        .dataTables_wrapper tbody td.js-actions::before {
             display: none;
         }
 
-        table tbody td.text-end {
+
+        .js-responsive-table tbody td.text-end,
+        .js-datatable tbody td.text-end,
+        .dataTables_wrapper tbody td.text-end {
             justify-content: flex-end;
         }
 
-            table tbody td.text-end::before {
-                display: none;
-            }
+    .js-responsive-table tbody tr:last-child,
+    .js-responsive-tablet foot tr:last-child,
+    .js-datatable tbody tr:last-child,
+    .dataTables_wrapper tbody tr:last-child,
+    .js-datatable tfoot tr:last-child,
+    .dataTables_wrapper tfoot tr:last-child {
+        border-bottom: 1px solid var(--kt-gray-300) !important;
+    }
 
+    .js-responsive-table th:first-child,
+    .js-datatable th:first-child,
+    .dataTables_wrapper th:first-child {
+        padding-left: 1rem !important;
+    }
+
+    .js-responsive-table th:last-child,
+    .js-datatable th:last-child,
+    .dataTables_wrapper th:last-child {
+        padding-right: 1rem !important;
+    }
+
+    /* -----------------------------
+       DataTables Pagination
+    ----------------------------- */
     .dataTables_paginate .page-link {
-        padding: 0.5rem 0.5rem;
-        font-size: 1rem;
         min-width: unset;
+        padding: 0.5rem;
+        font-size: 1rem;
     }
 
     .dataTables_wrapper .row:last-child {
@@ -290,4 +377,219 @@ body {
             max-width: none !important;
             flex: 0 0 auto !important;
         }
+
+    div.dataTables_wrapper div.dataTables_info {
+        display: none;
+    }
+
+    .table .table th:first-child, .table tr:first-child{
+        padding-left: 1rem !important;
+    }
+
+    .table .table th:last-child, .table tr:last-child {
+        padding-right: 1rem !important;
+    }
+
+    .table tbody tr:last-child, .table tfoot tr:last-child {
+        border-bottom: 1px solid var(--kt-gray-300) !important;
+    }
+    /* -----------------------------
+       Mobile Sort Bar
+    ----------------------------- */
+    .mobile-sort-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+
+        .mobile-sort-bar select {
+            flex: 1;
+            min-width: 0;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.3rem;
+            background-color: var(--bs-body-bg);
+            color: var(--bs-body-color);
+            font-size: 1.1rem;
+        }
+
+    .mobile-sort-dir {
+        flex-shrink: 0;
+        padding: 0.4rem 0.65rem;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+        background: var(--bs-body-bg);
+        color: var(--bs-text-muted);
+        font-size: 1.1rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s, border-color 0.15s;
+    }
+
+        .mobile-sort-dir:active {
+            background: var(--bs-secondary-bg);
+            border-color: var(--bs-border-color-translucent);
+        }
+
+    /* -----------------------------
+       Mobile Book Grid
+    ----------------------------- */
+    .mobile-book-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        padding: 1rem 0 1rem;
+    }
+
+    .mobile-book-card {
+        display: flex;
+        flex-direction: column;
+        border-radius: 0.75rem;
+        border: 1px solid var(--bs-border-color);
+        background: var(--bs-body-bg);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    }
+
+
+
+    .mobile-book-cover-wrap {
+        position: relative;
+        width: 100%;
+    }
+
+    .mobile-book-cover {
+        display: block;
+        width: 100%;
+        aspect-ratio: 2 / 3;
+        overflow: hidden;
+        background: var(--bs-secondary-bg);
+        border-radius: 0.75rem 0.75rem 0 0;
+    }
+
+        .mobile-book-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            display: block;
+            transition: transform 0.2s ease;
+        }
+
+
+        .mobile-book-cover:active img {
+            transform: scale(1.03);
+        }
+
+    /* -----------------------------
+       Mobile Book Menu Trigger
+    ----------------------------- */
+
+    .mobile-book-menu-trigger {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bs-body-bg);
+        border: 1px solid var(--bs-border-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 3;
+        color: var(--bs-body-color);
+        font-size: 0.8rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        transition: background 0.15s, box-shadow 0.15s;
+    }
+
+
+        .mobile-book-menu-trigger:active {
+            background: var(--bs-secondary-bg);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+
+    /* -----------------------------
+       Mobile Book Info
+    ----------------------------- */
+    .mobile-book-info {
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 0.65rem 0.65rem; 
+        gap: 0.15rem;
+    }
+
+    .mobile-book-title {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--bs-body-color);
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-decoration: none;
+    }
+
+        .mobile-book-title:hover {
+            color: var(--bs-primary);
+        }
+
+    .mobile-book-author {
+        font-size: 0.8rem;
+        color: var(--bs-text-muted);
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .mobile-book-isbn {
+        font-size: 0.7rem;
+        color: var(--bs-text-muted);
+        opacity: 0.75;
+        font-family: monospace;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
+
+
+.hide-before::before {
+    content: none !important;
+}
+
+
+.tt-menu {
+    width: 100%;
+    max-height: 360px;
+    overflow-y: auto;
+    z-index: 1050;
+    background-color: var(--kt-dropdown-bg);
+    border: 1px solid var(--kt-border-color);
+    border-radius: var(--kt-border-radius);
+    margin-top: 4px;
+    box-shadow: var(--kt-dropdown-box-shadow);
+}
+
+.tt-suggestion:hover,
+.tt-suggestion.tt-cursor {
+    background-color: var(--kt-dropdown-link-hover-bg);
+}
+
+.tt-highlight {
+    background: transparent;
+    color: var(--kt-primary);
+    font-weight: 500;
+}
+
+@media (max-width: 576px) {
+    #Search.tt-input {
+        font-size: 16px;
+    }
+}
+

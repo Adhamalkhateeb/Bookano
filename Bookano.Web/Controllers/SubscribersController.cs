@@ -45,7 +45,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Search(SearchFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -88,7 +87,6 @@ namespace Bookano.Web.Controllers
         public async Task<IActionResult> Create() => View("Form", await PopulateViewModelAsync());
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(SubscriberFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -192,7 +190,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(SubscriberFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -251,7 +248,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> RenewSubscription(string subscriberKey)
         {
             var subscriberId = int.Parse(_dataProtector.Unprotect(subscriberKey));

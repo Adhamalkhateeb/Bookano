@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="~/assets/plugins/datatables/datatables.bundle.css" />
 }
 
-<div class="content flex-column-fluid p-10" id="kt_content">
+<div class="content flex-column-fluid @(User.Identity!.IsAuthenticated ? "" : "p-10")" id="kt_content">
     @if (!User.Identity!.IsAuthenticated)
     {
         <ul class="breadcrumb breadcrumb-dot fw-semibold text-gray-600 fs-7 mb-5">
@@ -167,9 +167,9 @@
                             @foreach (var copy in Model.Copies)
                             {
                                 <tr>
-                                    <td>@copy.SerialNumber</td>
-                                    <td>@copy.SerialNumber</td>
-                                    <td>
+                                    <td data-label="Serial Number">@copy.SerialNumber</td>
+                                    <td data-label="Edition">@copy.SerialNumber</td>
+                                    <td data-label="Rental">
                                         <span class="badge badge-light-@(copy.IsAvailableForRental ? "success" : "warning")">
                                             @(copy.IsAvailableForRental ? "Available" : "Not Available")
                                         </span>

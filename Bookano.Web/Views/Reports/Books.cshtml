@@ -45,14 +45,14 @@
             </div>
             @if (Model.Books.Any())
             {
-                <div class="card-toolbar gap-3">
-                    <a class="btn btn-light-success" asp-action="ExportBooksToExcel"
+                <div class="card-toolbar  gap-3">
+                    <a class="btn btn-light-success w-100 w-md-auto" asp-action="ExportBooksToExcel"
                        asp-route-authors="@Context.Request.Query["SelectedAuthors"]"
                        asp-route-categories="@Context.Request.Query["SelectedCategories"]">
                         <i class="fa-solid fa-file-excel"></i>
                         Export to Excel
                     </a>
-                    <a class="btn btn-light-danger" asp-action="ExportBooksToPDF"
+                    <a class="btn btn-light-danger  w-100 w-md-auto" asp-action="ExportBooksToPDF"
                        asp-route-authors="@Context.Request.Query["SelectedAuthors"]"
                        asp-route-categories="@Context.Request.Query["SelectedCategories"]">
                         <i class="fa-solid fa-file-pdf"></i>
@@ -62,11 +62,11 @@
             }
         </div>
         <div class="card-body">
-            <partial name="_Pagination" model="new PaginatedViewModel {PageNumber = Model.Books.PageNumber, TotalPages = Model.Books.TotalPages}" />
+            <partial name="_Pagination" model="new PaginatedViewModel { PageNumber = Model.Books.PageNumber, TotalPages = Model.Books.TotalPages }" />
             @if (Model.Books.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle">
+                    <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-responsive-table">
                         <thead>
                             <tr class="fw-bold fs-5 text-white bg-black ">
                                 <th class="ps-4 rounded-start">ISBN</th>
@@ -84,15 +84,15 @@
                             @foreach (var book in Model.Books)
                             {
                                 <tr>
-                                    <td class="ps-4">@book.Isbn</td>
-                                    <td>@book.Title</td>
-                                    <td>@string.Join(", ", book.Authors)</td>
-                                    <td>@string.Join(", ", book.Categories)</td>
-                                    <td>@book.Publisher</td>
-                                    <td>@book.PublishingDate.ToString("d MMM, yyyy")</td>
-                                    <td>@book.Hall</td>
-                                    <td>@(book.IsAvailableForRental ? "Yes" : "No")</td>
-                                    <td class="pe-4">@(book.IsDeleted ? "Deleted" : "Available")</td>
+                                    <td data-label="ISBN" class="ps-md-4">@book.Isbn</td>
+                                    <td data-label="Title">@book.Title</td>
+                                    <td data-label="Authors">@string.Join(", ", book.Authors)</td>
+                                    <td data-label="Catrgories">@string.Join(", ", book.Categories)</td>
+                                    <td data-label="Publisher">@book.Publisher</td>
+                                    <td data-label="Publishing Date">@book.PublishingDate.ToString("d MMM, yyyy")</td>
+                                    <td data-label="Hall">@book.Hall</td>
+                                    <td data-label="Available for rental">@(book.IsAvailableForRental ? "Yes" : "No")</td>
+                                    <td data-label="Status" class="pe-4">@(book.IsDeleted ? "Deleted" : "Available")</td>
                                 </tr>
                             }
                         </tbody>

@@ -29,7 +29,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PublisherFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -61,7 +60,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(PublisherFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -84,7 +82,6 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var publisher = await _context.Publishers.FindAsync(id);

@@ -24,7 +24,7 @@ namespace Bookano.Web.Controllers
 
         public IActionResult Index() => View();
 
-        [HttpPost]
+        [HttpPost, IgnoreAntiforgeryToken]
         public async Task<IActionResult> GetBooks()
         {
             int skip = int.TryParse(Request.Form["start"], out var parsedSkip) ? parsedSkip : 0;
@@ -125,7 +125,6 @@ namespace Bookano.Web.Controllers
         public async Task<IActionResult> Create() => View("Form", await PopulateViewModelAsync());
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BookFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -208,7 +207,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(BookFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -303,7 +301,6 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var book = await _context.Books.FindAsync(id);

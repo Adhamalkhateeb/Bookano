@@ -39,6 +39,11 @@ function initTable() {
         drawCallback: function () {
             KTMenu?.createInstances();
             formatDates(this.api().table().node());
+
+            // Initialize mobile sort bars after table draws (so we catch server-side draws too)
+            setTimeout(() => {
+                initMobileSortBars();
+            }, 50);
         },
     });
 
@@ -480,6 +485,122 @@ function applySelect2(container = document) {
 }
 
 // ============================================================
+// Mobile Sort Bar
+// ============================================================
+
+
+function initMobileSortBars() {
+    if (window.innerWidth >= 768) return;
+
+    document.querySelectorAll('table.dataTable, table.js-datatable').forEach(function (table) {
+        const dtWrapper = table.closest('.dataTables_wrapper');
+
+        const insertTarget = dtWrapper.parentElement; 
+
+        if (insertTarget.parentElement?.querySelector('.mobile-sort-bar')) return;
+
+
+        const dt = $.fn.dataTable.isDataTable(table) ? $(table).DataTable() : null;
+
+        const headers = [...table.querySelectorAll('thead th')];
+        const sortable = [];
+
+        dt.columns().every(function (index) {
+            const column = this;
+
+            const header = column.header();
+
+            const label = header.textContent.trim();
+
+            const orderable = dt.settings()[0].aoColumns[index].bSortable;
+
+            if (
+                label !== '' &&
+                orderable &&
+                !header.classList.contains('js-no-export')
+            ) {
+                sortable.push({
+                    th: header,
+                    i: index,
+                    label
+                });
+            }
+        });
+
+        if (sortable.length === 0) return;
+
+       
+        const bar = document.createElement('div');
+        bar.className = 'mobile-sort-bar';
+
+        const select = document.createElement('select');
+        sortable.forEach(col => {
+            const opt = document.createElement('option');
+            opt.value = col.i;
+            opt.textContent = col.label;
+            select.appendChild(opt);
+        });
+
+        const dirBtn = document.createElement('button');
+        dirBtn.type = 'button';
+        dirBtn.className = 'mobile-sort-dir';
+
+        let currentCol = sortable[0].i;
+        let currentDir = 'asc';
+
+        function syncFromDt() {
+            const order = dt.order();
+            if (!order || !order[0]) return;
+            const [col, dir] = order[0];
+            const match = sortable.find(s => s.i === col);
+            if (match) {
+                currentCol = col;
+                currentDir = dir;
+                select.value = col;
+                updateDirBtn();
+            }
+        }
+
+        function updateDirBtn() {
+            dirBtn.innerHTML = currentDir === 'asc'
+                ? '<i class="fa-solid fa-arrow-up-a-z"></i>'
+                : '<i class="fa-solid fa-arrow-down-z-a"></i>';
+        }
+
+        function applySort() {
+            dt.order([currentCol, currentDir]).draw(false);
+            updateDirBtn();
+        }
+
+        select.addEventListener('change', function () {
+            currentCol = parseInt(this.value);
+            applySort();
+        });
+
+        dirBtn.addEventListener('click', function () {
+            currentDir = currentDir === 'asc' ? 'desc' : 'asc';
+            applySort();
+        });
+
+        
+        dt.on('order.dt', function () {
+            syncFromDt();
+        });
+
+        // bar.appendChild(label);
+        bar.appendChild(select);
+        bar.appendChild(dirBtn);
+
+        insertTarget.parentElement.insertBefore(bar, insertTarget);
+
+        syncFromDt();
+        updateDirBtn();
+    });
+}
+
+
+
+// ============================================================
 // Helpers
 // ============================================================
 
@@ -623,7 +744,8 @@ document.addEventListener('DOMContentLoaded', () => {
     $('.js-datepicker').daterangepicker({
         singleDatePicker: true,
         autoApply: true,
-        drops: 'up',
+        drops: 'auto',
+        opens:"center",
         maxDate: new Date(),
         showDropdowns: true,
     });
@@ -639,4 +761,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ?.addEventListener('click', () => document.getElementById('SignOut').submit());
 
     initImageInputSync();
+
+
 });

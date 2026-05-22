@@ -10,9 +10,9 @@
             <div class="row">
                 <div class="col-md-4">
                     <div class="mb-5">
-                            <label asp-for="Duration"  class="form-label">Duration: </label>
-                            <input type="text" asp-for="Duration" class="form-control form-control-solid js-date-range" placeholder="Pick date range" autocomplete="off" />
-                            <span asp-validation-for="Duration" class="text-danger mt-2"></span>
+                        <label asp-for="Duration" class="form-label">Duration: </label>
+                        <input type="text" asp-for="Duration" class="form-control form-control-solid js-date-range" placeholder="Pick date range" autocomplete="off" />
+                        <span asp-validation-for="Duration" class="text-danger mt-2"></span>
                     </div>
                 </div>
             </div>
@@ -30,12 +30,12 @@
             @if (Model.Rentals.Any())
             {
                 <div class="card-toolbar gap-3">
-                    <a class="btn btn-light-success" asp-action="ExportRentalsToExcel"
+                    <a class="btn btn-light-success w-100 w-md-auto" asp-action="ExportRentalsToExcel"
                        asp-route-duration="@Context.Request.Query["Duration"]">
                         <i class="fa-solid fa-file-excel"></i>
                         Export to Excel
                     </a>
-                    <a class="btn btn-light-danger" asp-action="ExportRentalsToPDF"
+                    <a class="btn btn-light-danger w-100 w-md-auto" asp-action="ExportRentalsToPDF"
                        asp-route-duration="@Context.Request.Query["Duration"]">
                         <i class="fa-solid fa-file-pdf"></i>
                         Export to PDF
@@ -48,7 +48,7 @@
             @if (Model.Rentals.Any())
             {
                 <div class="table-responsive">
-                    <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle">
+                    <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-responsive-table">
                         <thead>
                             <tr class="fw-bold fs-5 text-white bg-black ">
                                 <th class="ps-4 rounded-start">Subscriber ID</th>
@@ -67,16 +67,16 @@
                             @foreach (var rental in Model.Rentals)
                             {
                                 <tr>
-                                    <td class="ps-4">@rental.SubscriberId</td>
-                                    <td>@rental.SubscriberName</td>
-                                    <td>@rental.SubscriberMobile</td>
-                                    <td>@rental.BookTitle</td>
-                                    <td>@string.Join(", ", rental.BookAuthors!)</td>
-                                    <td>@rental.BookSerialNumber</td>
-                                    <td>@rental.RentalDate.ToString("d MMM, yyyy")</td>
-                                    <td>@rental.EndDate.ToString("d MMM, yyyy")</td>
-                                    <td>@(rental.ReturnDate is null ? "-" : rental.ReturnDate.Value.ToString("d MMM, yyyy"))</td>
-                                    <td class="pe-4">@(rental.ExtendedOn is null ? "-" : rental.ExtendedOn.Value.ToString("d MMM, yyyy"))</td>
+                                    <td data-label="Subscriber ID" class="ps-md-4">@rental.SubscriberId</td>
+                                    <td data-label="Subscriber Name">@rental.SubscriberName</td>
+                                    <td data-label="Subscriber Mobile">@rental.SubscriberMobile</td>
+                                    <td data-label="Book Title">@rental.BookTitle</td>
+                                    <td data-label="Book Authors">@string.Join(", ", rental.BookAuthors!)</td>
+                                    <td data-label="Serial Number">@rental.BookSerialNumber</td>
+                                    <td data-label="Rental Date">@rental.RentalDate.ToString("d MMM, yyyy")</td>
+                                    <td data-label="End Date">@rental.EndDate.ToString("d MMM, yyyy")</td>
+                                    <td data-label="Return Date">@(rental.ReturnDate is null ? "-" : rental.ReturnDate.Value.ToString("d MMM, yyyy"))</td>
+                                    <td data-label="Extended On" class="pe-4">@(rental.ExtendedOn is null ? "-" : rental.ExtendedOn.Value.ToString("d MMM, yyyy"))</td>
                                 </tr>
                             }
                         </tbody>
