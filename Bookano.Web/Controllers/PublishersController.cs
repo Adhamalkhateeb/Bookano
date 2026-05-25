@@ -1,16 +1,12 @@
-﻿namespace Bookano.Web.Controllers
+﻿using Bookano.Domain.Entities;
+
+namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class PublishersController : Controller
+    public class PublishersController(IApplicationDbContext context, IMapper mapper) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-
-        public PublishersController(ApplicationDbContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {
@@ -35,7 +31,6 @@
                 return BadRequest();
 
             var publisher = _mapper.Map<Publisher>(model);
-            publisher.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Publishers.Add(publisher);
             await _context.SaveChangesAsync();
@@ -71,9 +66,6 @@
                 return NotFound();
 
             publisher = _mapper.Map(model, publisher);
-            publisher.LastUpdatedOnUtc = DateTime.UtcNow;
-            publisher.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-
             await _context.SaveChangesAsync();
 
             var PublisherViewModel = _mapper.Map<PublisherViewModel>(publisher);
@@ -90,13 +82,10 @@
                 return NotFound();
 
             publisher.IsDeleted = !publisher.IsDeleted;
-            var updatedOn = DateTimeOffset.UtcNow;
-            publisher.LastUpdatedOnUtc = updatedOn;
-            publisher.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _context.SaveChangesAsync();
 
-            return Ok(updatedOn.ToString("o"));
+            return Ok(publisher.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(PublisherFormViewModel model)

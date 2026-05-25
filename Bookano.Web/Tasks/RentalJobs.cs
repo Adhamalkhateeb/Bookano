@@ -3,25 +3,17 @@ using Bookano.Web.Services.Mail;
 
 namespace Bookano.Web.Tasks
 {
-    public class RentalJobs
+    public class RentalJobs(
+        IApplicationDbContext context,
+        IEmailBodyBuilder emailBodyBuilder,
+        IEmailSender emailSender,
+        WhatsAppHelper whatsAppHelper
+    )
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IEmailBodyBuilder _emailBodyBuilder;
-        private readonly IEmailSender _emailSender;
-        private readonly WhatsAppHelper _whatsAppHelper;
-
-        public RentalJobs(
-            ApplicationDbContext context,
-            IEmailBodyBuilder emailBodyBuilder,
-            IEmailSender emailSender,
-            WhatsAppHelper whatsAppHelper
-        )
-        {
-            _context = context;
-            _emailBodyBuilder = emailBodyBuilder;
-            _emailSender = emailSender;
-            _whatsAppHelper = whatsAppHelper;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
+        private readonly IEmailSender _emailSender = emailSender;
+        private readonly WhatsAppHelper _whatsAppHelper = whatsAppHelper;
 
         public async Task SendExpiringSoonAlerts()
         {

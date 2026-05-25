@@ -1,6 +1,4 @@
-﻿using System.Text.Encodings.Web;
-
-namespace Bookano.Web.Services.Mail
+﻿namespace Bookano.Web.Services.Mail
 {
     public class EmailBodyBuilder : IEmailBodyBuilder
     {

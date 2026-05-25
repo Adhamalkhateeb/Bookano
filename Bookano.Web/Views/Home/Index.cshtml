@@ -15,7 +15,7 @@
                 <!--begin::Menu-->
                 <div class="d-flex flex-column flex-column-fluid mb-5 mb-lg-10">
                     <!--begin::Brand-->
-                    <div class="d-flex flex-stack pt-10 pt-lg-0 mb-10 mb-lg-0 h-lg-225px justify-content-between justify-content-lg-center px-10 px-lg-0">
+                    <div class="d-flex flex-stack pt-10 pt-lg-0 mb-5 mb-lg-0 h-lg-225px justify-content-between justify-content-lg-center px-10 px-lg-0">
                         <!--begin::Sidebar toggle-->
                         <div class="btn btn-icon btn-active-color-primary w-50px h-50px d-lg-none bg-white bg-opacity-25 rounded"
                              id="kt_sidebar_toggle">
@@ -25,7 +25,7 @@
                         <!--begin::Logo-->
                         <a href="/" >
                             <img alt="Logo" src="~/assets/imgs/logo.png"
-                                 class="h-125px h-lg-250px mb-n2" />
+                                 class="h-150px h-lg-250px mb-n5" />
                         </a>
                         <!--end::Logo-->
                         <!--begin::Empty div for flex spacing-->
@@ -41,7 +41,7 @@
                             <!--begin::Card-->
                             <div class="card border-0 shadow-none h-lg-100 " style="background-color: #A838FF">
                                 <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column flex-center pb-0 pt-15">
+                                <div class="card-body d-flex flex-column flex-center pb-0 pt-20">
                                     <!--begin::Wrapper-->
                                     <div class="px-10 mb-10 align-items-center  d-flex flex-column">
                                         <!--begin::Heading-->
@@ -67,11 +67,11 @@
                         </div>
                         <!--end::Col-->
                         <!--begin::Col-->
-                        <div class="col-12 col-lg-6 col-xxl-5 mb-5 mb-lg-0">
+                        <div class="col-12 col-lg-6 col-xxl-5 mb-10 mb-lg-0">
                             <!--begin::Card-->
                             <div class="card border-0 shadow-none h-lg-100 bg-primary">
                                 <!--begin::Card body-->
-                                <div class="card-body d-flex flex-column flex-center pb-0 pt-15">
+                                <div class="card-body d-flex flex-column flex-center pb-0 pt-20">
                                     <!--begin::Wrapper-->
                                     <div class="px-10 mb-10 align-items-center  d-flex flex-column">
                                         <!--begin::Heading-->
@@ -130,7 +130,7 @@
                         {
 
                             <!--begin::Item-->
-                            <a class="d-flex flex-stack" asp-controller="Search" asp-action="BookDetails" asp-route-bookKey="@book.key">
+                            <a class="d-flex flex-stack @(book == Model.Last() ? "mb-10" : "mb-5")" asp-controller="Search" asp-action="BookDetails" asp-route-bookKey="@book.Key">
                                 <!--begin::Symbol-->
                                 <div class="symbol  symbol-60px me-4">
                                     <img src="@(book.ImageUrl ?? "/images/books/no-image-cover.png")" alt="@book.Title" class="h-100px">
@@ -142,7 +142,7 @@
                                     <div class="flex-grow-1 me-2">
                                         <h5 class="text-white text-hover-primary fs-5 fw-bolder">@book.Title</h5>
 
-                                        <span class="text-gray-400 fw-semibold d-block fs-6">@(string.Join(", ", book.Authors))</span>
+                                        <span class="text-gray-700 fw-semibold d-block fs-6">@(string.Join(", ", book.Authors))</span>
                                     </div>
                                     <!--end:Author-->
                                 </div>

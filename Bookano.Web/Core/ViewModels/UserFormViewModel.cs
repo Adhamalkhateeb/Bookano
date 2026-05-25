@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using UoN.ExpressiveAnnotations.NetCore.Attributes;
 
 namespace Bookano.Web.Core.ViewModels
@@ -60,7 +58,7 @@ namespace Bookano.Web.Core.ViewModels
         ]
         public string? ConfirmPassword { get; set; } = null!;
 
-        public IList<string> SelectedRoles { get; set; } = new List<string>();
+        public IList<string> SelectedRoles { get; set; } = [];
 
         public IEnumerable<SelectListItem>? Roles { get; set; }
     }

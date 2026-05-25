@@ -1,19 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.Build.Framework;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Reception}")]
-    public class AreasController : Controller
+    public class AreasController(IApplicationDbContext context, IMapper mapper) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-
-        public AreasController(ApplicationDbContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {
@@ -42,7 +35,6 @@ namespace Bookano.Web.Controllers
                 return BadRequest();
 
             var area = _mapper.Map<Area>(model);
-            area.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Areas.Add(area);
             await _context.SaveChangesAsync();
@@ -83,8 +75,6 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             area = _mapper.Map(model, area);
-            area.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-            area.LastUpdatedOnUtc = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             await _context.Entry(area).Reference(a => a.Governorate).LoadAsync();
@@ -103,13 +93,9 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             area.IsDeleted = !area.IsDeleted;
-            var updatedOn = DateTimeOffset.UtcNow;
-            area.LastUpdatedOnUtc = updatedOn;
-            area.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-
             await _context.SaveChangesAsync();
 
-            return Ok(updatedOn.ToString("o"));
+            return Ok(area.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(AreaFormViewModel model)

@@ -4,35 +4,23 @@
     {
         public BookCopyViewModel? BookCopy { get; set; }
 
-        public DateOnly RentalDate { get; set; }
+        public DateTime RentalDate { get; set; }
 
-        public DateOnly EndDate { get; set; }
+        public DateTime EndDate { get; set; }
 
-        public DateOnly? ReturnDate { get; set; }
+        public DateTime? ReturnDate { get; set; }
 
-        public DateOnly? ExtendedOn { get; set; }
+        public DateTime? ExtendedOn { get; set; }
 
         public int DelayInDays
         {
             get
             {
-                var today = DateOnly.FromDateTime(DateTime.Today);
-
                 if (ReturnDate.HasValue && ReturnDate.Value > EndDate)
-                {
-                    return (
-                        ReturnDate.Value.ToDateTime(TimeOnly.MinValue)
-                        - EndDate.ToDateTime(TimeOnly.MinValue)
-                    ).Days;
-                }
+                    return (ReturnDate.Value.Subtract(EndDate)).Days;
 
-                if (!ReturnDate.HasValue && today > EndDate)
-                {
-                    return (
-                        today.ToDateTime(TimeOnly.MinValue)
-                        - EndDate.ToDateTime(TimeOnly.MinValue)
-                    ).Days;
-                }
+                if (!ReturnDate.HasValue && DateTime.Today > EndDate)
+                    return (DateTime.Today.Subtract(EndDate)).Days;
 
                 return 0;
             }

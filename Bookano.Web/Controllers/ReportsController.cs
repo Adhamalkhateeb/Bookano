@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Net.Mime;
-using Bookano.Web.Extensions;
 using Bookano.Web.Services.PDF;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,26 +8,18 @@ using OpenHtmlToPdf;
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = "Admin")]
-    public class ReportsController : Controller
+    public class ReportsController(
+        IApplicationDbContext context,
+        IWebHostEnvironment webHostEnvironment,
+        IMapper mapper,
+        IViewRendererService viewRenderer
+    ) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly IMapper _mapper;
-        private readonly IViewRendererService _viewRenderer;
+        private readonly IApplicationDbContext _context = context;
+        private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
+        private readonly IMapper _mapper = mapper;
+        private readonly IViewRendererService _viewRenderer = viewRenderer;
         private readonly int excelDataStartRow = 10;
-
-        public ReportsController(
-            ApplicationDbContext context,
-            IWebHostEnvironment webHostEnvironment,
-            IMapper mapper,
-            IViewRendererService viewRenderer
-        )
-        {
-            _context = context;
-            _webHostEnvironment = webHostEnvironment;
-            _mapper = mapper;
-            _viewRenderer = viewRenderer;
-        }
 
         public IActionResult Index()
         {
@@ -169,7 +160,7 @@ namespace Bookano.Web.Controllers
                 Authors = b.Authors.Select(a => a.Author!.Name),
                 Categories = b.Categories.Select(c => c.Category!.Name),
                 Publisher = b.Publisher!.Name,
-                PublishingDate = b.PublishingDate,
+                PublishingDate = b.PublishingDate.ToDateTime(TimeOnly.MinValue),
                 Hall = b.Hall,
                 IsAvailableForRental = b.IsAvailableForRental,
                 IsDeleted = b.IsDeleted,
@@ -178,28 +169,32 @@ namespace Bookano.Web.Controllers
             return books;
         }
 
-        private (IEnumerable<int> authors, IEnumerable<int> categories) GetBooksSelectedFilters(
-            string authors,
-            string categories
-        )
+        private static (
+            IEnumerable<int> authors,
+            IEnumerable<int> categories
+        ) GetBooksSelectedFilters(string authors, string categories)
         {
             IEnumerable<int> selectedAuthors = string.IsNullOrEmpty(authors)
-                ? Enumerable.Empty<int>()
-                : authors
-                    .Split(',')
-                    .Select(s => int.TryParse(s.Trim(), out var id) ? (int?)id : null)
-                    .Where(id => id.HasValue)
-                    .Select(id => id!.Value)
-                    .ToList();
+                ? []
+                :
+                [
+                    .. authors
+                        .Split(',')
+                        .Select(s => int.TryParse(s.Trim(), out var id) ? (int?)id : null)
+                        .Where(id => id.HasValue)
+                        .Select(id => id!.Value),
+                ];
 
             IEnumerable<int> selectedCategories = string.IsNullOrEmpty(categories)
-                ? Enumerable.Empty<int>()
-                : categories
-                    .Split(',')
-                    .Select(s => int.TryParse(s.Trim(), out var id) ? (int?)id : null)
-                    .Where(id => id.HasValue)
-                    .Select(id => id!.Value)
-                    .ToList();
+                ? []
+                :
+                [
+                    .. categories
+                        .Split(',')
+                        .Select(s => int.TryParse(s.Trim(), out var id) ? (int?)id : null)
+                        .Where(id => id.HasValue)
+                        .Select(id => id!.Value),
+                ];
 
             return (selectedAuthors, selectedCategories);
         }
@@ -454,7 +449,7 @@ namespace Bookano.Web.Controllers
             );
         }
 
-        public async Task<IActionResult> ExportDelayedRentalsToPdf(string duration)
+        public async Task<IActionResult> ExportDelayedRentalsToPdf()
         {
             var delayedRentals = await GetDelayedRentals();
 

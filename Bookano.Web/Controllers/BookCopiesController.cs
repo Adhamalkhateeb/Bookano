@@ -1,16 +1,10 @@
 ﻿namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class BookCopiesController : Controller
+    public class BookCopiesController(IApplicationDbContext context, IMapper mapper) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-
-        public BookCopiesController(ApplicationDbContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
 
         public IActionResult Index()
         {
@@ -49,7 +43,6 @@
             {
                 EditionNumber = model.EditionNumber,
                 IsAvailableForRental = book.IsAvailableForRental && model.IsAvailableForRental,
-                CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value,
             };
 
             book.Copies.Add(copy);
@@ -91,8 +84,6 @@
                 return NotFound();
 
             copy.EditionNumber = model.EditionNumber;
-            copy.LastUpdatedOnUtc = DateTime.UtcNow;
-            copy.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
             copy.IsAvailableForRental =
                 copy.Book!.IsAvailableForRental && model.IsAvailableForRental;
 
@@ -112,13 +103,10 @@
                 return NotFound();
 
             copy.IsDeleted = !copy.IsDeleted;
-            var updatedOn = DateTimeOffset.UtcNow;
-            copy.LastUpdatedOnUtc = updatedOn;
-            copy.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _context.SaveChangesAsync();
 
-            return Ok(updatedOn.ToString("o"));
+            return Ok(copy.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> RentalHistory(int id)
@@ -146,7 +134,7 @@
                 .OrderByDescending(c => c.StartDate)
                 .ToListAsync();
 
-            if (!viewModel.Any() && !await _context.BookCopies.AnyAsync(c => c.Id == id))
+            if (viewModel.Count == 0 && !await _context.BookCopies.AnyAsync(c => c.Id == id))
                 return NotFound();
 
             return View(viewModel);

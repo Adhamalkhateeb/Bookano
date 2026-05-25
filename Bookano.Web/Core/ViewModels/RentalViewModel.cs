@@ -6,7 +6,7 @@
 
         public SubscriberViewModel? Subscriber { get; set; }
 
-        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.Today);
+        public DateTime StartDate { get; set; } = DateTime.Today;
 
         public bool PenaltyPaid { get; set; }
 

@@ -1,11 +1,10 @@
-﻿using Bookano.Web.Core.Utilities;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookano.Web.Core.ViewModels
 {
     public class BooksReportViewModel
     {
-        public PaginatedList<BookViewModel> Books { get; set; }
+        public PaginatedList<BookViewModel>? Books { get; set; }
         public IEnumerable<SelectListItem> Authors { get; set; } = [];
 
         [Display(Name = "Authors")]

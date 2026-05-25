@@ -13,7 +13,7 @@
                         <div class="symbol symbol-40px overflow-hidden me-3">
                             <a href="/Books/Details/${row.id}">
                                 <div class="symbol-label h-60px">
-                                    <img src="${row.imageThumbnailUrl ?? '/images/books/no-image-cover.png'}"
+                                    <img src="${row.imageUrl ?? '/images/books/no-image-cover.png'}"
                                          alt="${row.title}"
                                          class="object-fit-contain w-45px h-60px rounded">
                                 </div>
@@ -25,7 +25,7 @@
                                 ${row.title}
                             </a>
                             <span class="fs-7">${row.authors}</span>
-                            <span class="text-dark fs-8">${row.isbn}</span>
+                            <span class="text-dark fs-8">${row.isbn == null ? '' : row.isbn}</span>
                         </div>
                     </div>
                 `,

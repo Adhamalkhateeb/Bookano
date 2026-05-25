@@ -1,26 +1,18 @@
 ﻿using System.Linq.Dynamic.Core;
-using System.Net.WebSockets;
+using Bookano.Domain.Entities;
 using Microsoft.AspNetCore.DataProtection;
-using NuGet.Packaging;
 
 namespace Bookano.Web.Controllers
 {
-    public class RentalsController : Controller
+    public class RentalsController(
+        IApplicationDbContext context,
+        IMapper mapper,
+        IDataProtectionProvider dataProtector
+    ) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IDataProtector _dataProtector;
-        private readonly IMapper _mapper;
-
-        public RentalsController(
-            ApplicationDbContext context,
-            IMapper mapper,
-            IDataProtectionProvider dataProtector
-        )
-        {
-            _context = context;
-            _mapper = mapper;
-            _dataProtector = dataProtector.CreateProtector("security");
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IDataProtector _dataProtector = dataProtector.CreateProtector("security");
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Create(string subscriberKey)
         {
@@ -83,7 +75,7 @@ namespace Bookano.Web.Controllers
             var rental = new Rental
             {
                 RentalCopies = newCopies,
-                CreatedById = User.FindFirstValue(ClaimTypes.NameIdentifier),
+                StartDate = DateOnly.FromDateTime(DateTime.Today),
             };
 
             subscriber.Rentals.Add(rental);
@@ -167,8 +159,7 @@ namespace Bookano.Web.Controllers
                 return View("NotAllowedRental", copiesError);
 
             rental.RentalCopies = editedCopies;
-            rental.LastUpdatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            rental.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
+            _context.Entry(rental).State = EntityState.Modified;
 
             await _context.SaveChangesAsync();
 
@@ -192,9 +183,7 @@ namespace Bookano.Web.Controllers
                 .Include(s => s.Subscriptions)
                 .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
 
-            var subscriptionEndDate = DateOnly.FromDateTime(
-                subscriber!.Subscriptions.Max(sb => sb.EndDate)
-            );
+            var subscriptionEndDate = subscriber!.Subscriptions.Max(sb => sb.EndDate);
             var extendDeadline = rental.StartDate.AddDays(
                 (int)RentalsConfigurations.MaxRentalDuration
             );
@@ -251,9 +240,7 @@ namespace Bookano.Web.Controllers
                 .Subscribers.Include(s => s.Subscriptions)
                 .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
 
-            var subscriptionEndDate = DateOnly.FromDateTime(
-                subscriber!.Subscriptions.Max(sb => sb.EndDate)
-            );
+            var subscriptionEndDate = subscriber!.Subscriptions.Max(sb => sb.EndDate);
             var extendDeadline = rental.StartDate.AddDays(
                 (int)RentalsConfigurations.MaxRentalDuration
             );
@@ -315,10 +302,7 @@ namespace Bookano.Web.Controllers
 
             if (isUpdated)
             {
-                rental.LastUpdatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                rental.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
                 rental.PenaltyPaid = model.PenalityPaid;
-
                 await _context.SaveChangesAsync();
             }
 
@@ -364,9 +348,6 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             rental.IsDeleted = true;
-            rental.LastUpdatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            rental.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
-
             await _context.SaveChangesAsync();
 
             return Ok(rental.RentalCopies.Count);
@@ -398,7 +379,9 @@ namespace Bookano.Web.Controllers
 
             if (
                 subscriber.Subscriptions.Max(s => s.EndDate)
-                < DateTime.UtcNow.Date.AddDays((int)RentalsConfigurations.RentalDuration)
+                < DateOnly.FromDateTime(
+                    DateTime.UtcNow.Date.AddDays((int)RentalsConfigurations.RentalDuration)
+                )
             )
                 return (Error.InactiveSubscriber, null);
 
@@ -469,7 +452,5 @@ namespace Bookano.Web.Controllers
 
             return (null, copies);
         }
-
-        //private async Task<bool> ValidateExention()
     }
 }

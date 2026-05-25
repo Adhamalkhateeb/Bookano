@@ -114,6 +114,17 @@ namespace Bookano.Web.Services.Image
             };
         }
 
-        public string? ValidateImage(IFormFile file) => Core.Consts.Image.ValidateImage(file);
+        public string? ValidateImage(IFormFile file)
+        {
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+            if (!Domain.Common.Consts.Image.AllowedExtensions.Contains(ext))
+                return Domain.Common.Consts.Error.NotAllowedImageExtension;
+
+            if (file.Length > Domain.Common.Consts.Image.MaxSize)
+                return Domain.Common.Consts.Error.ImageMaxSizeLimit;
+
+            return null;
+        }
     }
 }

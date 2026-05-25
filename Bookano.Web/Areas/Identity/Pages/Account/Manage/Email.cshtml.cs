@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 
@@ -145,7 +144,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
 
                 var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
 
-                await _emailSender.SendEmailAsync(Input.NewEmail, "Confirm your email", body);
+                await _emailSender.SendEmailAsync(Input.NewEmail, "Change your email", body);
 
                 StatusMessage = "Confirmation link to change email sent. Please check your email.";
                 return RedirectToPage();

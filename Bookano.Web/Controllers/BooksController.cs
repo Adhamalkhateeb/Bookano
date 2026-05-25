@@ -5,22 +5,15 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class BooksController : Controller
+    public class BooksController(
+        IApplicationDbContext context,
+        IMapper mapper,
+        [FromKeyedServices("cloudinary")] IImageService imageService
+    ) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-        private readonly IImageService _imageService;
-
-        public BooksController(
-            ApplicationDbContext context,
-            IMapper mapper,
-            [FromKeyedServices("cloudinary")] IImageService imageService
-        )
-        {
-            _context = context;
-            _mapper = mapper;
-            _imageService = imageService;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
+        private readonly IImageService _imageService = imageService;
 
         public IActionResult Index() => View();
 
@@ -152,7 +145,6 @@ namespace Bookano.Web.Controllers
 
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
-            book.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Books.Add(book);
             try
@@ -200,8 +192,8 @@ namespace Bookano.Web.Controllers
             var model = _mapper.Map<BookFormViewModel>(book);
             var viewModel = await PopulateViewModelAsync(model);
 
-            viewModel.SelectedCategories = book.Categories.Select(c => c.CategoryId).ToList();
-            viewModel.SelectedAuthors = book.Authors.Select(a => a.AuthorId).ToList();
+            viewModel.SelectedCategories = [.. book.Categories.Select(c => c.CategoryId)];
+            viewModel.SelectedAuthors = [.. book.Authors.Select(a => a.AuthorId)];
 
             return View("Form", viewModel);
         }
@@ -240,12 +232,6 @@ namespace Bookano.Web.Controllers
 
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
-            book.LastUpdatedOnUtc = DateTime.UtcNow;
-            book.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-
-            if (!book.IsAvailableForRental)
-                foreach (var copy in book.Copies)
-                    copy.IsAvailableForRental = false;
 
             if (model.RowVersion is not null)
                 _context.Entry(book).Property(b => b.RowVersion).OriginalValue = model.RowVersion;
@@ -253,6 +239,10 @@ namespace Bookano.Web.Controllers
             try
             {
                 await _context.SaveChangesAsync();
+                if (!model.IsAvailableForRental)
+                    await _context
+                        .BookCopies.Where(bc => bc.BookId == model.Id)
+                        .ExecuteUpdateAsync(p => p.SetProperty(c => c.IsAvailableForRental, false));
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -309,13 +299,10 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             book.IsDeleted = !book.IsDeleted;
-            var updatedOn = DateTimeOffset.UtcNow;
-            book.LastUpdatedOnUtc = updatedOn;
-            book.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _context.SaveChangesAsync();
 
-            return Ok(updatedOn.ToString("o"));
+            return Ok(book.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(BookFormViewModel model)
@@ -363,7 +350,7 @@ namespace Bookano.Web.Controllers
             return viewModel;
         }
 
-        private void SyncCategories(Book book, IEnumerable<int> selected)
+        private static void SyncCategories(Book book, IEnumerable<int> selected)
         {
             var set = selected.ToHashSet();
 
@@ -376,7 +363,7 @@ namespace Bookano.Web.Controllers
                     book.Categories.Add(new BookCategory { CategoryId = id });
         }
 
-        private void SyncAuthors(Book book, IEnumerable<int> selected)
+        private static void SyncAuthors(Book book, IEnumerable<int> selected)
         {
             var set = selected.ToHashSet();
 

@@ -14,6 +14,6 @@
 
         public DateTime? ExtendedOn { get; set; }
 
-        public int DelayInDays => (int)(DateTime.Now - EndDate).TotalDays;
+        public int DelayInDays => (int)(DateTime.Now.Subtract(EndDate)).TotalDays;
     }
 }

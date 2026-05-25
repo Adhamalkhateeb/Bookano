@@ -1,18 +1,12 @@
 ﻿namespace Bookano.Web.Tasks
 {
-    public class WhatsAppHelper
+    public class WhatsAppHelper(
+        IWebHostEnvironment webHostEnvironment,
+        IWhatsAppClient whatsAppClient
+    )
     {
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly IWhatsAppClient _whatsAppClient;
-
-        public WhatsAppHelper(
-            IWebHostEnvironment webHostEnvironment,
-            IWhatsAppClient whatsAppClient
-        )
-        {
-            _webHostEnvironment = webHostEnvironment;
-            _whatsAppClient = whatsAppClient;
-        }
+        private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
+        private readonly IWhatsAppClient _whatsAppClient = whatsAppClient;
 
         public async Task SendWhatsApp(
             Subscriber subscriber,
@@ -22,7 +16,7 @@
         {
             List<WhatsAppComponent>? components = null;
 
-            if (parameters is not null && parameters.Any())
+            if (parameters is not null && parameters.Count != 0)
             {
                 components = [new WhatsAppComponent { Type = "body", Parameters = parameters }];
             }

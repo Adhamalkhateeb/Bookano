@@ -1,16 +1,10 @@
 ﻿namespace Bookano.Web.Controllers;
 
 [Authorize(Roles = AppRoles.Archive)]
-public class CategoriesController : Controller
+public class CategoriesController(IApplicationDbContext context, IMapper mapper) : Controller
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IMapper _mapper;
-
-    public CategoriesController(ApplicationDbContext context, IMapper mapper)
-    {
-        _context = context;
-        _mapper = mapper;
-    }
+    private readonly IApplicationDbContext _context = context;
+    private readonly IMapper _mapper = mapper;
 
     [HttpGet]
     public async Task<IActionResult> Index()
@@ -36,7 +30,6 @@ public class CategoriesController : Controller
             return BadRequest();
 
         var category = _mapper.Map<Category>(model);
-        category.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
         _context.Categories.Add(category);
         await _context.SaveChangesAsync();
 
@@ -71,8 +64,6 @@ public class CategoriesController : Controller
             return NotFound();
 
         category = _mapper.Map(model, category);
-        category.LastUpdatedOnUtc = DateTime.UtcNow;
-        category.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         await _context.SaveChangesAsync();
 
@@ -90,13 +81,10 @@ public class CategoriesController : Controller
             return NotFound();
 
         category.IsDeleted = !category.IsDeleted;
-        var updatedOn = DateTimeOffset.UtcNow;
-        category.LastUpdatedOnUtc = updatedOn;
-        category.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
         await _context.SaveChangesAsync();
 
-        return Ok(updatedOn.ToString("o"));
+        return Ok(category.LastUpdatedOnUtc.ToString());
     }
 
     public async Task<IActionResult> AllowItem(CategoryFormViewModel model)

@@ -1,31 +1,22 @@
-﻿using System.Threading.RateLimiting;
-using Bookano.Web.Services.Mail;
+﻿using Bookano.Web.Services.Mail;
 
 namespace Bookano.Web.Tasks
 {
-    public class SubscriptionJobs
+    public class SubscriptionJobs(
+        IApplicationDbContext context,
+        IEmailBodyBuilder emailBodyBuilder,
+        IEmailSender emailSender,
+        WhatsAppHelper whatsAppHelper
+    )
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IEmailBodyBuilder _emailBodyBuilder;
-        private readonly IEmailSender _emailSender;
-        private readonly WhatsAppHelper _whatsAppHelper;
-
-        public SubscriptionJobs(
-            ApplicationDbContext context,
-            IEmailBodyBuilder emailBodyBuilder,
-            IEmailSender emailSender,
-            WhatsAppHelper whatsAppHelper
-        )
-        {
-            _context = context;
-            _emailBodyBuilder = emailBodyBuilder;
-            _emailSender = emailSender;
-            _whatsAppHelper = whatsAppHelper;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
+        private readonly IEmailSender _emailSender = emailSender;
+        private readonly WhatsAppHelper _whatsAppHelper = whatsAppHelper;
 
         public async Task PrepareExpirationAlerts()
         {
-            var today = DateTime.UtcNow.Date;
+            var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
             var soonThreshold = today.AddDays(5);
 
             var relevant = await _context
@@ -40,12 +31,12 @@ namespace Bookano.Web.Tasks
                 .ToListAsync();
 
             var expiringSoon = relevant
-                .Where(x => x.LatestEnd.Date == soonThreshold)
+                .Where(x => x.LatestEnd == soonThreshold)
                 .Select(x => (x.Subscriber, x.LatestEnd))
                 .ToList();
 
             var expiredToday = relevant
-                .Where(x => x.LatestEnd.Date == today)
+                .Where(x => x.LatestEnd == today)
                 .Select(x => (x.Subscriber, x.LatestEnd))
                 .ToList();
 
@@ -54,7 +45,7 @@ namespace Bookano.Web.Tasks
         }
 
         private async Task SendExpiringSoonAlerts(
-            List<(Subscriber Subscriber, DateTime LatestEnd)> alerts
+            List<(Subscriber Subscriber, DateOnly LatestEnd)> alerts
         )
         {
             foreach (var (subscriber, latestEnd) in alerts)
@@ -89,17 +80,16 @@ namespace Bookano.Web.Tasks
                     await _whatsAppHelper.SendWhatsApp(
                         subscriber,
                         WhatsAppTemplates.SubscriptionExpiration,
-                        new List<object>
-                        {
+                        [
                             new WhatsAppTextParameter { Text = subscriber.FirstName },
                             new WhatsAppTextParameter { Text = endDateFormatted },
-                        }
+                        ]
                     );
             }
         }
 
         private async Task SendExpiredTodayAlerts(
-            List<(Subscriber Subscriber, DateTime LatestEnd)> alerts
+            List<(Subscriber Subscriber, DateOnly LatestEnd)> alerts
         )
         {
             foreach (var (subscriber, latestEnd) in alerts)
@@ -130,11 +120,10 @@ namespace Bookano.Web.Tasks
                     await _whatsAppHelper.SendWhatsApp(
                         subscriber,
                         WhatsAppTemplates.SubscriptionExpired,
-                        new List<object>
-                        {
+                        [
                             new WhatsAppTextParameter { Text = subscriber.FirstName },
                             new WhatsAppTextParameter { Text = endDateFormatted },
-                        }
+                        ]
                     );
             }
         }

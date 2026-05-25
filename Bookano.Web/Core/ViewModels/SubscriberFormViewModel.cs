@@ -23,7 +23,7 @@ namespace Bookano.Web.Core.ViewModels
 
         [Display(Name = "Date Of Birth")]
         [AssertThat("DateOfBirth <= Today()", ErrorMessage = Error.NotAllowFutureDates)]
-        public DateTime DateOfBirth { get; set; } = DateTime.Now;
+        public DateTime DateOfBirth { get; set; } = DateTime.Today;
 
         [MaxLength(14, ErrorMessage = Error.MaxLength)]
         [RegularExpression(RegexPatterns.NationalId, ErrorMessage = Error.InvalidNationalId)]

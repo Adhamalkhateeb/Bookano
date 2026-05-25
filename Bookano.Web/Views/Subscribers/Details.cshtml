@@ -3,12 +3,13 @@
     ViewData["Title"] = "Details";
     var lastSubscription = Model.Subscriptions.OrderBy(s => s.EndDate).Last();
 
+
     var subscriberStatus = Model.IsBlackListed ? SubscriberStatus.Banned
-        : lastSubscription.EndDate < DateTime.UtcNow.Date
+        : lastSubscription.EndDate < DateTime.Today
         ? SubscriberStatus.InActive : SubscriberStatus.Active;
 
     var statusClass = Model.IsBlackListed ? "danger"
-        : lastSubscription.EndDate < DateTime.UtcNow.Date
+        : lastSubscription.EndDate < DateTime.Today
         ? "warning" : "success";
 
     string statusIcon = subscriberStatus switch
@@ -51,7 +52,7 @@
     <div class="d-flex flex-column flex-xl-row">
         <!--begin::Sidebar-->
         <div class="flex-column flex-lg-row-auto w-100 w-xl-350px mb-10">
-        
+
             <!--begin::Card-->
             <div class="card mb-5 mb-xl-8">
                 <!--begin::Card body-->
@@ -260,8 +261,8 @@
                                 <span class="card-label fw-bold fs-3 mb-1">Rentals</span>
                             </h3>
                             @{
-                                var IsAddRentalBtnVisable = !Model.IsBlackListed 
-                                && lastSubscription.EndDate >= DateTime.UtcNow.Date.AddDays((int)RentalsConfigurations.RentalDuration)
+                                var IsAddRentalBtnVisable = !Model.IsBlackListed
+                                && lastSubscription.EndDate >= DateTime.Today.AddDays((int)RentalsConfigurations.RentalDuration)
                                 && Model.Rentals.Sum(r => r.ActiveCopies) < (int)RentalsConfigurations.MaxAllowedCopies;
                             }
                             <div id="AddRental" class="card-toolbar @(IsAddRentalBtnVisable ? "" : "d-none")">
@@ -270,7 +271,7 @@
                                     Add Rental
                                 </a>
                             </div>
-                            
+
                         </div>
                         <!--end::Card header-->
                         <!--begin::Card body-->
@@ -280,7 +281,7 @@
                         <!--end::Card body-->
                     </div>
                     <!--end::Card-->
-                
+
                 </div>
                 <!--end:::Tab pane-->
 
@@ -290,7 +291,7 @@
         <!--end::Content-->
     </div>
     <!--end::Layout-->
-					
+
 </div>
 
 @section Scripts {

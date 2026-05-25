@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 

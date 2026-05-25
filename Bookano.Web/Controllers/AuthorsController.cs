@@ -1,16 +1,10 @@
 ﻿namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class AuthorsController : Controller
+    public class AuthorsController(IApplicationDbContext context, IMapper mapper) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-
-        public AuthorsController(ApplicationDbContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {
@@ -29,13 +23,13 @@
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AuthorFormViewModel model)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
 
             var author = _mapper.Map<Author>(model);
-            author.CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             _context.Authors.Add(author);
             await _context.SaveChangesAsync();
@@ -60,6 +54,7 @@
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(AuthorFormViewModel model)
         {
             if (!ModelState.IsValid)
@@ -71,8 +66,6 @@
                 return NotFound();
 
             author = _mapper.Map(model, author);
-            author.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-            author.LastUpdatedOnUtc = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
             var authorViewModel = _mapper.Map<AuthorViewModel>(author);
@@ -81,6 +74,7 @@
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var author = await _context.Authors.FindAsync(id);
@@ -89,13 +83,9 @@
                 return NotFound();
 
             author.IsDeleted = !author.IsDeleted;
-            var updatedOn = DateTimeOffset.UtcNow;
-            author.LastUpdatedOnUtc = updatedOn;
-            author.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-
             await _context.SaveChangesAsync();
 
-            return Ok(updatedOn.ToString("o"));
+            return Ok(author.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(AuthorFormViewModel model)

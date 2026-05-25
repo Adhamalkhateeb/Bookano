@@ -1,4 +1,5 @@
-﻿using Bookano.Web.Services.Image;
+﻿using Bookano.Domain.Entities;
+using Bookano.Web.Services.Image;
 using Bookano.Web.Services.Mail;
 using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
@@ -7,37 +8,25 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Reception)]
-    public class SubscribersController : Controller
+    public class SubscribersController(
+        IApplicationDbContext context,
+        IDataProtectionProvider dataProtector,
+        IWebHostEnvironment webHostEnvironment,
+        IMapper mapper,
+        IWhatsAppClient whatsAppClient,
+        [FromKeyedServices("local")] IImageService imageService,
+        IEmailBodyBuilder emailBodyBuilder,
+        IEmailSender emailSender
+    ) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IDataProtector _dataProtector;
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly IMapper _mapper;
-        private readonly IWhatsAppClient _whatsAppClient;
-        private readonly IImageService _imageService;
-        private readonly IEmailBodyBuilder _emailBodyBuilder;
-        private readonly IEmailSender _emailSender;
-
-        public SubscribersController(
-            ApplicationDbContext context,
-            IDataProtectionProvider dataProtector,
-            IWebHostEnvironment webHostEnvironment,
-            IMapper mapper,
-            IWhatsAppClient whatsAppClient,
-            [FromKeyedServices("local")] IImageService imageService,
-            IEmailBodyBuilder emailBodyBuilder,
-            IEmailSender emailSender
-        )
-        {
-            _context = context;
-            _dataProtector = dataProtector.CreateProtector("security");
-            _mapper = mapper;
-            _whatsAppClient = whatsAppClient;
-            _imageService = imageService;
-            _webHostEnvironment = webHostEnvironment;
-            _emailBodyBuilder = emailBodyBuilder;
-            _emailSender = emailSender;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IDataProtector _dataProtector = dataProtector.CreateProtector("security");
+        private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
+        private readonly IMapper _mapper = mapper;
+        private readonly IWhatsAppClient _whatsAppClient = whatsAppClient;
+        private readonly IImageService _imageService = imageService;
+        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
+        private readonly IEmailSender _emailSender = emailSender;
 
         public IActionResult Index()
         {
@@ -110,14 +99,11 @@ namespace Bookano.Web.Controllers
             subscriber.ImageUrl = uploadResult.Url!;
             subscriber.ImagePublicId = uploadResult.PublicId!;
             subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
-            subscriber.CreatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
             var subscription = new Subscription
             {
-                CreatedById = subscriber.CreatedById,
-                CreatedOnUtc = subscriber.CreatedOnUtc,
-                StartDate = DateTime.Today,
-                EndDate = DateTime.Today.AddYears(1),
+                StartDate = DateOnly.FromDateTime(DateTime.Today),
+                EndDate = DateOnly.FromDateTime(DateTime.Today.AddYears(1)),
             };
 
             subscriber.Subscriptions.Add(subscription);
@@ -145,13 +131,10 @@ namespace Bookano.Web.Controllers
             {
                 var component = new List<WhatsAppComponent>
                 {
-                    new WhatsAppComponent
+                    new()
                     {
                         Type = "body",
-                        Parameters = new List<object>
-                        {
-                            new WhatsAppTextParameter { Text = subscriber.FirstName },
-                        },
+                        Parameters = [new WhatsAppTextParameter { Text = subscriber.FirstName }],
                     },
                 };
                 var mobileNumber = _webHostEnvironment.IsDevelopment()
@@ -240,9 +223,6 @@ namespace Bookano.Web.Controllers
                 subscriber.ImagePublicId = uploadResult.PublicId!;
             }
 
-            subscriber.LastUpdatedById = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            subscriber.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
-
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Details), new { Id = model.Key });
         }
@@ -265,13 +245,12 @@ namespace Bookano.Web.Controllers
             var lastSubscription = subscriber.Subscriptions.OrderBy(s => s.EndDate).Last();
 
             var startDate =
-                DateTime.Today > lastSubscription.EndDate
-                    ? DateTime.Today
+                DateOnly.FromDateTime(DateTime.Today) > lastSubscription.EndDate
+                    ? DateOnly.FromDateTime(DateTime.Today)
                     : lastSubscription.EndDate.AddDays(1);
 
             var newSubscription = new Subscription
             {
-                CreatedById = User.FindFirstValue(ClaimTypes.NameIdentifier),
                 StartDate = startDate,
                 EndDate = startDate.AddYears(1),
             };
@@ -302,17 +281,17 @@ namespace Bookano.Web.Controllers
             {
                 var component = new List<WhatsAppComponent>
                 {
-                    new WhatsAppComponent
+                    new()
                     {
                         Type = "body",
-                        Parameters = new List<object>
-                        {
+                        Parameters =
+                        [
                             new WhatsAppTextParameter { Text = subscriber.FirstName },
                             new WhatsAppTextParameter
                             {
                                 Text = newSubscription.EndDate.ToString("d MMM, yyyy"),
                             },
-                        },
+                        ],
                     },
                 };
                 var mobileNumber = _webHostEnvironment.IsDevelopment()

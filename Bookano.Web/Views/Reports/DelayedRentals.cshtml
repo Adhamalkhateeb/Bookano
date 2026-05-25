@@ -9,7 +9,7 @@
         <div class="card-title">
             <span>Delayed Rentals</span>
         </div>
-        @if (Model.Rentals.Any())
+        @if (Model.Rentals!.Any())
         {
             <div class="card-toolbar gap-3">
                 <a class="btn btn-light-success w-100 w-md-auto" asp-action="ExportDelayedRentalsToExcel">
@@ -24,7 +24,7 @@
         }
     </div>
     <div class="card-body">
-        @if (Model.Rentals.Any())
+        @if (Model.Rentals!.Any())
         {
             <div class="table-responsive">
                 <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-responsive-table">
@@ -42,7 +42,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var rental in Model.Rentals)
+                        @foreach (var rental in Model.Rentals!)
                         {
                             <tr>
                                 <td data-label="Subscriber ID" class="ps-md-4" >@rental.SubscriberId</td>

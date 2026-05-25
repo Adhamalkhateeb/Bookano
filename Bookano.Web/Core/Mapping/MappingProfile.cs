@@ -1,7 +1,6 @@
 ﻿using System.Data;
-using System.Runtime.CompilerServices;
+using Bookano.Domain.Entities;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 
 namespace Bookano.Web.Core.Mapping;
 
@@ -9,6 +8,10 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
+        CreateMap<DateOnly, DateTime>().ConvertUsing(d => d.ToDateTime(TimeOnly.MinValue));
+
+        CreateMap<DateTime, DateOnly>().ConvertUsing(d => DateOnly.FromDateTime(d));
+
         //Areas
         CreateMap<Area, AreaViewModel>()
             .ForMember(dest => dest.Governorate, opt => opt.MapFrom(a => a.Governorate!.Name));

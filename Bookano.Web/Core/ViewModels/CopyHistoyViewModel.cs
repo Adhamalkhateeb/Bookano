@@ -15,13 +15,14 @@
         {
             get
             {
-                if (ReturnDate.HasValue && ReturnDate.Value > EndDate) return (ReturnDate.Value - EndDate).Days;
+                if (ReturnDate.HasValue && ReturnDate.Value > EndDate)
+                    return ReturnDate.Value.Date.Subtract(EndDate).Days;
 
-                if (!ReturnDate.HasValue && DateTime.Today > EndDate) return ( DateTime.Today - EndDate).Days;
+                if (!ReturnDate.HasValue && DateTime.Today > EndDate)
+                    return DateTime.Today.Subtract(EndDate).Days;
 
                 return 0;
             }
         }
-        
     }
 }

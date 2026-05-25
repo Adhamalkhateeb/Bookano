@@ -3,10 +3,10 @@
     var name = User.FindFirstValue(ClaimTypes.GivenName);
     var email = User.FindFirstValue(ClaimTypes.Email);
 
-    var avatarUrl = $"{WebHostEnvironment.WebRootPath}/images/users/{User.FindFirst(ClaimTypes.NameIdentifier)!.Value}.png";
+    var avatarUrl = $"{WebHostEnvironment.WebRootPath}/images/users/{User.GetUserId()}.png";
 
     avatarUrl = System.IO.File.Exists(avatarUrl) ?
-    $"/images/users/{User.FindFirst(ClaimTypes.NameIdentifier)!.Value}.png"
+    $"/images/users/{User.GetUserId()}.png"
     : "/assets/imgs/avatar.png";
 }
 

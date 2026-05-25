@@ -3,35 +3,25 @@ using System.Text;
 using System.Text.Encodings.Web;
 using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Admin)]
-    public class UsersController : Controller
+    public class UsersController(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        IEmailBodyBuilder emailBodyBuilder,
+        IEmailSender emailSender,
+        IMapper mapper
+    ) : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly IEmailBodyBuilder _emailBodyBuilder;
-        private readonly IEmailSender _emailSender;
-        private readonly IMapper _mapper;
-
-        public UsersController(
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager,
-            IEmailBodyBuilder emailBodyBuilder,
-            IEmailSender emailSender,
-            IMapper mapper
-        )
-        {
-            _userManager = userManager;
-            _mapper = mapper;
-            _roleManager = roleManager;
-            _emailSender = emailSender;
-            _emailBodyBuilder = emailBodyBuilder;
-        }
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly RoleManager<IdentityRole> _roleManager = roleManager;
+        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
+        private readonly IEmailSender _emailSender = emailSender;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {
@@ -140,7 +130,6 @@ namespace Bookano.Web.Controllers
                 FullName = model.FullName,
                 UserName = model.UserName,
                 Email = model.Email,
-                CreatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value,
             };
             var result = await _userManager.CreateAsync(user, model.Password!);
 
@@ -157,7 +146,7 @@ namespace Bookano.Web.Controllers
                     {
                         area = "Identity",
                         userId = user.Id,
-                        code = code,
+                        code,
                     },
                     protocol: Request.Scheme
                 );
@@ -213,8 +202,6 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             user = _mapper.Map(model, user);
-            user.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-            user.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
 
             var result = await _userManager.UpdateAsync(user);
 
@@ -246,15 +233,12 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             user.IsDeleted = !user.IsDeleted;
-            var updatedOn = DateTimeOffset.UtcNow;
-            user.LastUpdatedOnUtc = updatedOn;
-            user.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
 
             await _userManager.UpdateAsync(user);
             if (user.IsDeleted)
                 await _userManager.UpdateSecurityStampAsync(user);
 
-            return Ok(updatedOn.ToString("o"));
+            return Ok(user.LastUpdatedOnUtc.ToString());
         }
 
         [HttpGet]
@@ -289,9 +273,6 @@ namespace Bookano.Web.Controllers
 
             if (result.Succeeded)
             {
-                user.LastUpdatedById = User.FindFirst(ClaimTypes.NameIdentifier)!.Value;
-                user.LastUpdatedOnUtc = DateTimeOffset.UtcNow;
-
                 await _userManager.UpdateAsync(user);
                 return Ok();
             }

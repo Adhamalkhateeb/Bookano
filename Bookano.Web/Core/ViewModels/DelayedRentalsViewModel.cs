@@ -2,6 +2,6 @@
 {
     public class DelayedRentalsViewModel
     {
-        public IEnumerable<DelayedRentalItemViewModel> Rentals { get; set; }
+        public IEnumerable<DelayedRentalItemViewModel>? Rentals { get; set; }
     }
 }

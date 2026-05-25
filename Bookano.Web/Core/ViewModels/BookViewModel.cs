@@ -3,7 +3,7 @@
     public class BookViewModel
     {
         public int Id { get; set; }
-        public string? key { get; set; }
+        public string? Key { get; set; }
         public string? Isbn { get; set; }
         public string Title { get; set; } = null!;
         public string Publisher { get; set; } = null!;

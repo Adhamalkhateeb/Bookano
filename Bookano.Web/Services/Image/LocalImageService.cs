@@ -4,16 +4,11 @@ using SixLabors.ImageSharp.Processing;
 
 namespace Bookano.Web.Services.Image
 {
-    public sealed class LocalImageService : IImageService
+    public sealed class LocalImageService(IWebHostEnvironment env) : IImageService
     {
-        private readonly IWebHostEnvironment _env;
+        private readonly IWebHostEnvironment _env = env;
         private const string ImagesRoot = "images";
         private const string ThumbFolder = "thumb";
-
-        public LocalImageService(IWebHostEnvironment env)
-        {
-            _env = env;
-        }
 
         public async Task<ImageDeleteResult> DeleteAsync(string imageId)
         {
@@ -90,9 +85,20 @@ namespace Bookano.Web.Services.Image
                 : GetUrl(imageId);
         }
 
-        public string? ValidateImage(IFormFile file) => Core.Consts.Image.ValidateImage(file);
+        public string? ValidateImage(IFormFile file)
+        {
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-        private async Task CreateThumbnailAsync(string source, string destination, int width)
+            if (!Domain.Common.Consts.Image.AllowedExtensions.Contains(ext))
+                return Domain.Common.Consts.Error.NotAllowedImageExtension;
+
+            if (file.Length > Domain.Common.Consts.Image.MaxSize)
+                return Domain.Common.Consts.Error.ImageMaxSizeLimit;
+
+            return null;
+        }
+
+        private static async Task CreateThumbnailAsync(string source, string destination, int width)
         {
             using var image = await SixLabors.ImageSharp.Image.LoadAsync(source);
 
@@ -111,7 +117,7 @@ namespace Bookano.Web.Services.Image
             return Path.Combine(_env.WebRootPath, ImagesRoot, folder!, ThumbFolder, fileName);
         }
 
-        private string GetUrl(string relativePath) =>
+        private static string GetUrl(string relativePath) =>
             $"/{ImagesRoot}/{relativePath.Replace("\\", "/")}";
 
         private static ImageDeleteResult FailDelete(string message) =>

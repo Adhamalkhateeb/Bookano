@@ -1,3 +1,6 @@
 <Solution>
+  <Project Path="Bookano.Application/Bookano.Application.csproj" Id="3c82aa59-58ed-4863-9651-76ebf8faf3aa" />
+  <Project Path="Bookano.Domain/Bookano.Domain.csproj" Id="d8d9c987-41c7-4b02-8872-4537f498e911" />
+  <Project Path="Bookano.Infrastructure/Bookano.Infrastructure.csproj" Id="99a7318f-d373-4705-8928-e791721fe935" />
   <Project Path="Bookano.Web/Bookano.Web.csproj" />
 </Solution>

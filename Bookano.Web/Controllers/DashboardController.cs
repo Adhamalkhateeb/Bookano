@@ -1,21 +1,10 @@
-﻿using System.Collections.Specialized;
-using DocumentFormat.OpenXml.Wordprocessing;
-using Microsoft.AspNetCore.Mvc;
-using SQLitePCL;
-
-namespace Bookano.Web.Controllers
+﻿namespace Bookano.Web.Controllers
 {
     [Authorize]
-    public class DashboardController : Controller
+    public class DashboardController(IApplicationDbContext context, IMapper mapper) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IMapper _mapper;
-
-        public DashboardController(ApplicationDbContext context, IMapper mapper)
-        {
-            _context = context;
-            _mapper = mapper;
-        }
+        private readonly IApplicationDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {
