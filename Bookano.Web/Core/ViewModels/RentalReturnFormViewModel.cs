@@ -8,7 +8,7 @@ namespace Bookano.Web.Core.ViewModels
 
         [Display(Name = "Penality Paid?")]
         [AssertThat(
-            "(TotalDelayInDays == 0 && PenalityPaid == false) || PenalityPaid == true",
+            "TotalDelayInDays == 0 || PenalityPaid",
             ErrorMessage = Error.PenalityShouldBePaid
         )]
         public bool PenalityPaid { get; set; }

@@ -1,21 +1,16 @@
-﻿namespace Bookano.Web.Services.Mail
-{
-    public class EmailBodyBuilder : IEmailBodyBuilder
-    {
-        private readonly IWebHostEnvironment _webHostEnvironment;
+﻿using Bookano.Domain.Common;
+using Microsoft.Extensions.Options;
 
-        public EmailBodyBuilder(IWebHostEnvironment webHostEnvironment)
-        {
-            _webHostEnvironment = webHostEnvironment;
-        }
+namespace Bookano.Infrastructure.Services
+{
+    public class EmailBodyBuilder(IOptions<MailSettings> mailSettings) : IEmailBodyBuilder
+    {
+        private readonly MailSettings _settings = mailSettings.Value;
 
         public string GetEmailBody(string template, Dictionary<string, string> placeholders)
         {
-            var filePath = Path.Combine(
-                _webHostEnvironment.WebRootPath,
-                "templates",
-                $"{template}.html"
-            );
+            var filePath = Path.Combine(_settings.TemplatesPath, $"{template}.html");
+
             using var sr = new StreamReader(filePath);
             var templateContent = sr.ReadToEnd();
 

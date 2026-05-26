@@ -1,18 +1,19 @@
-﻿using Bookano.Web.Services.Mail;
+﻿using Bookano.Domain.Common.Consts;
+using WhatsAppCloudApi;
 
-namespace Bookano.Web.Tasks
+namespace Bookano.Infrastructure.BackgroundServices
 {
     public class SubscriptionJobs(
         IApplicationDbContext context,
         IEmailBodyBuilder emailBodyBuilder,
         IEmailSender emailSender,
-        WhatsAppHelper whatsAppHelper
+        IWhatsAppService<Subscriber> whatsAppService
     )
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
         private readonly IEmailSender _emailSender = emailSender;
-        private readonly WhatsAppHelper _whatsAppHelper = whatsAppHelper;
+        private readonly IWhatsAppService<Subscriber> _whatsAppHelper = whatsAppService;
 
         public async Task PrepareExpirationAlerts()
         {

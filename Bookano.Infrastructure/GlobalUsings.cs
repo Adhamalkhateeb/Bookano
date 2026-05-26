@@ -1,5 +1,9 @@
 ﻿global using Bookano.Application.Common.Interfaces;
+global using Bookano.Domain.Common;
+global using Bookano.Domain.Common.Consts;
 global using Bookano.Domain.Entities;
 global using Bookano.Infrastructure.Persistence.Configurations.Common;
+global using Bookano.Infrastructure.Services;
+global using Microsoft.AspNetCore.Identity.UI.Services;
 global using Microsoft.EntityFrameworkCore;
 global using Microsoft.EntityFrameworkCore.Metadata.Builders;

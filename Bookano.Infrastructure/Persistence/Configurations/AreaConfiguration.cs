@@ -1,6 +1,4 @@
-﻿using Bookano.Infrastructure.Persistence.Configurations.Common;
-
-namespace Bookano.Infrastructure.Persistence.Configurations
+﻿namespace Bookano.Infrastructure.Persistence.Configurations
 {
     internal class AreaConfiguration : IEntityTypeConfiguration<Area>
     {
@@ -10,7 +8,7 @@ namespace Bookano.Infrastructure.Persistence.Configurations
 
             BaseEntityConfiguration.ConfigureBase(builder);
 
-            builder.Property(x => x.Name).IsRequired().HasMaxLength(255);
+            builder.Property(x => x.Name).IsRequired().HasMaxLength(100);
 
             builder.HasIndex(x => new { x.Name, x.GovernorateId }).IsUnique();
 

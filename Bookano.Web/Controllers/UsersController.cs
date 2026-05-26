@@ -1,7 +1,6 @@
 ﻿using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Text.Encodings.Web;
-using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
@@ -14,7 +13,9 @@ namespace Bookano.Web.Controllers
         RoleManager<IdentityRole> roleManager,
         IEmailBodyBuilder emailBodyBuilder,
         IEmailSender emailSender,
-        IMapper mapper
+        IMapper mapper,
+        IValidator<UserFormViewModel> formValidator,
+        IValidator<ResetPasswordFormViewModel> resetPasswordFormValidator
     ) : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
@@ -22,6 +23,9 @@ namespace Bookano.Web.Controllers
         private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
         private readonly IEmailSender _emailSender = emailSender;
         private readonly IMapper _mapper = mapper;
+        private readonly IValidator<UserFormViewModel> _formValidator = formValidator;
+        private readonly IValidator<ResetPasswordFormViewModel> _resetPasswordFormValidator =
+            resetPasswordFormValidator;
 
         public async Task<IActionResult> Index()
         {
@@ -122,6 +126,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(UserFormViewModel model)
         {
+            var validationResult = _formValidator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 
@@ -193,6 +200,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(UserFormViewModel model)
         {
+            var validationResult = _formValidator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 
@@ -258,6 +268,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ResetPassword(ResetPasswordFormViewModel model)
         {
+            var validationResult = _resetPasswordFormValidator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 

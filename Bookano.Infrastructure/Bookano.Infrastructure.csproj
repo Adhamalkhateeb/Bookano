@@ -13,6 +13,7 @@
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="10.0.0" />
+    <PackageReference Include="WhatsAppCloudApi" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

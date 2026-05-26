@@ -5,19 +5,13 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 
 namespace Bookano.Web.Services.PDF
 {
-    public class ViewRendererService : IViewRendererService
+    public class ViewRendererService(
+        IRazorViewEngine razorViewEngine,
+        ITempDataProvider tempDataProvider
+    ) : IViewRendererService
     {
-        private readonly IRazorViewEngine _razorViewEngine;
-        private readonly ITempDataProvider _tempDataProvider;
-
-        public ViewRendererService(
-            IRazorViewEngine razorViewEngine,
-            ITempDataProvider tempDataProvider
-        )
-        {
-            _razorViewEngine = razorViewEngine;
-            _tempDataProvider = tempDataProvider;
-        }
+        private readonly IRazorViewEngine _razorViewEngine = razorViewEngine;
+        private readonly ITempDataProvider _tempDataProvider = tempDataProvider;
 
         public async Task<string> RenderViewToStringAsync(
             ControllerContext actionContext,
@@ -35,8 +29,10 @@ namespace Bookano.Web.Services.PDF
             var viewDictionary = new ViewDataDictionary(
                 new EmptyModelMetadataProvider(),
                 actionContext.ModelState
-            );
-            viewDictionary.Model = model;
+            )
+            {
+                Model = model,
+            };
 
             var view = viewEngineResult.View;
             var tempData = new TempDataDictionary(actionContext.HttpContext, _tempDataProvider);

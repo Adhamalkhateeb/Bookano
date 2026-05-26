@@ -4,7 +4,6 @@
 
 using System.Text;
 using System.Text.Encodings.Web;
-using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
@@ -12,22 +11,15 @@ using Microsoft.AspNetCore.WebUtilities;
 namespace Bookano.Web.Areas.Identity.Pages.Account
 {
     [AllowAnonymous]
-    public class ResendEmailConfirmationModel : PageModel
+    public class ResendEmailConfirmationModel(
+        UserManager<ApplicationUser> userManager,
+        IEmailSender emailSender,
+        IEmailBodyBuilder emailBodyBuilder
+    ) : PageModel
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailSender _emailSender;
-        private readonly IEmailBodyBuilder _emailBodyBuilder;
-
-        public ResendEmailConfirmationModel(
-            UserManager<ApplicationUser> userManager,
-            IEmailSender emailSender,
-            IEmailBodyBuilder emailBodyBuilder
-        )
-        {
-            _userManager = userManager;
-            _emailSender = emailSender;
-            _emailBodyBuilder = emailBodyBuilder;
-        }
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly IEmailSender _emailSender = emailSender;
+        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -89,7 +81,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
                 {
                     area = "Identity",
                     userId = user.Id,
-                    code = code,
+                    code,
                 },
                 protocol: Request.Scheme
             );

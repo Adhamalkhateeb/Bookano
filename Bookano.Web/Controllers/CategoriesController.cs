@@ -1,10 +1,15 @@
 ﻿namespace Bookano.Web.Controllers;
 
 [Authorize(Roles = AppRoles.Archive)]
-public class CategoriesController(IApplicationDbContext context, IMapper mapper) : Controller
+public class CategoriesController(
+    IApplicationDbContext context,
+    IMapper mapper,
+    IValidator<CategoryFormViewModel> validator
+) : Controller
 {
     private readonly IApplicationDbContext _context = context;
     private readonly IMapper _mapper = mapper;
+    private readonly IValidator<CategoryFormViewModel> _validator = validator;
 
     [HttpGet]
     public async Task<IActionResult> Index()
@@ -26,6 +31,9 @@ public class CategoriesController(IApplicationDbContext context, IMapper mapper)
     [HttpPost]
     public async Task<IActionResult> Create(CategoryFormViewModel model)
     {
+        var validationResult = _validator.Validate(model);
+        validationResult.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
             return BadRequest();
 
@@ -55,6 +63,9 @@ public class CategoriesController(IApplicationDbContext context, IMapper mapper)
     [HttpPost]
     public async Task<IActionResult> Edit(CategoryFormViewModel model)
     {
+        var validationResult = _validator.Validate(model);
+        validationResult.AddToModelState(ModelState);
+
         if (!ModelState.IsValid)
             return BadRequest();
 

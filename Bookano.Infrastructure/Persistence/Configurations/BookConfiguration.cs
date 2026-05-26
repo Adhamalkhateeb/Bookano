@@ -9,7 +9,7 @@
             builder.Property(x => x.Isbn).HasMaxLength(20).IsUnicode(false);
             builder.HasIndex(b => b.Isbn).IsUnique().HasFilter("[Isbn] IS NOT NULL");
 
-            builder.Property(x => x.Title).IsRequired().HasMaxLength(255);
+            builder.Property(x => x.Title).IsRequired().HasMaxLength(200);
 
             builder.Property(x => x.Hall).IsRequired().HasMaxLength(50);
 

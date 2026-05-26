@@ -4,29 +4,21 @@
 
 using System.Text;
 using System.Text.Encodings.Web;
-using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookano.Web.Areas.Identity.Pages.Account
 {
-    public class ForgotPasswordModel : PageModel
+    public class ForgotPasswordModel(
+        UserManager<ApplicationUser> userManager,
+        IEmailSender emailSender,
+        IEmailBodyBuilder emailBodyBuilder
+    ) : PageModel
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IEmailBodyBuilder _emailBodyBuilder;
-        private readonly IEmailSender _emailSender;
-
-        public ForgotPasswordModel(
-            UserManager<ApplicationUser> userManager,
-            IEmailSender emailSender,
-            IEmailBodyBuilder emailBodyBuilder
-        )
-        {
-            _userManager = userManager;
-            _emailSender = emailSender;
-            _emailBodyBuilder = emailBodyBuilder;
-        }
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
+        private readonly IEmailSender _emailSender = emailSender;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used

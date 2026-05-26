@@ -1,10 +1,15 @@
 ﻿namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class BookCopiesController(IApplicationDbContext context, IMapper mapper) : Controller
+    public class BookCopiesController(
+        IApplicationDbContext context,
+        IMapper mapper,
+        IValidator<BookCopyFormViewModel> validator
+    ) : Controller
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
+        private readonly IValidator<BookCopyFormViewModel> _validator = validator;
 
         public IActionResult Index()
         {
@@ -31,6 +36,9 @@
         [HttpPost]
         public async Task<IActionResult> Create(BookCopyFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return PartialView("_Form", model);
 
@@ -73,6 +81,9 @@
         [HttpPost]
         public async Task<IActionResult> Edit(BookCopyFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return PartialView("_Form", model);
 

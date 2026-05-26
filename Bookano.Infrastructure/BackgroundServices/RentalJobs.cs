@@ -1,19 +1,19 @@
 ﻿using System.Text;
-using Bookano.Web.Services.Mail;
+using Bookano.Domain.Common.Consts;
 
-namespace Bookano.Web.Tasks
+namespace Bookano.Infrastructure.BackgroundServices
 {
     public class RentalJobs(
         IApplicationDbContext context,
         IEmailBodyBuilder emailBodyBuilder,
         IEmailSender emailSender,
-        WhatsAppHelper whatsAppHelper
+        IWhatsAppService<Subscriber> whatsAppService
     )
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
         private readonly IEmailSender _emailSender = emailSender;
-        private readonly WhatsAppHelper _whatsAppHelper = whatsAppHelper;
+        private readonly IWhatsAppService<Subscriber> _whatsAppService = whatsAppService;
 
         public async Task SendExpiringSoonAlerts()
         {
@@ -71,7 +71,7 @@ namespace Bookano.Web.Tasks
                 );
 
                 if (rental.Subscriber.HasWhatsApp)
-                    await _whatsAppHelper.SendWhatsApp(
+                    await _whatsAppService.SendWhatsApp(
                         rental.Subscriber,
                         WhatsAppTemplates.RentalExpiringSoon
                     );

@@ -8,9 +8,9 @@
 
             BaseEntityConfiguration.ConfigureBase(builder);
 
-            builder.Property(x => x.FirstName).IsRequired().HasMaxLength(100);
+            builder.Property(x => x.FirstName).IsRequired().HasMaxLength(50);
 
-            builder.Property(x => x.LastName).IsRequired().HasMaxLength(100);
+            builder.Property(x => x.LastName).IsRequired().HasMaxLength(50);
 
             builder.Property(x => x.DateOfBirth).IsRequired();
 

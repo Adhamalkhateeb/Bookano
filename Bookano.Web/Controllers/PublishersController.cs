@@ -3,10 +3,15 @@
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class PublishersController(IApplicationDbContext context, IMapper mapper) : Controller
+    public class PublishersController(
+        IApplicationDbContext context,
+        IMapper mapper,
+        IValidator<PublisherFormViewModel> validator
+    ) : Controller
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
+        private readonly IValidator<PublisherFormViewModel> _validator = validator;
 
         public async Task<IActionResult> Index()
         {
@@ -27,6 +32,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(PublisherFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 
@@ -57,6 +65,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(PublisherFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 

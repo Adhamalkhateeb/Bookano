@@ -1,4 +1,4 @@
-﻿namespace Bookano.Web.Services.Mail
+﻿namespace Bookano.Application.Common.Interfaces
 {
     public interface IEmailBodyBuilder
     {

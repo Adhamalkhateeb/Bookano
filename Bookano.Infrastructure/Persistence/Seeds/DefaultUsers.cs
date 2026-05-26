@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Bookano.Web.Seeds
+namespace Bookano.Infrastructure.Persistence.Seeds
 {
     public static class DefaultUsers
     {
@@ -19,6 +19,8 @@ namespace Bookano.Web.Seeds
             {
                 await userManger.CreateAsync(admin, "P@ssword1504");
                 await userManger.AddToRoleAsync(admin, AppRoles.Admin);
+                await userManger.AddToRoleAsync(admin, AppRoles.Archive);
+                await userManger.AddToRoleAsync(admin, AppRoles.Reception);
             }
         }
     }

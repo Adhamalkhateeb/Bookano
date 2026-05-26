@@ -1,14 +1,40 @@
 using Bookano.Infrastructure;
+using Bookano.Infrastructure.BackgroundServices;
+using Bookano.Infrastructure.Persistence.Seeds;
 using Bookano.Web;
-using Bookano.Web.Seeds;
-using Bookano.Web.Tasks;
 using Hangfire;
 using HashidsNet;
-using Microsoft.AspNetCore.Identity;
 using Serilog;
 using Serilog.Context;
+using Serilog.Sinks.MSSqlServer;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog(
+    (ctx, config) =>
+    {
+        config
+            .ReadFrom.Configuration(builder.Configuration)
+            .WriteTo.MSSqlServer(
+                builder.Configuration.GetConnectionString("DefaultConnection"),
+                sinkOptions: new MSSqlServerSinkOptions
+                {
+                    TableName = "Logs",
+                    SchemaName = "logging",
+                    AutoCreateSqlTable = true,
+                },
+                restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Error,
+                columnOptions: new ColumnOptions
+                {
+                    AdditionalColumns =
+                    [
+                        new SqlColumn("UserId", System.Data.SqlDbType.NVarChar, dataLength: 450),
+                        new SqlColumn("UserName", System.Data.SqlDbType.NVarChar, dataLength: 256),
+                    ],
+                }
+            );
+    }
+);
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddWebServices(builder);
@@ -58,16 +84,7 @@ app.Use(
     }
 );
 
-using (var scope = app.Services.CreateScope())
-{
-    await DefaultRoles.SeedAsync(
-        scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>()
-    );
-
-    await DefaultUsers.SeedAdminUserAsync(
-        scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>()
-    );
-}
+await DatabaseInitializer.SeedAsync(app.Services);
 
 app.MapStaticAssets();
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace Bookano.Web.Seeds
+namespace Bookano.Infrastructure.Persistence.Seeds
 {
     public static class DefaultRoles
     {

@@ -3,10 +3,15 @@
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Reception}")]
-    public class AreasController(IApplicationDbContext context, IMapper mapper) : Controller
+    public class AreasController(
+        IApplicationDbContext context,
+        IMapper mapper,
+        IValidator<AreaFormViewModel> validator
+    ) : Controller
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
+        private readonly IValidator<AreaFormViewModel> _validator = validator;
 
         public async Task<IActionResult> Index()
         {
@@ -31,6 +36,8 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(AreaFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
             if (!ModelState.IsValid)
                 return BadRequest();
 
@@ -66,6 +73,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(AreaFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 

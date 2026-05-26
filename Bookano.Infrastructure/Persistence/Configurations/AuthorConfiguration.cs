@@ -1,6 +1,4 @@
-﻿using Bookano.Infrastructure.Persistence.Configurations.Common;
-
-namespace Bookano.Infrastructure.Persistence.Configurations
+﻿namespace Bookano.Infrastructure.Persistence.Configurations
 {
     internal class AuthorConfiguration : IEntityTypeConfiguration<Author>
     {

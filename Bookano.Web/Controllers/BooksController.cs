@@ -8,12 +8,14 @@ namespace Bookano.Web.Controllers
     public class BooksController(
         IApplicationDbContext context,
         IMapper mapper,
-        [FromKeyedServices("cloudinary")] IImageService imageService
+        [FromKeyedServices("cloudinary")] IImageService imageService,
+        IValidator<BookFormViewModel> validator
     ) : Controller
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
         private readonly IImageService _imageService = imageService;
+        private readonly IValidator<BookFormViewModel> _validator = validator;
 
         public IActionResult Index() => View();
 
@@ -120,6 +122,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(BookFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 
@@ -201,6 +206,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(BookFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 

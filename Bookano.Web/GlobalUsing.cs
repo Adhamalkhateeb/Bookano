@@ -10,6 +10,8 @@ global using Bookano.Domain.Entities;
 global using Bookano.Web.Core.ViewModels;
 global using Bookano.Web.Extensions;
 global using Bookano.Web.Filters;
+global using FluentValidation;
+global using FluentValidation.AspNetCore;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Identity.UI.Services;
 global using Microsoft.AspNetCore.Mvc;

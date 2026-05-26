@@ -1,10 +1,15 @@
 ﻿namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class AuthorsController(IApplicationDbContext context, IMapper mapper) : Controller
+    public class AuthorsController(
+        IApplicationDbContext context,
+        IMapper mapper,
+        IValidator<AuthorFormViewModel> validator
+    ) : Controller
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
+        private readonly IValidator<AuthorFormViewModel> _validator = validator;
 
         public async Task<IActionResult> Index()
         {
@@ -26,6 +31,9 @@
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AuthorFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 
@@ -57,6 +65,9 @@
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(AuthorFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 

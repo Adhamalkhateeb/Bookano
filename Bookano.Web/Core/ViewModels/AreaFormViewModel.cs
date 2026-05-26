@@ -6,17 +6,13 @@ namespace Bookano.Web.Core.ViewModels
     {
         public int Id { get; set; }
 
-        [
-            MaxLength(255, ErrorMessage = Error.MaxLength),
-            Display(Name = "Area"),
-            RegularExpression(RegexPatterns.AreaName, ErrorMessage = Error.InvalidAreaName),
-            Remote(
-                "AllowItem",
-                null!,
-                AdditionalFields = $"{nameof(Id)},{nameof(GovernorateId)}",
-                ErrorMessage = Error.AreaAlreadyExists
-            )
-        ]
+        [Display(Name = "Area")]
+        [Remote(
+            "AllowItem",
+            null!,
+            AdditionalFields = $"{nameof(Id)},{nameof(GovernorateId)}",
+            ErrorMessage = Error.AreaAlreadyExists
+        )]
         public string Name { get; set; } = null!;
 
         [Display(Name = "Governorate")]

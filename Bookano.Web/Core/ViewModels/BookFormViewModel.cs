@@ -8,10 +8,8 @@ namespace Bookano.Web.Core.ViewModels
         public int Id { get; set; }
 
         [Remote("AllowItem", null!, AdditionalFields = nameof(Id), ErrorMessage = Error.Duplicated)]
-        [MaxLength(20, ErrorMessage = Error.MaxLength), Display(Name = "ISBN")]
+        [Display(Name = "ISBN")]
         public string? Isbn { get; set; }
-
-        [MaxLength(255, ErrorMessage = Error.MaxLength)]
         public string Title { get; set; } = null!;
 
         [Display(Name = "Publisher")]
@@ -29,7 +27,6 @@ namespace Bookano.Web.Core.ViewModels
         public string IdempotencyKey { get; set; } = Guid.NewGuid().ToString();
         public byte[]? RowVersion { get; set; }
 
-        [MaxLength(50, ErrorMessage = Error.MaxLength)]
         public string Hall { get; set; } = null!;
 
         [Display(Name = "Is available for rental?")]

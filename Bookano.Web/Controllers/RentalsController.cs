@@ -1,18 +1,20 @@
 ﻿using System.Linq.Dynamic.Core;
-using Bookano.Domain.Entities;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Bookano.Web.Controllers
 {
+    [Authorize(Roles = AppRoles.Reception)]
     public class RentalsController(
         IApplicationDbContext context,
         IMapper mapper,
-        IDataProtectionProvider dataProtector
+        IDataProtectionProvider dataProtector,
+        IValidator<RentalReturnFormViewModel> validator
     ) : Controller
     {
         private readonly IApplicationDbContext _context = context;
         private readonly IDataProtector _dataProtector = dataProtector.CreateProtector("security");
         private readonly IMapper _mapper = mapper;
+        private readonly IValidator<RentalReturnFormViewModel> _validator = validator;
 
         public async Task<IActionResult> Create(string subscriberKey)
         {
@@ -229,6 +231,9 @@ namespace Bookano.Web.Controllers
             var copies = _mapper.Map<IList<RentalCopyViewModel>>(
                 rental.RentalCopies.Where(rc => !rc.ReturnDate.HasValue)
             );
+
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
 
             if (!ModelState.IsValid)
             {

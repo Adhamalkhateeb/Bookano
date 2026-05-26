@@ -4,32 +4,23 @@
 
 using System.Text;
 using System.Text.Encodings.Web;
-using Bookano.Web.Services.Mail;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
 {
-    public class EmailModel : PageModel
+    public class EmailModel(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        IEmailSender emailSender,
+        IEmailBodyBuilder emailBodyBuilder
+    ) : PageModel
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly IEmailBodyBuilder _emailBodyBuilder;
-        private readonly IEmailSender _emailSender;
-
-        public EmailModel(
-            UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
-            IEmailSender emailSender,
-            IEmailBodyBuilder emailBodyBuilder
-        )
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _emailSender = emailSender;
-            _emailBodyBuilder = emailBodyBuilder;
-        }
+        private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
+        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
+        private readonly IEmailSender _emailSender = emailSender;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -120,9 +111,9 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
                     values: new
                     {
                         area = "Identity",
-                        userId = userId,
+                        userId,
                         email = Input.NewEmail,
-                        code = code,
+                        code,
                     },
                     protocol: Request.Scheme
                 );
@@ -178,8 +169,8 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
                 values: new
                 {
                     area = "Identity",
-                    userId = userId,
-                    code = code,
+                    userId,
+                    code,
                 },
                 protocol: Request.Scheme
             );

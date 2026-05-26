@@ -3,15 +3,16 @@
     public static class Error
     {
         public const string RequiredField = "Required Field";
-        public const string MaxLength = "Length cannot be more than {1} characters.";
+        public const string MaxLength =
+            "{PropertyName} cannot be more than {MaxLength} characters.";
         public const string MaxMinLength =
-            "The {0} must be at least {2} and at max {1} characters long.";
+            "{PropertyName} must be at least {MinLength} and at max {MaxLength} characters long.";
         public const string Duplicated = "Another record with the same {0} already exists!";
         public const string NotAllowedImageExtension =
             "Only (.jpg, .jpeg, .png, .webp) files are allowed.";
         public const string ImageMaxSizeLimit = "File cannot exceed 2MB!";
         public const string NotAllowFutureDates = "Date cannot be in the future!";
-        public const string ShouldBeInRange = "{0} should be between {1} and {2}!";
+        public const string ShouldBeInRange = "{PropertyName} should be between {From} and {To}!";
         public const string PasswordNotMatch =
             "The password and confirmation password do not match.";
         public const string WeakPassword =

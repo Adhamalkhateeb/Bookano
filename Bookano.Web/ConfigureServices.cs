@@ -2,13 +2,12 @@
 using Bookano.Web.Core.Mapping;
 using Bookano.Web.Helpers;
 using Bookano.Web.Services.Image;
-using Bookano.Web.Services.Mail;
 using Bookano.Web.Services.PDF;
-using Bookano.Web.Tasks;
+using Bookano.Web.Validators;
+using FluentValidation.AspNetCore;
 using HashidsNet;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
-using Serilog;
 using UoN.ExpressiveAnnotations.NetCore.DependencyInjection;
 using WhatsAppCloudApi.Extensions;
 
@@ -21,10 +20,8 @@ namespace Bookano.Web
             WebApplicationBuilder builder
         )
         {
-            builder.Host.UseSerilog();
-
-            builder
-                .Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            services
+                .AddIdentity<ApplicationUser, IdentityRole>(options =>
                 {
                     options.SignIn.RequireConfirmedAccount = true;
                     options.Password.RequiredLength = 8;
@@ -34,10 +31,6 @@ namespace Bookano.Web
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultUI()
                 .AddDefaultTokenProviders();
-
-            services.Configure<SecurityStampValidatorOptions>(options =>
-                options.ValidationInterval = TimeSpan.FromMinutes(5)
-            );
 
             services.AddScoped<
                 IUserClaimsPrincipalFactory<ApplicationUser>,
@@ -58,14 +51,9 @@ namespace Bookano.Web
                 );
             });
 
-            services.AddScoped<SubscriptionJobs>();
-            services.AddScoped<RentalJobs>();
-
             services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloudinary");
             services.AddKeyedTransient<IImageService, LocalImageService>("local");
 
-            services.AddTransient<IEmailSender, EmailSender>();
-            services.AddTransient<IEmailBodyBuilder, EmailBodyBuilder>();
             services.AddScoped<IViewRendererService, ViewRendererService>();
 
             services.AddControllersWithViews();
@@ -78,19 +66,39 @@ namespace Bookano.Web
             services.AddExpressiveAnnotations();
 
             services.AddWhatsAppApiClient(builder.Configuration);
-            services.AddScoped<WhatsAppHelper>();
+
+            services.Configure<WhatsAppSettings>(config =>
+            {
+                builder.Configuration.GetSection("WhatsAppSettings").Bind(config);
+                config.IsDevelopment = builder.Environment.IsDevelopment();
+                config.DevelopmentOverrideMobile = "01021094971";
+            });
 
             services.Configure<CloudinarySettings>(
                 builder.Configuration.GetSection(nameof(CloudinarySettings))
             );
-            services.Configure<MailSettings>(
-                builder.Configuration.GetSection(nameof(MailSettings))
-            );
+
+            services.Configure<MailSettings>(config =>
+            {
+                builder.Configuration.GetSection("MailSettings").Bind(config);
+
+                config.IsDevelopment = builder.Environment.IsDevelopment();
+
+                if (!Path.IsPathRooted(config.TemplatesPath))
+                    config.TemplatesPath = Path.Combine(
+                        builder.Environment.WebRootPath,
+                        config.TemplatesPath
+                    );
+            });
 
             services.AddSingleton<IHashids>(_ => new Hashids(
                 salt: "f1nd1ngn3m0",
                 minHashLength: 11
             ));
+
+            services.AddFluentValidationAutoValidation();
+            services.AddFluentValidationClientsideAdapters();
+            services.AddValidatorsFromAssemblyContaining<AuthorValidator>();
 
             return services;
         }

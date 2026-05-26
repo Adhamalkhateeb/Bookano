@@ -153,18 +153,20 @@ namespace Bookano.Web.Controllers
                 );
             }
 
-            var books = booksQuery.Select(b => new BookViewModel
-            {
-                Isbn = b.Isbn ?? "N/A",
-                Title = b.Title,
-                Authors = b.Authors.Select(a => a.Author!.Name),
-                Categories = b.Categories.Select(c => c.Category!.Name),
-                Publisher = b.Publisher!.Name,
-                PublishingDate = b.PublishingDate.ToDateTime(TimeOnly.MinValue),
-                Hall = b.Hall,
-                IsAvailableForRental = b.IsAvailableForRental,
-                IsDeleted = b.IsDeleted,
-            });
+            var books = booksQuery
+                .OrderByDescending(b => b.CreatedOnUtc)
+                .Select(b => new BookViewModel
+                {
+                    Isbn = b.Isbn ?? "N/A",
+                    Title = b.Title,
+                    Authors = b.Authors.Select(a => a.Author!.Name),
+                    Categories = b.Categories.Select(c => c.Category!.Name),
+                    Publisher = b.Publisher!.Name,
+                    PublishingDate = b.PublishingDate.ToDateTime(TimeOnly.MinValue),
+                    Hall = b.Hall,
+                    IsAvailableForRental = b.IsAvailableForRental,
+                    IsDeleted = b.IsDeleted,
+                });
 
             return books;
         }

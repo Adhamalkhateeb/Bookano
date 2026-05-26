@@ -4,18 +4,11 @@
     {
         public string Id { get; set; } = null!;
 
-        [
-            DataType(DataType.Password),
-            StringLength(100, ErrorMessage = Error.MaxMinLength, MinimumLength = 8),
-            RegularExpression(RegexPatterns.Password, ErrorMessage = Error.WeakPassword)
-        ]
+        [DataType(DataType.Password)]
         public string Password { get; set; } = null!;
 
-        [
-            DataType(DataType.Password),
-            Display(Name = "Confirm password"),
-            Compare("Password", ErrorMessage = Error.PasswordNotMatch),
-        ]
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
         public string ConfirmPassword { get; set; } = null!;
     }
 }

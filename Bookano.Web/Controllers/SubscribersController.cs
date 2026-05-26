@@ -1,6 +1,5 @@
 ﻿using Bookano.Domain.Entities;
 using Bookano.Web.Services.Image;
-using Bookano.Web.Services.Mail;
 using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -16,7 +15,8 @@ namespace Bookano.Web.Controllers
         IWhatsAppClient whatsAppClient,
         [FromKeyedServices("local")] IImageService imageService,
         IEmailBodyBuilder emailBodyBuilder,
-        IEmailSender emailSender
+        IEmailSender emailSender,
+        IValidator<SubscriberFormViewModel> validator
     ) : Controller
     {
         private readonly IApplicationDbContext _context = context;
@@ -27,6 +27,7 @@ namespace Bookano.Web.Controllers
         private readonly IImageService _imageService = imageService;
         private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
         private readonly IEmailSender _emailSender = emailSender;
+        private readonly IValidator<SubscriberFormViewModel> _validator = validator;
 
         public IActionResult Index()
         {
@@ -78,6 +79,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(SubscriberFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 
@@ -175,6 +179,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(SubscriberFormViewModel model)
         {
+            var validationResult = _validator.Validate(model);
+            validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 

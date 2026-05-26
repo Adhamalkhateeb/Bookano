@@ -2,15 +2,11 @@
 using System.Net.Mail;
 using Microsoft.Extensions.Options;
 
-namespace Bookano.Web.Services.Mail
+namespace Bookano.Infrastructure.Services
 {
-    public class EmailSender(
-        IOptions<MailSettings> mailSettings,
-        IWebHostEnvironment webHostEnvironment
-    ) : IEmailSender
+    public class EmailSender(IOptions<MailSettings> mailSettings) : IEmailSender
     {
         private readonly MailSettings _mailSettings = mailSettings.Value;
-        private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
 
         public async Task SendEmailAsync(string email, string subject, string htmlMessage)
         {
@@ -22,7 +18,7 @@ namespace Bookano.Web.Services.Mail
                 IsBodyHtml = true,
             };
 
-            var recipient = _webHostEnvironment.IsDevelopment()
+            var recipient = _mailSettings.IsDevelopment
                 ? _mailSettings.DevelopmentOverrideRecipient ?? email
                 : email;
 
