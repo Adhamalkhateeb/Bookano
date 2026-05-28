@@ -2,7 +2,7 @@
 
 namespace Bookano.Domain.Common
 {
-    public abstract class BaseEntity
+    public abstract class BaseEntity : IAuditable
     {
         public bool IsDeleted { get; set; }
         public string? CreatedById { get; set; }

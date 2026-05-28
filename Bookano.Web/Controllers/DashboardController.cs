@@ -1,20 +1,24 @@
-﻿namespace Bookano.Web.Controllers
+﻿using Bookano.Application.Interfaces;
+
+namespace Bookano.Web.Controllers
 {
     [Authorize]
-    public class DashboardController(IApplicationDbContext context, IMapper mapper) : Controller
+    public class DashboardController(IUnitOfWork unitOfWork, IMapper mapper) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
 
         public async Task<IActionResult> Index()
         {
-            var copiesCount = await _context.BookCopies.CountAsync(c => !c.IsDeleted);
+            var copiesCount = await _unitOfWork
+                .BookCopies.GetQueryable()
+                .CountAsync(c => !c.IsDeleted);
             copiesCount = copiesCount <= 10 ? copiesCount : copiesCount / 10 * 10;
 
-            var subscribersCount = await _context.Subscribers.CountAsync(s => !s.IsDeleted);
+            var subscribersCount = await _unitOfWork.Subscribers.CountAsync(s => !s.IsDeleted);
 
-            var recentlyAddedBooks = await _context
-                .Books.AsNoTracking()
+            var recentlyAddedBooks = await _unitOfWork
+                .Books.GetQueryable()
                 .Where(b => !b.IsDeleted)
                 .OrderByDescending(b => b.CreatedOnUtc)
                 .Take(8)
@@ -27,15 +31,16 @@
                 })
                 .ToListAsync();
 
-            var topBookIds = await _context
-                .RentalCopies.GroupBy(rc => rc.BookCopy!.BookId)
+            var topBookIds = await _unitOfWork
+                .RentalCopies.GetQueryable()
+                .GroupBy(rc => rc.BookCopy!.BookId)
                 .OrderByDescending(g => g.Count())
                 .Take(6)
                 .Select(g => g.Key)
                 .ToListAsync();
 
-            var topRentedBooks = await _context
-                .Books.AsNoTracking()
+            var topRentedBooks = await _unitOfWork
+                .Books.GetQueryable()
                 .Where(b => topBookIds.Contains(b.Id) && !b.IsDeleted)
                 .Include(b => b.Authors)
                     .ThenInclude(ba => ba.Author)
@@ -76,8 +81,9 @@
                 ? DateOnly.ParseExact(endDate, "yyyy-MM-dd")
                 : DateOnly.FromDateTime(DateTime.UtcNow);
 
-            var data = await _context
-                .RentalCopies.Where(rc => rc.RentalDate >= start && rc.RentalDate <= end)
+            var data = await _unitOfWork
+                .RentalCopies.GetQueryable()
+                .Where(rc => rc.RentalDate >= start && rc.RentalDate <= end)
                 .GroupBy(rc => rc.RentalDate)
                 .Select(g => new { Date = g.Key, Count = g.Count() })
                 .ToListAsync();
@@ -101,9 +107,10 @@
 
         public async Task<IActionResult> GetSubscribersPerGovernorate()
         {
-            var data = await _context
-                .Subscribers.Where(s => !s.IsDeleted)
-                .GroupBy(s => new { GovernorateName = s.Governorate!.Name })
+            var data = await _unitOfWork
+                .Subscribers.GetQueryable()
+                .Where(s => !s.IsDeleted)
+                .GroupBy(s => new { GovernorateName = s.Area!.Governorate!.Name })
                 .Select(g => new ChartItemViewModel
                 {
                     Label = g.Key.GovernorateName,

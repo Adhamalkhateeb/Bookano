@@ -1,18 +1,20 @@
 ﻿using System.Linq.Dynamic.Core;
+using Bookano.Application.Interfaces;
 using Bookano.Web.Services.Image;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
     public class BooksController(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IMapper mapper,
         [FromKeyedServices("cloudinary")] IImageService imageService,
         IValidator<BookFormViewModel> validator
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
         private readonly IImageService _imageService = imageService;
         private readonly IValidator<BookFormViewModel> _validator = validator;
@@ -59,7 +61,7 @@ namespace Bookano.Web.Controllers
             );
             var sortDirection = isDescending ? "desc" : "asc";
 
-            var booksQuery = _context.Books.AsNoTracking().AsQueryable();
+            var booksQuery = _unitOfWork.Books.GetQueryable();
 
             var totalRecords = await booksQuery.CountAsync();
 
@@ -98,8 +100,8 @@ namespace Bookano.Web.Controllers
 
         public async Task<IActionResult> Details(int id)
         {
-            var book = await _context
-                .Books.AsNoTracking()
+            var book = await _unitOfWork
+                .Books.GetQueryable()
                 .Include(b => b.Copies)
                 .Include(b => b.Publisher)
                 .Include(b => b.Authors)
@@ -138,9 +140,9 @@ namespace Bookano.Web.Controllers
                 }
             }
 
-            var duplicate = await _context.Books.FirstOrDefaultAsync(b =>
-                b.IdempotencyKey == model.IdempotencyKey
-            );
+            var duplicate = await _unitOfWork
+                .Books.GetQueryable()
+                .FirstOrDefaultAsync(b => b.IdempotencyKey == model.IdempotencyKey);
 
             if (duplicate is not null)
                 return RedirectToAction(nameof(Details), new { duplicate.Id });
@@ -151,16 +153,16 @@ namespace Bookano.Web.Controllers
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
 
-            _context.Books.Add(book);
+            _unitOfWork.Books.Add(book);
             try
             {
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
-                var existing = await _context.Books.FirstAsync(b =>
-                    b.IdempotencyKey == model.IdempotencyKey
-                );
+                var existing = await _unitOfWork
+                    .Books.GetQueryable()
+                    .FirstAsync(b => b.IdempotencyKey == model.IdempotencyKey);
                 return RedirectToAction(nameof(Details), new { existing.Id });
             }
 
@@ -171,7 +173,7 @@ namespace Bookano.Web.Controllers
                 if (uploadResult.IsSuccess)
                 {
                     ApplyImage(book, uploadResult.Url!, uploadResult.PublicId!);
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
                 }
                 else
                 {
@@ -185,8 +187,8 @@ namespace Bookano.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var book = await _context
-                .Books.AsNoTracking()
+            var book = await _unitOfWork
+                .Books.GetQueryable()
                 .Include(b => b.Categories)
                 .Include(b => b.Authors)
                 .SingleOrDefaultAsync(b => b.Id == id);
@@ -212,8 +214,9 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return View("Form", await PopulateViewModelAsync(model));
 
-            var book = await _context
-                .Books.Include(b => b.Categories)
+            var book = await _unitOfWork
+                .Books.GetQueryable()
+                .Include(b => b.Categories)
                 .Include(b => b.Authors)
                 .Include(b => b.Copies)
                 .SingleOrDefaultAsync(b => b.Id == model.Id);
@@ -241,15 +244,17 @@ namespace Bookano.Web.Controllers
             SyncCategories(book, model.SelectedCategories);
             SyncAuthors(book, model.SelectedAuthors);
 
-            if (model.RowVersion is not null)
-                _context.Entry(book).Property(b => b.RowVersion).OriginalValue = model.RowVersion;
+            //if (model.RowVersion is not null)
+            //    _unitOfWork.Books.Entry(book).Property(b => b.RowVersion).OriginalValue =
+            //        model.RowVersion;
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
                 if (!model.IsAvailableForRental)
-                    await _context
-                        .BookCopies.Where(bc => bc.BookId == model.Id)
+                    await _unitOfWork
+                        .BookCopies.GetQueryable()
+                        .Where(bc => bc.BookId == model.Id)
                         .ExecuteUpdateAsync(p => p.SetProperty(c => c.IsAvailableForRental, false));
             }
             catch (DbUpdateConcurrencyException)
@@ -266,7 +271,7 @@ namespace Bookano.Web.Controllers
                     var oldImagePublicId = dbImagePublicId;
 
                     ApplyImage(book, uploadResult.Url!, uploadResult.PublicId!);
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
 
                     if (!string.IsNullOrEmpty(oldImagePublicId))
                     {
@@ -291,7 +296,7 @@ namespace Bookano.Web.Controllers
                     book.ImageUrl = null;
                     book.ImageThumbnailUrl = null;
                     book.ImagePublicId = null;
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
                 }
             }
 
@@ -301,21 +306,23 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id)
         {
-            var book = await _context.Books.FindAsync(id);
+            var book = await _unitOfWork.Books.GetQueryable().SingleOrDefaultAsync(b => b.Id == id);
 
             if (book is null)
                 return NotFound();
 
             book.IsDeleted = !book.IsDeleted;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return Ok(book.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(BookFormViewModel model)
         {
-            var book = await _context.Books.SingleOrDefaultAsync(b => b.Isbn == model.Isbn);
+            var book = await _unitOfWork
+                .Books.GetQueryable()
+                .SingleOrDefaultAsync(b => b.Isbn == model.Isbn);
             var isAllowed = book is null || book.Id.Equals(model.Id);
 
             return Json(isAllowed);
@@ -334,20 +341,21 @@ namespace Bookano.Web.Controllers
         {
             var viewModel = model ?? new BookFormViewModel();
 
-            var authors = await _context
-                .Authors.AsNoTracking()
+            var authors = await _unitOfWork
+                .Authors.GetQueryable()
                 .Where(a => !a.IsDeleted)
                 .OrderBy(a => a.Name)
                 .ToListAsync();
 
-            var categories = await _context
-                .Categories.AsNoTracking()
+            var categories = await _unitOfWork
+                .Categories.GetQueryable()
                 .Where(c => !c.IsDeleted)
                 .OrderBy(c => c.Name)
                 .ToListAsync();
 
-            var publishers = await _context
-                .Publishers.Where(p => !p.IsDeleted)
+            var publishers = await _unitOfWork
+                .Publishers.GetQueryable()
+                .Where(p => !p.IsDeleted)
                 .OrderBy(p => p.Name)
                 .ToListAsync();
 

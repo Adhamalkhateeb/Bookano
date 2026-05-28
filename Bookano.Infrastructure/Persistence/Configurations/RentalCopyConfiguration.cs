@@ -1,6 +1,4 @@
-﻿using Bookano.Domain.Common.Enums;
-
-namespace Bookano.Infrastructure.Persistence.Configurations
+﻿namespace Bookano.Infrastructure.Persistence.Configurations
 {
     internal class RentalCopyConfiguration : IEntityTypeConfiguration<RentalCopy>
     {

@@ -1,14 +1,15 @@
-﻿namespace Bookano.Domain.Entities
+﻿namespace Bookano.Domain.Entities;
+
+public sealed class Subscription : IAuditable
 {
-    public class Subscription
-    {
-        public int Id { get; set; }
-        public int SubscriberId { get; set; }
-        public Subscriber? Subscriber { get; set; }
-        public DateOnly StartDate { get; set; }
-        public DateOnly EndDate { get; set; }
-        public string? CreatedById { get; set; }
-        public ApplicationUser? CreatedBy { get; set; }
-        public DateTimeOffset CreatedOnUtc { get; set; }
-    }
+    public int Id { get; set; }
+    public int SubscriberId { get; set; }
+    public Subscriber? Subscriber { get; set; }
+    public DateOnly StartDate { get; set; }
+    public DateOnly EndDate { get; set; }
+    public string? CreatedById { get; set; }
+    public ApplicationUser? CreatedBy { get; set; }
+    public DateTimeOffset CreatedOnUtc { get; set; }
+    public string? LastUpdatedById { get; set; }
+    public DateTimeOffset? LastUpdatedOnUtc { get ; set; }
 }

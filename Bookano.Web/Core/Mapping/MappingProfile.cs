@@ -12,20 +12,7 @@ public class MappingProfile : Profile
 
         CreateMap<DateTime, DateOnly>().ConvertUsing(d => DateOnly.FromDateTime(d));
 
-        //Areas
-        CreateMap<Area, AreaViewModel>()
-            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(a => a.Governorate!.Name));
-        CreateMap<AreaFormViewModel, Area>().ReverseMap();
-        CreateMap<Area, SelectListItem>()
-            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
-            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
-        //Authors
-        CreateMap<Author, AuthorViewModel>();
-        CreateMap<AuthorFormViewModel, Author>().ReverseMap();
-        CreateMap<Author, SelectListItem>()
-            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
-            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
         //Books
         CreateMap<BookFormViewModel, Book>()
@@ -68,25 +55,6 @@ public class MappingProfile : Profile
 
         CreateMap<BookCopy, BookCopyFormViewModel>();
 
-        //Categories
-        CreateMap<Category, CategoryViewModel>();
-        CreateMap<CategoryFormViewModel, Category>().ReverseMap();
-        CreateMap<Category, SelectListItem>()
-            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
-            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
-
-        //Governorates
-
-        CreateMap<Governorate, SelectListItem>()
-            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
-            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
-
-        //Publishers
-        CreateMap<Publisher, PublisherViewModel>();
-        CreateMap<PublisherFormViewModel, Publisher>().ReverseMap();
-        CreateMap<Publisher, SelectListItem>()
-            .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
-            .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 
         //Rentals
         CreateMap<Rental, RentalViewModel>();
@@ -94,7 +62,7 @@ public class MappingProfile : Profile
 
         //Subscribers
         CreateMap<Subscriber, SubscriberViewModel>()
-            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(s => s.Governorate!.Name))
+            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(s => s.Area!.Governorate!.Name))
             .ForMember(dest => dest.Area, opt => opt.MapFrom(s => s.Area!.Name))
             .ForMember(
                 dest => dest.FullName,

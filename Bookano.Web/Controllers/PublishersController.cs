@@ -1,21 +1,22 @@
-﻿using Bookano.Domain.Entities;
+﻿using Bookano.Application.DTOs.Publishers;
+using Bookano.Application.Services.Publishers;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
     public class PublishersController(
-        IApplicationDbContext context,
         IMapper mapper,
-        IValidator<PublisherFormViewModel> validator
+        IValidator<PublisherFormViewModel> validator,
+        IPublisherService publisherService
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
         private readonly IValidator<PublisherFormViewModel> _validator = validator;
+        private readonly IPublisherService _publisherService = publisherService;
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(CancellationToken ct = default)
         {
-            var publishers = await _context.Publishers.AsNoTracking().ToListAsync();
+            var publishers = await _publisherService.GetAllAsync(ct);
 
             var viewModel = _mapper.Map<IEnumerable<PublisherViewModel>>(publishers);
 
@@ -30,7 +31,7 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(PublisherFormViewModel model)
+        public async Task<IActionResult> Create(PublisherFormViewModel model, CancellationToken ct = default)
         {
             var validationResult = _validator.Validate(model);
             validationResult.AddToModelState(ModelState);
@@ -38,32 +39,30 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var publisher = _mapper.Map<Publisher>(model);
+            var dto = _mapper.Map<PublisherFormDto>(model);
+            var result = await _publisherService.AddAsync(dto, ct);
 
-            _context.Publishers.Add(publisher);
-            await _context.SaveChangesAsync();
+            var vm = _mapper.Map<PublisherViewModel>(result);
 
-            var PublisherViewModel = _mapper.Map<PublisherViewModel>(publisher);
-
-            return PartialView("_PublisherRow", PublisherViewModel);
+            return PartialView("_PublisherRow", vm);
         }
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, CancellationToken ct = default)
         {
-            var Publisher = await _context.Publishers.FindAsync(id);
+            var publisherDto = await _publisherService.GetByIdAsync(id, ct);
 
-            if (Publisher is null)
+            if (publisherDto is null)
                 return NotFound();
 
-            var PublisherFormViewModel = _mapper.Map<PublisherFormViewModel>(Publisher);
+            var vm = _mapper.Map<PublisherFormViewModel>(publisherDto);
 
-            return PartialView("_Form", PublisherFormViewModel);
+            return PartialView("_Form", vm);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(PublisherFormViewModel model)
+        public async Task<IActionResult> Edit(PublisherFormViewModel model, CancellationToken ct = default)
         {
             var validationResult = _validator.Validate(model);
             validationResult.AddToModelState(ModelState);
@@ -71,40 +70,32 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var publisher = await _context.Publishers.FindAsync(model.Id);
+            var dto = _mapper.Map<PublisherFormDto>(model);
+            var result = await _publisherService.UpdateAsync(model.Id, dto, ct);
 
-            if (publisher is null)
+            if (result is null)
                 return NotFound();
 
-            publisher = _mapper.Map(model, publisher);
-            await _context.SaveChangesAsync();
+            var vm = _mapper.Map<PublisherViewModel>(result);
 
-            var PublisherViewModel = _mapper.Map<PublisherViewModel>(publisher);
-
-            return PartialView("_PublisherRow", PublisherViewModel);
+            return PartialView("_PublisherRow", vm);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ToggleStatus(int id)
+        public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct = default)
         {
-            var publisher = await _context.Publishers.FindAsync(id);
+            var result = await _publisherService.ToggleAsync(id, ct);
 
-            if (publisher is null)
+            if (result is null)
                 return NotFound();
 
-            publisher.IsDeleted = !publisher.IsDeleted;
-
-            await _context.SaveChangesAsync();
-
-            return Ok(publisher.LastUpdatedOnUtc.ToString());
+            return Ok(result.LastUpdatedOnUtc.ToString());
         }
 
-        public async Task<IActionResult> AllowItem(PublisherFormViewModel model)
+        public async Task<IActionResult> AllowItem(PublisherFormViewModel model, CancellationToken ct = default)
         {
-            var Publisher = await _context.Publishers.SingleOrDefaultAsync(c =>
-                c.Name == model.Name
-            );
-            var isAllowed = Publisher is null || Publisher.Id.Equals(model.Id);
+            var dto = _mapper.Map<PublisherFormDto>(model);
+            var isAllowed = await _publisherService.IsPublisherAllowedAsync(dto, ct);
 
             return Json(isAllowed);
         }

@@ -1,17 +1,19 @@
 ﻿using System.Linq.Dynamic.Core;
+using Bookano.Application.Interfaces;
+using Bookano.Domain.Enums;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Reception)]
     public class RentalsController(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IMapper mapper,
         IDataProtectionProvider dataProtector,
         IValidator<RentalReturnFormViewModel> validator
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IDataProtector _dataProtector = dataProtector.CreateProtector("security");
         private readonly IMapper _mapper = mapper;
         private readonly IValidator<RentalReturnFormViewModel> _validator = validator;
@@ -20,8 +22,8 @@ namespace Bookano.Web.Controllers
         {
             var subscriberId = int.Parse(_dataProtector.Unprotect(subscriberKey));
 
-            var subscriber = await _context
-                .Subscribers.AsNoTracking()
+            var subscriber = await _unitOfWork
+                .Subscribers.GetQueryable()
                 .Include(s => s.Subscriptions)
                 .Include(s => s.Rentals)
                     .ThenInclude(r => r.RentalCopies)
@@ -51,8 +53,9 @@ namespace Bookano.Web.Controllers
 
             var subscriberId = int.Parse(_dataProtector.Unprotect(model.SubscriberKey));
 
-            var subscriber = await _context
-                .Subscribers.Include(s => s.Subscriptions)
+            var subscriber = await _unitOfWork
+                .Subscribers.GetQueryable()
+                .Include(s => s.Subscriptions)
                 .Include(s => s.Rentals)
                     .ThenInclude(r => r.RentalCopies)
                         .ThenInclude(r => r.BookCopy)
@@ -81,7 +84,7 @@ namespace Bookano.Web.Controllers
             };
 
             subscriber.Rentals.Add(rental);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = rental.Id });
         }
@@ -89,8 +92,9 @@ namespace Bookano.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            var rental = await _context
-                .Rentals.AsNoTracking()
+            var rental = await _unitOfWork
+                .Rentals.GetQueryable()
+                .AsNoTracking()
                 .Include(r => r.RentalCopies)
                     .ThenInclude(rc => rc.BookCopy)
                         .ThenInclude(bc => bc!.Book)
@@ -99,8 +103,9 @@ namespace Bookano.Web.Controllers
             if (rental is null || rental.CreatedOnUtc.Date != DateTime.UtcNow.Date)
                 return NotFound();
 
-            var subscriber = await _context
-                .Subscribers.AsNoTracking()
+            var subscriber = await _unitOfWork
+                .Subscribers.GetQueryable()
+                .AsNoTracking()
                 .Include(s => s.Subscriptions)
                 .Include(s => s.Rentals)
                     .ThenInclude(r => r.RentalCopies)
@@ -130,16 +135,18 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return View("Form", model);
 
-            var rental = await _context
-                .Rentals.Include(r => r.RentalCopies)
+            var rental = await _unitOfWork
+                .Rentals.GetQueryable()
+                .Include(r => r.RentalCopies)
                     .ThenInclude(rc => rc.BookCopy)
                 .SingleOrDefaultAsync(r => r.Id == model.Id);
 
             if (rental is null || rental.CreatedOnUtc.Date != DateTime.UtcNow.Date)
                 return NotFound();
 
-            var subscriber = await _context
-                .Subscribers.AsSplitQuery()
+            var subscriber = await _unitOfWork
+                .Subscribers.GetQueryable()
+                .AsSplitQuery()
                 .Include(s => s.Subscriptions)
                 .Include(s => s.Rentals)
                     .ThenInclude(r => r.RentalCopies)
@@ -161,17 +168,18 @@ namespace Bookano.Web.Controllers
                 return View("NotAllowedRental", copiesError);
 
             rental.RentalCopies = editedCopies;
-            _context.Entry(rental).State = EntityState.Modified;
+            //_unitOfWork.RentalCopies.Entry(rental).State = EntityState.Modified;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return RedirectToAction(nameof(Details), new { id = rental.Id });
         }
 
         public async Task<IActionResult> Return(int id)
         {
-            var rental = await _context
-                .Rentals.AsNoTracking()
+            var rental = await _unitOfWork
+                .Rentals.GetQueryable()
+                .AsNoTracking()
                 .Include(r => r.RentalCopies)
                     .ThenInclude(rc => rc.BookCopy)
                         .ThenInclude(bc => bc!.Book)
@@ -180,15 +188,14 @@ namespace Bookano.Web.Controllers
             if (rental is null || rental.CreatedOnUtc.Date == DateTime.UtcNow.Date)
                 return NotFound();
 
-            var subscriber = await _context
-                .Subscribers.AsNoTracking()
+            var subscriber = await _unitOfWork
+                .Subscribers.GetQueryable()
+                .AsNoTracking()
                 .Include(s => s.Subscriptions)
                 .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
 
             var subscriptionEndDate = subscriber!.Subscriptions.Max(sb => sb.EndDate);
-            var extendDeadline = rental.StartDate.AddDays(
-                (int)RentalsConfigurations.MaxRentalDuration
-            );
+            var extendDeadline = rental.StartDate.AddDays(RentalConstants.MaxRentalDuration);
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
             var viewModel = new RentalReturnFormViewModel
@@ -210,7 +217,7 @@ namespace Bookano.Web.Controllers
                 AllowExtend =
                     !subscriber.IsBlackListed
                     && subscriptionEndDate >= extendDeadline
-                    && today <= rental.StartDate.AddDays((int)RentalsConfigurations.RentalDuration),
+                    && today <= rental.StartDate.AddDays(RentalConstants.RentalDuration),
             };
 
             return View("Return", viewModel);
@@ -219,8 +226,9 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Return(RentalReturnFormViewModel model)
         {
-            var rental = await _context
-                .Rentals.Include(r => r.RentalCopies)
+            var rental = await _unitOfWork
+                .Rentals.GetQueryable()
+                .Include(r => r.RentalCopies)
                     .ThenInclude(rc => rc.BookCopy)
                         .ThenInclude(bc => bc!.Book)
                 .SingleOrDefaultAsync(r => r.Id == model.Id);
@@ -241,14 +249,13 @@ namespace Bookano.Web.Controllers
                 return View(model);
             }
 
-            var subscriber = await _context
-                .Subscribers.Include(s => s.Subscriptions)
+            var subscriber = await _unitOfWork
+                .Subscribers.GetQueryable()
+                .Include(s => s.Subscriptions)
                 .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
 
             var subscriptionEndDate = subscriber!.Subscriptions.Max(sb => sb.EndDate);
-            var extendDeadline = rental.StartDate.AddDays(
-                (int)RentalsConfigurations.MaxRentalDuration
-            );
+            var extendDeadline = rental.StartDate.AddDays(RentalConstants.MaxRentalDuration);
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
             if (model.SelectedCopies.Any(c => c.IsReturned.HasValue && !c.IsReturned.Value))
@@ -259,9 +266,7 @@ namespace Bookano.Web.Controllers
                     error = Error.ExtendNotAllowedForBlackListed;
                 else if (subscriptionEndDate < extendDeadline)
                     error = Error.ExtendNotAllowedForInactive;
-                else if (
-                    today > rental.StartDate.AddDays((int)RentalsConfigurations.RentalDuration)
-                )
+                else if (today > rental.StartDate.AddDays(RentalConstants.RentalDuration))
                     error = Error.ExtendNotAllowed;
 
                 if (!string.IsNullOrEmpty(error))
@@ -299,7 +304,7 @@ namespace Bookano.Web.Controllers
 
                     currentCopy.ExtendedOn = today;
                     currentCopy.EndDate = currentCopy.RentalDate.AddDays(
-                        (int)RentalsConfigurations.MaxRentalDuration
+                        RentalConstants.MaxRentalDuration
                     );
                     isUpdated = true;
                 }
@@ -308,7 +313,7 @@ namespace Bookano.Web.Controllers
             if (isUpdated)
             {
                 rental.PenaltyPaid = model.PenalityPaid;
-                await _context.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
             }
 
             return RedirectToAction(nameof(Details), new { id = rental.Id });
@@ -320,8 +325,9 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var copy = await _context
-                .BookCopies.Include(c => c.Book)
+            var copy = await _unitOfWork
+                .BookCopies.GetQueryable()
+                .Include(c => c.Book)
                 .SingleOrDefaultAsync(c =>
                     c.SerialNumber.ToString() == model.Value && !c.IsDeleted && !c.Book!.IsDeleted
                 );
@@ -332,9 +338,9 @@ namespace Bookano.Web.Controllers
             if (!copy.IsAvailableForRental || !copy.Book!.IsAvailableForRental)
                 return BadRequest(Error.NotAvailableForRental);
 
-            var isInOtherRental = await _context.RentalCopies.AnyAsync(rc =>
-                rc.BookCopyId == copy.Id && !rc.ReturnDate.HasValue
-            );
+            var isInOtherRental = await _unitOfWork
+                .RentalCopies.GetQueryable()
+                .AnyAsync(rc => rc.BookCopyId == copy.Id && !rc.ReturnDate.HasValue);
             if (isInOtherRental)
                 return BadRequest(Error.CopyIsInRental);
 
@@ -345,23 +351,25 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Cancel(int id)
         {
-            var rental = await _context
-                .Rentals.Include(r => r.RentalCopies)
+            var rental = await _unitOfWork
+                .Rentals.GetQueryable()
+                .Include(r => r.RentalCopies)
                 .SingleOrDefaultAsync(r => r.Id == id);
 
             if (rental is null || rental.CreatedOnUtc.Date != DateTime.UtcNow.Date)
                 return NotFound();
 
             rental.IsDeleted = true;
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return Ok(rental.RentalCopies.Count);
         }
 
         public async Task<IActionResult> Details(int id)
         {
-            var rental = await _context
-                .Rentals.AsNoTracking()
+            var rental = await _unitOfWork
+                .Rentals.GetQueryable()
+                .AsNoTracking()
                 .Include(r => r.RentalCopies)
                     .ThenInclude(rc => rc.BookCopy)
                         .ThenInclude(bc => bc!.Book)
@@ -385,7 +393,7 @@ namespace Bookano.Web.Controllers
             if (
                 subscriber.Subscriptions.Max(s => s.EndDate)
                 < DateOnly.FromDateTime(
-                    DateTime.UtcNow.Date.AddDays((int)RentalsConfigurations.RentalDuration)
+                    DateTime.UtcNow.Date.AddDays((RentalConstants.RentalDuration))
                 )
             )
                 return (Error.InactiveSubscriber, null);
@@ -395,7 +403,7 @@ namespace Bookano.Web.Controllers
                 .SelectMany(r => r.RentalCopies)
                 .Count(rc => !rc.ReturnDate.HasValue);
 
-            var availableCopiesCount = (int)RentalsConfigurations.MaxAllowedCopies - currentRentals;
+            var availableCopiesCount = RentalConstants.MaxAllowedCopies - currentRentals;
 
             if (availableCopiesCount.Equals(0))
                 return (Error.MaxAllowedCopiesReached, null);
@@ -420,15 +428,17 @@ namespace Bookano.Web.Controllers
                 .Select(rc => rc.BookCopy!.BookId)
                 .ToHashSet();
 
-            var selectedCopies = await _context
-                .BookCopies.Include(c => c.Book)
+            var selectedCopies = await _unitOfWork
+                .BookCopies.GetQueryable()
+                .Include(c => c.Book)
                 .Include(c => c.Rentals.Where(r => !r.ReturnDate.HasValue))
                 .Where(c => subscriberSelectedCopies.Contains(c.SerialNumber))
                 .ToListAsync();
 
             var existingCopyIds = rentalId.HasValue
-                ? await _context
-                    .RentalCopies.Where(rc => rc.RentalId == rentalId)
+                ? await _unitOfWork
+                    .RentalCopies.GetQueryable()
+                    .Where(rc => rc.RentalId == rentalId)
                     .Select(rc => rc.BookCopyId)
                     .ToHashSetAsync()
                 : [];

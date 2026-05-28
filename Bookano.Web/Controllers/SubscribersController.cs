@@ -1,4 +1,5 @@
-﻿using Bookano.Domain.Entities;
+﻿using Bookano.Application.Interfaces;
+using Bookano.Domain.Entities;
 using Bookano.Web.Services.Image;
 using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
@@ -8,7 +9,7 @@ namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Reception)]
     public class SubscribersController(
-        IApplicationDbContext context,
+        IUnitOfWork context,
         IDataProtectionProvider dataProtector,
         IWebHostEnvironment webHostEnvironment,
         IMapper mapper,
@@ -19,7 +20,7 @@ namespace Bookano.Web.Controllers
         IValidator<SubscriberFormViewModel> validator
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _context = context;
         private readonly IDataProtector _dataProtector = dataProtector.CreateProtector("security");
         private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
         private readonly IMapper _mapper = mapper;
@@ -40,11 +41,13 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
-                s.MobileNumber == model.Value
-                || s.NationalId == model.Value
-                || s.Email == model.Value
-            );
+            var subscriber = await _context
+                .Subscribers.GetQueryable()
+                .SingleOrDefaultAsync(s =>
+                    s.MobileNumber == model.Value
+                    || s.NationalId == model.Value
+                    || s.Email == model.Value
+                );
 
             var viewModel = _mapper.Map<SubscriberSearchResultViewModel>(subscriber);
             if (subscriber is not null)
@@ -58,8 +61,8 @@ namespace Bookano.Web.Controllers
             var subscriberId = int.Parse(_dataProtector.Unprotect(id));
 
             var subscriber = await _context
-                .Subscribers.Include(s => s.Area)
-                .Include(s => s.Governorate)
+                .Subscribers.GetQueryable()
+                .Include(s => s.Area)
                 .Include(s => s.Subscriptions)
                 .Include(s => s.Rentals)
                     .ThenInclude(r => r.RentalCopies)
@@ -165,7 +168,9 @@ namespace Bookano.Web.Controllers
         public async Task<IActionResult> Edit(string id)
         {
             var subscriberId = int.Parse(_dataProtector.Unprotect(id));
-            var subscriber = await _context.Subscribers.FindAsync(subscriberId);
+            var subscriber = await _context
+                .Subscribers.GetQueryable()
+                .SingleAsync(s => s.Id == subscriberId);
 
             if (subscriber is null)
                 return NotFound();
@@ -186,7 +191,9 @@ namespace Bookano.Web.Controllers
                 return View("Form", await PopulateViewModelAsync(model));
 
             var subscriberId = int.Parse(_dataProtector.Unprotect(model.Key!));
-            var subscriber = await _context.Subscribers.FindAsync(subscriberId);
+            var subscriber = await _context
+                .Subscribers.GetQueryable()
+                .SingleAsync(s => s.Id == subscriberId);
 
             if (subscriber is null)
                 return NotFound();
@@ -240,7 +247,8 @@ namespace Bookano.Web.Controllers
             var subscriberId = int.Parse(_dataProtector.Unprotect(subscriberKey));
 
             var subscriber = await _context
-                .Subscribers.Include(s => s.Subscriptions)
+                .Subscribers.GetQueryable()
+                .Include(s => s.Subscriptions)
                 .SingleOrDefaultAsync(s => s.Id == subscriberId);
 
             if (subscriber is null)
@@ -323,7 +331,8 @@ namespace Bookano.Web.Controllers
         public async Task<IActionResult> GetAreas(int governorateId)
         {
             var areas = await _context
-                .Areas.AsNoTracking()
+                .Areas.GetQueryable()
+                .AsNoTracking()
                 .Where(a => a.Governorate!.Id == governorateId && !a.IsDeleted)
                 .OrderBy(a => a.Name)
                 .ToListAsync();
@@ -337,9 +346,9 @@ namespace Bookano.Web.Controllers
             if (!string.IsNullOrEmpty(model.Key))
                 subscriberId = int.Parse(_dataProtector.Unprotect(model.Key));
 
-            var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
-                s.Email == model.Email
-            );
+            var subscriber = await _context
+                .Subscribers.GetQueryable()
+                .SingleOrDefaultAsync(s => s.Email == model.Email);
             var isAllowed = subscriber is null || subscriber.Id.Equals(subscriberId);
 
             return Json(isAllowed);
@@ -351,9 +360,9 @@ namespace Bookano.Web.Controllers
             if (!string.IsNullOrEmpty(model.Key))
                 subscriberId = int.Parse(_dataProtector.Unprotect(model.Key));
 
-            var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
-                s.MobileNumber == model.MobileNumber
-            );
+            var subscriber = await _context
+                .Subscribers.GetQueryable()
+                .SingleOrDefaultAsync(s => s.MobileNumber == model.MobileNumber);
             var isAllowed = subscriber is null || subscriber.Id.Equals(subscriberId);
 
             return Json(isAllowed);
@@ -365,9 +374,9 @@ namespace Bookano.Web.Controllers
             if (!string.IsNullOrEmpty(model.Key))
                 subscriberId = int.Parse(_dataProtector.Unprotect(model.Key));
 
-            var subscriber = await _context.Subscribers.SingleOrDefaultAsync(s =>
-                s.NationalId == model.NationalId
-            );
+            var subscriber = await _context
+                .Subscribers.GetQueryable()
+                .SingleOrDefaultAsync(s => s.NationalId == model.NationalId);
             var isAllowed = subscriber is null || subscriber.Id.Equals(subscriberId);
 
             return Json(isAllowed);
@@ -380,7 +389,8 @@ namespace Bookano.Web.Controllers
             model ??= new SubscriberFormViewModel();
 
             var governorates = await _context
-                .Governorates.AsNoTracking()
+                .Governorates.GetQueryable()
+                .AsNoTracking()
                 .Where(g => !g.IsDeleted)
                 .OrderBy(g => g.Name)
                 .ToListAsync();
@@ -390,7 +400,8 @@ namespace Bookano.Web.Controllers
             if (model.GovernorateId > 0)
             {
                 var areas = await _context
-                    .Areas.AsNoTracking()
+                    .Areas.GetQueryable()
+                    .AsNoTracking()
                     .Where(a => a.GovernorateId == model.GovernorateId && !a.IsDeleted)
                     .OrderBy(a => a.Name)
                     .ToListAsync();

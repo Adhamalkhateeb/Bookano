@@ -1,5 +1,7 @@
 ﻿using System.Globalization;
 using System.Net.Mime;
+using Bookano.Application.Interfaces;
+using Bookano.Domain.Enums;
 using Bookano.Web.Services.PDF;
 using ClosedXML.Excel;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -9,13 +11,13 @@ namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class ReportsController(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IWebHostEnvironment webHostEnvironment,
         IMapper mapper,
         IViewRendererService viewRenderer
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
         private readonly IMapper _mapper = mapper;
         private readonly IViewRendererService _viewRenderer = viewRenderer;
@@ -34,9 +36,14 @@ namespace Bookano.Web.Controllers
             int? pageNumber
         )
         {
-            var authors = await _context.Authors.OrderBy(a => a.Name).AsNoTracking().ToListAsync();
-            var categories = await _context
-                .Categories.OrderBy(c => c.Name)
+            var authors = await _unitOfWork
+                .Authors.GetQueryable()
+                .OrderBy(a => a.Name)
+                .AsNoTracking()
+                .ToListAsync();
+            var categories = await _unitOfWork
+                .Categories.GetQueryable()
+                .OrderBy(c => c.Name)
                 .AsNoTracking()
                 .ToListAsync();
 
@@ -49,11 +56,11 @@ namespace Bookano.Web.Controllers
             };
 
             var page = pageNumber ?? 1;
-            viewModel.Books = await PaginatedList<BookViewModel>.CreateAsync(
-                booksQuery,
-                page,
-                (int)ReportsConfigurations.PageSize
-            );
+            //viewModel.Books = await PaginatedList<BookViewModel>.CreateAsync(
+            //    booksQuery,
+            //    page,
+            //    (int)ReportsConfigurations.PageSize
+            //);
 
             return View(viewModel);
         }
@@ -137,7 +144,7 @@ namespace Bookano.Web.Controllers
             IEnumerable<int> selectedCategories
         )
         {
-            var booksQuery = _context.Books.AsNoTracking();
+            var booksQuery = _unitOfWork.Books.GetQueryable();
 
             if (selectedAuthors.Any())
             {
@@ -217,12 +224,12 @@ namespace Bookano.Web.Controllers
                 return View(viewModel);
             }
 
-            if (pageNumber.HasValue)
-                viewModel.Rentals = await PaginatedList<RentalsReportItemViewModel>.CreateAsync(
-                    query,
-                    pageNumber.Value,
-                    (int)ReportsConfigurations.PageSize
-                );
+            //if (pageNumber.HasValue)
+            //    viewModel.Rentals = await PaginatedList<RentalsReportItemViewModel>.CreateAsync(
+            //        query,
+            //        pageNumber.Value,
+            //        (int)ReportsConfigurations.PageSize
+            //    );
 
             ModelState.Clear();
             return View(viewModel);
@@ -360,8 +367,9 @@ namespace Bookano.Web.Controllers
             )
                 return (error: Error.InvalidEndDate, query);
 
-            query = _context
-                .RentalCopies.Where(rc => rc.RentalDate >= fromDate && rc.RentalDate <= toDate)
+            query = _unitOfWork
+                .RentalCopies.GetQueryable()
+                .Where(rc => rc.RentalDate >= fromDate && rc.RentalDate <= toDate)
                 .OrderByDescending(rc => rc.RentalDate)
                 .AsNoTracking()
                 .Select(rc => new RentalsReportItemViewModel
@@ -475,8 +483,9 @@ namespace Bookano.Web.Controllers
         {
             var today = DateOnly.FromDateTime(DateTime.Today);
 
-            var delayedRentals = await _context
-                .RentalCopies.AsNoTracking()
+            var delayedRentals = await _unitOfWork
+                .RentalCopies.GetQueryable()
+                .AsNoTracking()
                 .Where(rc => !rc.ReturnDate.HasValue && rc.EndDate < today)
                 .Select(rc => new DelayedRentalItemViewModel
                 {

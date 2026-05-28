@@ -1,11 +1,12 @@
-﻿using HashidsNet;
+﻿using Bookano.Application.Interfaces;
+using HashidsNet;
 
 namespace Bookano.Web.Controllers
 {
-    public class SearchController(IApplicationDbContext context, IHashids hashids, IMapper mapper)
+    public class SearchController(IUnitOfWork unitOfWork, IHashids hashids, IMapper mapper)
         : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
         private readonly IHashids _hashids = hashids;
 
@@ -18,8 +19,9 @@ namespace Bookano.Web.Controllers
         {
             query = query.Trim();
 
-            var books = await _context
-                .Books.AsNoTracking()
+            var books = await _unitOfWork
+                .Books.GetQueryable()
+                .AsNoTracking()
                 .Include(b => b.Authors)
                     .ThenInclude(a => a.Author)
                 .Where(b =>
@@ -48,8 +50,8 @@ namespace Bookano.Web.Controllers
             if (bookId.Length == 0)
                 return NotFound();
 
-            var book = await _context
-                .Books.AsNoTracking()
+            var book = await _unitOfWork
+                .Books.GetQueryable()
                 .Include(b => b.Copies)
                 .Include(b => b.Publisher)
                 .Include(b => b.Authors)

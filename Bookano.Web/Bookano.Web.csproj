@@ -12,7 +12,7 @@
     <PackageReference Include="CloudinaryDotNet" Version="1.29.1" />
     <PackageReference Include="dotenv.net" Version="4.0.2" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
-    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.12.0" />
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Hashids.net" Version="1.7.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">

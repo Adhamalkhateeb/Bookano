@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Bookano.Infrastructure.Settings;
+using Microsoft.Extensions.Options;
 using WhatsAppCloudApi;
 using WhatsAppCloudApi.Services;
 
@@ -7,13 +8,13 @@ namespace Bookano.Infrastructure.Services
     public class WhatsAppService(
         IOptions<WhatsAppSettings> settings,
         IWhatsAppClient whatsAppClient
-    ) : IWhatsAppService<Subscriber>
+    ) : IWhatsAppService
     {
         private readonly WhatsAppSettings _settings = settings.Value;
         private readonly IWhatsAppClient _whatsAppClient = whatsAppClient;
 
         public async Task SendWhatsApp(
-            Subscriber subscriber,
+            string mobileNumber,
             string template,
             List<object>? parameters = null
         )
@@ -25,12 +26,12 @@ namespace Bookano.Infrastructure.Services
                 components = [new WhatsAppComponent { Type = "body", Parameters = parameters }];
             }
 
-            var mobileNumber = _settings.IsDevelopment
-                ? _settings.DevelopmentOverrideMobile ?? subscriber.MobileNumber
-                : subscriber.MobileNumber;
+            var usedMobileNumber = _settings.IsDevelopment
+                ? _settings.DevelopmentOverrideMobile ?? mobileNumber
+                : mobileNumber;
 
             await _whatsAppClient.SendMessage(
-                $"2{mobileNumber}",
+                $"2{usedMobileNumber}",
                 WhatsAppLanguageCode.English,
                 template,
                 components

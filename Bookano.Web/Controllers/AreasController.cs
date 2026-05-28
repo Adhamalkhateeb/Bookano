@@ -1,24 +1,26 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Bookano.Application.DTOs.Areas;
+using Bookano.Application.Services.Areas;
+using Bookano.Application.Services.Governorates;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookano.Web.Controllers
 {
-    [Authorize(Roles = $"{AppRoles.Admin},{AppRoles.Reception}")]
+    [Authorize(Roles = AppRoles.Reception)]
     public class AreasController(
-        IApplicationDbContext context,
         IMapper mapper,
-        IValidator<AreaFormViewModel> validator
+        IValidator<AreaFormViewModel> validator,
+         IAreaService areaService,
+         IGovernorateService governorateService
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
         private readonly IValidator<AreaFormViewModel> _validator = validator;
+        private readonly IAreaService _areaService = areaService;
+        private readonly IGovernorateService _governorateService = governorateService;
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(CancellationToken ct)
         {
-            var areas = await _context
-                .Areas.AsNoTracking()
-                .Include(a => a.Governorate)
-                .ToListAsync();
+            var areas = await _areaService.GetAllAsync(ct);
 
             var viewModel = _mapper.Map<IEnumerable<AreaViewModel>>(areas);
 
@@ -27,51 +29,47 @@ namespace Bookano.Web.Controllers
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(CancellationToken ct)
         {
             var viewModel = await PopulateGovernoratesAsync();
             return PartialView("_Form", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(AreaFormViewModel model)
+        public async Task<IActionResult> Create(AreaFormViewModel model,CancellationToken ct)
         {
             var validationResult = _validator.Validate(model);
             validationResult.AddToModelState(ModelState);
+
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var area = _mapper.Map<Area>(model);
+            var dto = _mapper.Map<AreaFormDto>(model);
 
-            _context.Areas.Add(area);
-            await _context.SaveChangesAsync();
+            var result = await _areaService.AddAsync(dto,ct); 
+            
+            var vm = _mapper.Map<AreaViewModel>(result);
 
-            await _context.Entry(area).Reference(a => a.Governorate).LoadAsync();
-            var areaViewModel = _mapper.Map<AreaViewModel>(area);
-
-            return PartialView("_AreaRow", areaViewModel);
+            return PartialView("_AreaRow", vm);
         }
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id,CancellationToken ct)
         {
-            var area = await _context
-                .Areas.AsNoTracking()
-                .Include(a => a.Governorate)
-                .SingleOrDefaultAsync(a => a.Id == id);
+            var area = await _areaService.GetAsync(id, ct);
 
             if (area is null)
                 return NotFound();
 
-            var areaFormViewModel = _mapper.Map<AreaFormViewModel>(area);
-            areaFormViewModel = await PopulateGovernoratesAsync(areaFormViewModel);
+            var vm = _mapper.Map<AreaFormViewModel>(area);
+            vm = await PopulateGovernoratesAsync(vm);
 
-            return PartialView("_Form", areaFormViewModel);
+            return PartialView("_Form", vm);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(AreaFormViewModel model)
+        public async Task<IActionResult> Edit(AreaFormViewModel model,CancellationToken ct)
         {
             var validationResult = _validator.Validate(model);
             validationResult.AddToModelState(ModelState);
@@ -79,41 +77,31 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var area = await _context.Areas.FindAsync(model.Id);
+            var dto = _mapper.Map<AreaFormDto>(model);
+            
+            var result = await _areaService.UpdateAsync(model.Id,dto,ct);
 
-            if (area is null)
+            if (result is null)
                 return NotFound();
 
-            area = _mapper.Map(model, area);
-            await _context.SaveChangesAsync();
-
-            await _context.Entry(area).Reference(a => a.Governorate).LoadAsync();
-
-            var areaViewModel = _mapper.Map<AreaViewModel>(area);
-
-            return PartialView("_AreaRow", areaViewModel);
+            var vm = _mapper.Map<AreaViewModel>(result);
+            return PartialView("_AreaRow", vm);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ToggleStatus(int id)
+        public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
-            var area = await _context.Areas.FindAsync(id);
+            var result = await _areaService.ToggleAsync(id,ct);
 
-            if (area is null)
+            if (result is null)
                 return NotFound();
 
-            area.IsDeleted = !area.IsDeleted;
-            await _context.SaveChangesAsync();
-
-            return Ok(area.LastUpdatedOnUtc.ToString());
+            return Ok(result.LastUpdatedOnUtc.ToString());
         }
 
-        public async Task<IActionResult> AllowItem(AreaFormViewModel model)
+        public async Task<IActionResult> AllowItem(AreaFormViewModel model,CancellationToken ct)
         {
-            var area = await _context.Areas.SingleOrDefaultAsync(a =>
-                (a.Name == model.Name && a.GovernorateId == model.GovernorateId)
-            );
-            var isAllowed = area is null || area.Id.Equals(model.Id);
+            var isAllowed = await _areaService.IsAreaAvailableAsync(model.Id,model.GovernorateId, model.Name,ct);
 
             return Json(isAllowed);
         }
@@ -122,10 +110,11 @@ namespace Bookano.Web.Controllers
             AreaFormViewModel? model = null
         )
         {
-            var governorates = await _context.Governorates.AsNoTracking().ToListAsync();
-            var viewModel = model ?? new AreaFormViewModel();
+            var governorates = await _governorateService.GetAllAsync();
 
+            var viewModel = model ?? new AreaFormViewModel();
             viewModel.Governorates = _mapper.Map<IEnumerable<SelectListItem>>(governorates);
+
             return viewModel;
         }
     }

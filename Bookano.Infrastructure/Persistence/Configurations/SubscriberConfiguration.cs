@@ -38,12 +38,6 @@
                 .HasForeignKey(x => x.AreaId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            builder
-                .HasOne(x => x.Governorate)
-                .WithMany()
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasForeignKey(x => x.GovernorateId);
-
             builder.HasIndex(x => x.NationalId).IsUnique();
             builder.HasIndex(x => x.MobileNumber).IsUnique();
             builder.HasIndex(x => x.Email).IsUnique();

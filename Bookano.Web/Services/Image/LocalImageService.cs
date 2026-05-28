@@ -89,11 +89,11 @@ namespace Bookano.Web.Services.Image
         {
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
 
-            if (!Domain.Common.Consts.Image.AllowedExtensions.Contains(ext))
-                return Domain.Common.Consts.Error.NotAllowedImageExtension;
+            if (!Domain.Common.Constants.Image.AllowedExtensions.Contains(ext))
+                return Error.NotAllowedImageExtension;
 
-            if (file.Length > Domain.Common.Consts.Image.MaxSize)
-                return Domain.Common.Consts.Error.ImageMaxSizeLimit;
+            if (file.Length > Domain.Common.Constants.Image.MaxSize)
+                return Error.ImageMaxSizeLimit;
 
             return null;
         }

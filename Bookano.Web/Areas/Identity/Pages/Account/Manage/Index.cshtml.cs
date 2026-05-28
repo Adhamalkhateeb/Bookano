@@ -12,7 +12,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         [FromKeyedServices("local")] IImageService imageService
-        ) : PageModel
+    ) : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly SignInManager<ApplicationUser> _signInManager = signInManager;

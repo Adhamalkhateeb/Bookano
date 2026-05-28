@@ -1,20 +1,24 @@
-﻿namespace Bookano.Web.Controllers;
+﻿using Bookano.Application.DTOs.Categories;
+using Bookano.Application.Interfaces;
+using Bookano.Application.Services.Categories;
+
+namespace Bookano.Web.Controllers;
 
 [Authorize(Roles = AppRoles.Archive)]
 public class CategoriesController(
-    IApplicationDbContext context,
     IMapper mapper,
-    IValidator<CategoryFormViewModel> validator
+    IValidator<CategoryFormViewModel> validator,
+    ICategoryService categoryService
 ) : Controller
 {
-    private readonly IApplicationDbContext _context = context;
     private readonly IMapper _mapper = mapper;
     private readonly IValidator<CategoryFormViewModel> _validator = validator;
+    private readonly ICategoryService _categoryService = categoryService;
 
     [HttpGet]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(CancellationToken ct = default)
     {
-        var categories = await _context.Categories.AsNoTracking().ToListAsync();
+        var categories = await _categoryService.GetAllAsync(ct);
 
         var viewModel = _mapper.Map<IEnumerable<CategoryViewModel>>(categories);
 
@@ -29,7 +33,7 @@ public class CategoriesController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(CategoryFormViewModel model)
+    public async Task<IActionResult> Create(CategoryFormViewModel model, CancellationToken ct = default)
     {
         var validationResult = _validator.Validate(model);
         validationResult.AddToModelState(ModelState);
@@ -37,20 +41,19 @@ public class CategoriesController(
         if (!ModelState.IsValid)
             return BadRequest();
 
-        var category = _mapper.Map<Category>(model);
-        _context.Categories.Add(category);
-        await _context.SaveChangesAsync();
+        var dto = _mapper.Map<CategoryFormDto>(model);
+        var result = await _categoryService.AddAsync(dto, ct);
 
-        var categoryViewModel = _mapper.Map<CategoryViewModel>(category);
+        var categoryViewModel = _mapper.Map<CategoryViewModel>(result);
 
         return PartialView("_CategoryRow", categoryViewModel);
     }
 
     [HttpGet]
     [AjaxOnly]
-    public async Task<IActionResult> Edit(int id)
+    public async Task<IActionResult> Edit(int id, CancellationToken ct = default)
     {
-        var category = await _context.Categories.FindAsync(id);
+        var category = await _categoryService.GetByIdAsync(id, ct);
 
         if (category is null)
             return NotFound();
@@ -61,7 +64,7 @@ public class CategoriesController(
     }
 
     [HttpPost]
-    public async Task<IActionResult> Edit(CategoryFormViewModel model)
+    public async Task<IActionResult> Edit(CategoryFormViewModel model, CancellationToken ct = default)
     {
         var validationResult = _validator.Validate(model);
         validationResult.AddToModelState(ModelState);
@@ -69,39 +72,32 @@ public class CategoriesController(
         if (!ModelState.IsValid)
             return BadRequest();
 
-        var category = await _context.Categories.FindAsync(model.Id);
+        var dto = _mapper.Map<CategoryFormDto>(model);
+        var result = await _categoryService.UpdateAsync(model.Id, dto, ct);
 
-        if (category is null)
+        if (result is null)
             return NotFound();
 
-        category = _mapper.Map(model, category);
-
-        await _context.SaveChangesAsync();
-
-        var categoryViewModel = _mapper.Map<CategoryViewModel>(category);
+        var categoryViewModel = _mapper.Map<CategoryViewModel>(result);
 
         return PartialView("_CategoryRow", categoryViewModel);
     }
 
     [HttpPost]
-    public async Task<IActionResult> ToggleStatus(int id)
+    public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct = default)
     {
-        var category = await _context.Categories.FindAsync(id);
+        var result = await _categoryService.ToggleAsync(id, ct);
 
-        if (category is null)
+        if (result is null)
             return NotFound();
 
-        category.IsDeleted = !category.IsDeleted;
-
-        await _context.SaveChangesAsync();
-
-        return Ok(category.LastUpdatedOnUtc.ToString());
+        return Ok(result.LastUpdatedOnUtc.ToString());
     }
 
-    public async Task<IActionResult> AllowItem(CategoryFormViewModel model)
+    public async Task<IActionResult> AllowItem(CategoryFormViewModel model, CancellationToken ct = default)
     {
-        var category = await _context.Categories.SingleOrDefaultAsync(c => c.Name == model.Name);
-        var isAllowed = category is null || category.Id.Equals(model.Id);
+        var dto = _mapper.Map<CategoryFormDto>(model);
+        var isAllowed = await _categoryService.IsCategoryAllowedAsync(dto, ct);
 
         return Json(isAllowed);
     }

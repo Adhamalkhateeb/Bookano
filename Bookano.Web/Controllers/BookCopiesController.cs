@@ -1,13 +1,15 @@
-﻿namespace Bookano.Web.Controllers
+﻿using Bookano.Application.Interfaces;
+
+namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
     public class BookCopiesController(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IMapper mapper,
         IValidator<BookCopyFormViewModel> validator
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IMapper _mapper = mapper;
         private readonly IValidator<BookCopyFormViewModel> _validator = validator;
 
@@ -20,7 +22,9 @@
         [AjaxOnly]
         public async Task<IActionResult> Create(int bookId)
         {
-            var book = await _context.Books.FindAsync(bookId);
+            var book = await _unitOfWork
+                .Books.GetQueryable()
+                .SingleOrDefaultAsync(b => b.Id == bookId);
 
             if (book is null)
                 return NotFound();
@@ -42,7 +46,9 @@
             if (!ModelState.IsValid)
                 return PartialView("_Form", model);
 
-            var book = await _context.Books.FindAsync(model.BookId);
+            var book = await _unitOfWork
+                .Books.GetQueryable()
+                .SingleOrDefaultAsync(b => b.Id == model.BookId);
 
             if (book is null)
                 return NotFound();
@@ -54,7 +60,7 @@
             };
 
             book.Copies.Add(copy);
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             var viewModel = _mapper.Map<BookCopyViewModel>(copy);
             return PartialView("_BookCopyRow", viewModel);
@@ -64,8 +70,8 @@
         [AjaxOnly]
         public async Task<IActionResult> Edit(int id)
         {
-            var copy = await _context
-                .BookCopies.AsNoTracking()
+            var copy = await _unitOfWork
+                .BookCopies.GetQueryable()
                 .Include(c => c.Book)
                 .SingleOrDefaultAsync(c => c.Id == id);
 
@@ -87,8 +93,9 @@
             if (!ModelState.IsValid)
                 return PartialView("_Form", model);
 
-            var copy = await _context
-                .BookCopies.Include(c => c.Book)
+            var copy = await _unitOfWork
+                .BookCopies.GetQueryable()
+                .Include(c => c.Book)
                 .SingleOrDefaultAsync(c => c.Id == model.Id);
 
             if (copy is null)
@@ -98,7 +105,7 @@
             copy.IsAvailableForRental =
                 copy.Book!.IsAvailableForRental && model.IsAvailableForRental;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             var viewModel = _mapper.Map<BookCopyViewModel>(copy);
 
@@ -108,22 +115,24 @@
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id)
         {
-            var copy = await _context.BookCopies.FindAsync(id);
+            var copy = await _unitOfWork
+                .BookCopies.GetQueryable()
+                .SingleOrDefaultAsync(c => c.Id == id);
 
             if (copy is null)
                 return NotFound();
 
             copy.IsDeleted = !copy.IsDeleted;
 
-            await _context.SaveChangesAsync();
+            await _unitOfWork.SaveChangesAsync();
 
             return Ok(copy.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> RentalHistory(int id)
         {
-            var viewModel = await _context
-                .RentalCopies.AsNoTracking()
+            var viewModel = await _unitOfWork
+                .RentalCopies.GetQueryable()
                 .Where(rc => rc.BookCopy!.Id == id)
                 .Select(c => new CopyHistoyViewModel
                 {
@@ -145,7 +154,10 @@
                 .OrderByDescending(c => c.StartDate)
                 .ToListAsync();
 
-            if (viewModel.Count == 0 && !await _context.BookCopies.AnyAsync(c => c.Id == id))
+            if (
+                viewModel.Count == 0
+                && !await _unitOfWork.BookCopies.GetQueryable().AnyAsync(c => c.Id == id)
+            )
                 return NotFound();
 
             return View(viewModel);

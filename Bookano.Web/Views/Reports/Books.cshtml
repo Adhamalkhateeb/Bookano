@@ -43,7 +43,7 @@
             <div class="card-title">
                 <span>Books</span>
             </div>
-            @if (Model.Books.Any())
+            @if (Model.Books.Items.Any())
             {
                 <div class="card-toolbar  gap-3">
                     <a class="btn btn-light-success w-100 w-md-auto" asp-action="ExportBooksToExcel"
@@ -63,7 +63,7 @@
         </div>
         <div class="card-body">
             <partial name="_Pagination" model="new PaginatedViewModel { PageNumber = Model.Books.PageNumber, TotalPages = Model.Books.TotalPages }" />
-            @if (Model.Books.Any())
+            @if (Model.Books.Items.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-row-dashed table-row-gray-300 gy-2 align-middle js-responsive-table">
@@ -81,7 +81,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var book in Model.Books)
+                            @foreach (var book in Model.Books.Items)
                             {
                                 <tr>
                                     <td data-label="ISBN" class="ps-md-4">@book.Isbn</td>

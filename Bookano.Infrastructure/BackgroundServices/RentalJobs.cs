@@ -1,26 +1,26 @@
 ﻿using System.Text;
-using Bookano.Domain.Common.Consts;
+using Bookano.Application.Interfaces;
 
 namespace Bookano.Infrastructure.BackgroundServices
 {
     public class RentalJobs(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IEmailBodyBuilder emailBodyBuilder,
         IEmailSender emailSender,
-        IWhatsAppService<Subscriber> whatsAppService
+        IWhatsAppService whatsAppService
     )
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
         private readonly IEmailSender _emailSender = emailSender;
-        private readonly IWhatsAppService<Subscriber> _whatsAppService = whatsAppService;
+        private readonly IWhatsAppService _whatsAppService = whatsAppService;
 
         public async Task SendExpiringSoonAlerts()
         {
             var tomorrow = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1));
 
-            var rentals = await _context
-                .Rentals.AsNoTracking()
+            var rentals = await _unitOfWork
+                .Rentals.GetQueryable()
                 .Include(r => r.Subscriber)
                 .Include(r => r.RentalCopies)
                     .ThenInclude(rc => rc.BookCopy)
@@ -53,7 +53,7 @@ namespace Bookano.Infrastructure.BackgroundServices
                 {
                     {
                         "imageUrl",
-                        "https://res.cloudinary.com/bookano/image/upload/v1778410949/schedule_2_aumjwi.png"
+                        ImageUrls.ExpiringSoon
                     },
                     { "header", $"Hello {rental.Subscriber!.FirstName}, " },
                     { "body", message.ToString() },
@@ -72,7 +72,7 @@ namespace Bookano.Infrastructure.BackgroundServices
 
                 if (rental.Subscriber.HasWhatsApp)
                     await _whatsAppService.SendWhatsApp(
-                        rental.Subscriber,
+                        rental.Subscriber.MobileNumber,
                         WhatsAppTemplates.RentalExpiringSoon
                     );
             }

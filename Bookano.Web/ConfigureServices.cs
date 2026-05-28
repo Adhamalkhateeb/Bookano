@@ -1,4 +1,5 @@
 ﻿using Bookano.Infrastructure.Persistence;
+using Bookano.Infrastructure.Settings;
 using Bookano.Web.Core.Mapping;
 using Bookano.Web.Helpers;
 using Bookano.Web.Services.Image;
@@ -98,7 +99,7 @@ namespace Bookano.Web
 
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();
-            services.AddValidatorsFromAssemblyContaining<AuthorValidator>();
+            services.AddValidatorsFromAssemblyContaining<AreaFormViewModelValidator>();
 
             return services;
         }

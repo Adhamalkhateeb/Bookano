@@ -1,3 +1,4 @@
+using Bookano.Application;
 using Bookano.Infrastructure;
 using Bookano.Infrastructure.BackgroundServices;
 using Bookano.Infrastructure.Persistence.Seeds;
@@ -36,8 +37,10 @@ builder.Host.UseSerilog(
     }
 );
 
-builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddWebServices(builder);
+builder
+    .Services.AddInfrastructureServices(builder.Configuration)
+    .AddWebServices(builder)
+    .AddApplicationServices();
 
 var app = builder.Build();
 

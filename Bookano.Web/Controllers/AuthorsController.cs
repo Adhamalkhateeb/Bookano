@@ -1,19 +1,22 @@
-﻿namespace Bookano.Web.Controllers
+﻿using Bookano.Application.DTOs.Authors;
+using Bookano.Application.Services.Authors;
+
+namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
     public class AuthorsController(
-        IApplicationDbContext context,
         IMapper mapper,
-        IValidator<AuthorFormViewModel> validator
+        IValidator<AuthorFormViewModel> validator,
+        IAuthorService authorService
     ) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
         private readonly IMapper _mapper = mapper;
         private readonly IValidator<AuthorFormViewModel> _validator = validator;
+        private readonly IAuthorService _authorService = authorService;
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(CancellationToken ct)
         {
-            var authors = await _context.Authors.AsNoTracking().ToListAsync();
+            var authors = await _authorService.GetAllAsync(ct);
 
             var viewModel = _mapper.Map<IEnumerable<AuthorViewModel>>(authors);
 
@@ -28,42 +31,39 @@
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(AuthorFormViewModel model)
+        public async Task<IActionResult> Create(AuthorFormViewModel model, CancellationToken ct)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
+            var validation = _validator.Validate(model);
+            validation.AddToModelState(ModelState);
 
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var author = _mapper.Map<Author>(model);
+            var dto = _mapper.Map<AuthorFormDto>(model);
 
-            _context.Authors.Add(author);
-            await _context.SaveChangesAsync();
+            var result = await _authorService.AddAsync(dto, ct);
 
-            var authorViewModel = _mapper.Map<AuthorViewModel>(author);
+            var vm = _mapper.Map<AuthorViewModel>(result);
 
-            return PartialView("_AuthorRow", authorViewModel);
+            return PartialView("_AuthorRow", vm);
         }
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, CancellationToken ct)
         {
-            var author = await _context.Authors.FindAsync(id);
+            var author = await _authorService.GetAsync(id, ct);
 
             if (author is null)
                 return NotFound();
 
-            var authorFormViewModel = _mapper.Map<AuthorFormViewModel>(author);
+            var vm = _mapper.Map<AuthorFormViewModel>(author);
 
-            return PartialView("_Form", authorFormViewModel);
+            return PartialView("_Form", vm);
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(AuthorFormViewModel model)
+        public async Task<IActionResult> Edit(AuthorFormViewModel model, CancellationToken ct)
         {
             var validationResult = _validator.Validate(model);
             validationResult.AddToModelState(ModelState);
@@ -71,38 +71,32 @@
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var author = await _context.Authors.FindAsync(model.Id);
+            var dto = _mapper.Map<AuthorFormDto>(model);
 
-            if (author is null)
+            var result = await _authorService.UpdateAsync(model.Id, dto, ct);
+
+            if (result is null)
                 return NotFound();
 
-            author = _mapper.Map(model, author);
-            await _context.SaveChangesAsync();
+            var vm = _mapper.Map<AuthorViewModel>(result);
 
-            var authorViewModel = _mapper.Map<AuthorViewModel>(author);
-
-            return PartialView("_AuthorRow", authorViewModel);
+            return PartialView("_AuthorRow", vm);
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ToggleStatus(int id)
+        public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
-            var author = await _context.Authors.FindAsync(id);
+            var result = await _authorService.ToggleAsync(id, ct);
 
-            if (author is null)
+            if (result is null)
                 return NotFound();
 
-            author.IsDeleted = !author.IsDeleted;
-            await _context.SaveChangesAsync();
-
-            return Ok(author.LastUpdatedOnUtc.ToString());
+            return Ok(result.LastUpdatedOnUtc.ToString());
         }
 
-        public async Task<IActionResult> AllowItem(AuthorFormViewModel model)
+        public async Task<IActionResult> AllowItem(AuthorFormViewModel model, CancellationToken ct)
         {
-            var author = await _context.Authors.SingleOrDefaultAsync(c => c.Name == model.Name);
-            var isAllowed = author is null || author.Id.Equals(model.Id);
+            var isAllowed = await _authorService.IsNameAvailableAsync(model.Id, model.Name, ct);
 
             return Json(isAllowed);
         }

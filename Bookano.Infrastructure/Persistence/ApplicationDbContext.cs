@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Bookano.Infrastructure.Persistence
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : IdentityDbContext<ApplicationUser>(options),
-            IApplicationDbContext
+        : IdentityDbContext<ApplicationUser>(options)
     {
         public DbSet<Area> Areas { get; set; }
         public DbSet<Author> Authors { get; set; }

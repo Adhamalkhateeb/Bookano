@@ -1,7 +1,6 @@
-﻿namespace Bookano.Application.Common.Interfaces
+﻿namespace Bookano.Application.Common.Interfaces;
+
+public interface IEmailBodyBuilder
 {
-    public interface IEmailBodyBuilder
-    {
-        string GetEmailBody(string template, Dictionary<string, string> placeholders);
-    }
+    string GetEmailBody(string template, Dictionary<string, string> placeholders);
 }

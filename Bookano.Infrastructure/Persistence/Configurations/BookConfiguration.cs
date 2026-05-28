@@ -6,6 +6,9 @@
         {
             builder.HasKey(x => x.Id);
 
+            BaseEntityConfiguration.ConfigureBase(builder);
+
+
             builder.Property(x => x.Isbn).HasMaxLength(20).IsUnicode(false);
             builder.HasIndex(b => b.Isbn).IsUnique().HasFilter("[Isbn] IS NOT NULL");
 

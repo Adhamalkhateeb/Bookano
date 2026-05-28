@@ -1,4 +1,6 @@
-﻿namespace Bookano.Web.Core.ViewModels
+﻿using Bookano.Application.Constants;
+
+namespace Bookano.Web.Core.ViewModels
 {
     public class AuthorFormViewModel
     {

@@ -1,27 +1,28 @@
-﻿using Bookano.Domain.Common.Consts;
+﻿using Bookano.Application.Interfaces;
+using Bookano.Domain.Common.Constants;
 using WhatsAppCloudApi;
 
 namespace Bookano.Infrastructure.BackgroundServices
 {
     public class SubscriptionJobs(
-        IApplicationDbContext context,
+        IUnitOfWork unitOfWork,
         IEmailBodyBuilder emailBodyBuilder,
         IEmailSender emailSender,
-        IWhatsAppService<Subscriber> whatsAppService
+        IWhatsAppService whatsAppService
     )
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
         private readonly IEmailSender _emailSender = emailSender;
-        private readonly IWhatsAppService<Subscriber> _whatsAppHelper = whatsAppService;
+        private readonly IWhatsAppService _whatsAppService = whatsAppService;
 
         public async Task PrepareExpirationAlerts()
         {
             var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
             var soonThreshold = today.AddDays(5);
 
-            var relevant = await _context
-                .Subscribers.AsNoTracking()
+            var relevant = await _unitOfWork
+                .Subscribers.GetQueryable()
                 .Where(s => !s.IsBlackListed && s.Subscriptions.Any())
                 .Select(s => new
                 {
@@ -57,7 +58,7 @@ namespace Bookano.Infrastructure.BackgroundServices
                 {
                     {
                         "imageUrl",
-                        "https://res.cloudinary.com/bookano/image/upload/v1778410949/schedule_2_aumjwi.png"
+                        ImageUrls.ExpiringSoon
                     },
                     { "header", $"Hello {subscriber.FirstName}" },
                     {
@@ -78,8 +79,8 @@ namespace Bookano.Infrastructure.BackgroundServices
                 );
 
                 if (subscriber.HasWhatsApp)
-                    await _whatsAppHelper.SendWhatsApp(
-                        subscriber,
+                    await _whatsAppService.SendWhatsApp(
+                        subscriber.MobileNumber,
                         WhatsAppTemplates.SubscriptionExpiration,
                         [
                             new WhatsAppTextParameter { Text = subscriber.FirstName },
@@ -101,7 +102,7 @@ namespace Bookano.Infrastructure.BackgroundServices
                 {
                     {
                         "imageUrl",
-                        "https://res.cloudinary.com/bookano/image/upload/v1778415113/expired_spifns.png"
+                        ImageUrls.Expired
                     },
                     { "header", $"Hello {subscriber.FirstName}" },
                     {
@@ -118,8 +119,8 @@ namespace Bookano.Infrastructure.BackgroundServices
                 await _emailSender.SendEmailAsync(subscriber.Email, "Subscription Expired", body);
 
                 if (subscriber.HasWhatsApp)
-                    await _whatsAppHelper.SendWhatsApp(
-                        subscriber,
+                    await _whatsAppService.SendWhatsApp(
+                        subscriber.MobileNumber,
                         WhatsAppTemplates.SubscriptionExpired,
                         [
                             new WhatsAppTextParameter { Text = subscriber.FirstName },

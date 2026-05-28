@@ -1,11 +1,12 @@
+using Bookano.Application.Interfaces;
 using HashidsNet;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookano.Web.Controllers
 {
-    public class HomeController(IApplicationDbContext context, IHashids hashids) : Controller
+    public class HomeController(IUnitOfWork unitOfWork, IHashids hashids) : Controller
     {
-        private readonly IApplicationDbContext _context = context;
+        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IHashids _hashids = hashids;
 
         public async Task<IActionResult> Index()
@@ -13,8 +14,8 @@ namespace Bookano.Web.Controllers
             if (User is not null && User.Identity!.IsAuthenticated)
                 return RedirectToAction(nameof(Index), "Dashboard");
 
-            var recentlyAddedBooks = await _context
-                .Books.AsNoTracking()
+            var recentlyAddedBooks = await _unitOfWork
+                .Books.GetQueryable()
                 .Where(b => !b.IsDeleted)
                 .OrderByDescending(b => b.CreatedOnUtc)
                 .Take(10)
