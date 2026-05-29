@@ -7,7 +7,7 @@ namespace Bookano.Infrastructure.Persistence.Configurations.Common
         public static void ConfigureBase<TEntity>(EntityTypeBuilder<TEntity> builder)
             where TEntity : BaseEntity
         {
-            builder.Property(x => x.IsDeleted).HasDefaultValue(false);
+            builder.Property(x => x.IsDeleted).HasDefaultValue(false).ValueGeneratedOnAdd();
 
             builder
                 .Property(x => x.CreatedOnUtc)

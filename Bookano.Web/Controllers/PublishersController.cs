@@ -1,4 +1,4 @@
-﻿using Bookano.Application.DTOs.Publishers;
+using Bookano.Application.DTOs.Publishers;
 using Bookano.Application.Services.Publishers;
 
 namespace Bookano.Web.Controllers
@@ -6,12 +6,10 @@ namespace Bookano.Web.Controllers
     [Authorize(Roles = AppRoles.Archive)]
     public class PublishersController(
         IMapper mapper,
-        IValidator<PublisherFormViewModel> validator,
         IPublisherService publisherService
     ) : Controller
     {
         private readonly IMapper _mapper = mapper;
-        private readonly IValidator<PublisherFormViewModel> _validator = validator;
         private readonly IPublisherService _publisherService = publisherService;
 
         public async Task<IActionResult> Index(CancellationToken ct = default)
@@ -33,16 +31,15 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(PublisherFormViewModel model, CancellationToken ct = default)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
+            var dto = _mapper.Map<PublisherFormDto>(model);
+            var result = await _publisherService.AddAsync(dto, ct);
+
+            result.AddToModelState(ModelState);
 
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var dto = _mapper.Map<PublisherFormDto>(model);
-            var result = await _publisherService.AddAsync(dto, ct);
-
-            var vm = _mapper.Map<PublisherViewModel>(result);
+            var vm = _mapper.Map<PublisherViewModel>(result.Value);
 
             return PartialView("_PublisherRow", vm);
         }
@@ -64,19 +61,15 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(PublisherFormViewModel model, CancellationToken ct = default)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
+            var dto = _mapper.Map<PublisherFormDto>(model);
+            var result = await _publisherService.UpdateAsync(model.Id, dto, ct);
+
+            result.AddToModelState(ModelState);
 
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var dto = _mapper.Map<PublisherFormDto>(model);
-            var result = await _publisherService.UpdateAsync(model.Id, dto, ct);
-
-            if (result is null)
-                return NotFound();
-
-            var vm = _mapper.Map<PublisherViewModel>(result);
+            var vm = _mapper.Map<PublisherViewModel>(result.Value);
 
             return PartialView("_PublisherRow", vm);
         }
@@ -84,12 +77,12 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct = default)
         {
-            var result = await _publisherService.ToggleAsync(id, ct);
+            var lastUpdatedOnUtc = await _publisherService.ToggleAsync(id, ct);
 
-            if (result is null)
+            if (!lastUpdatedOnUtc.HasValue)
                 return NotFound();
 
-            return Ok(result.LastUpdatedOnUtc.ToString());
+            return Ok(lastUpdatedOnUtc.Value.ToString());
         }
 
         public async Task<IActionResult> AllowItem(PublisherFormViewModel model, CancellationToken ct = default)

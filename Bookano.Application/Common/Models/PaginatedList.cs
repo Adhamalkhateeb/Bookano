@@ -1,4 +1,4 @@
-﻿namespace Bookano.Application.Common.DTOs;
+﻿namespace Bookano.Application.Common.Models;
 
 public class PaginatedList<T>
 {

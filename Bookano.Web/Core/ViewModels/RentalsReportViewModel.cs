@@ -1,4 +1,6 @@
-﻿namespace Bookano.Web.Core.ViewModels
+﻿using Bookano.Application.Common.Models;
+
+namespace Bookano.Web.Core.ViewModels
 {
     public class RentalsReportViewModel
     {

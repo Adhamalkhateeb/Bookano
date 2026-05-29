@@ -30,7 +30,7 @@
                     </div>
                 `,
             },
-            { data: 'publisher', name: 'Publisher.Name', orderable: false, },
+            { data: 'publisher', name: 'Publisher.Name', orderable: true, },
             { data: 'publishingDate', name: 'PublishingDate', render: renderDate },
             { data: 'hall', name: 'Hall' },
             {

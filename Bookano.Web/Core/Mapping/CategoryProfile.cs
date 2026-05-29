@@ -11,8 +11,7 @@ public class CategoryProfile : Profile
         CreateMap<CategoryFormViewModel, CategoryFormDto>().ReverseMap();
 
 
-        //TODO: Replace Model with dto
-        CreateMap<Category, SelectListItem>()
+        CreateMap<CategoryDto, SelectListItem>()
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
 

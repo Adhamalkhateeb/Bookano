@@ -4,6 +4,7 @@ using Bookano.Infrastructure.Identity;
 using Bookano.Infrastructure.Persistence;
 using Bookano.Infrastructure.Persistence.Interceptors;
 using Bookano.Infrastructure.Persistence.Repositories;
+using Bookano.Web.Services.Image;
 using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -65,6 +66,9 @@ namespace Bookano.Infrastructure
             // Hangfire
             services.AddHangfire(x => x.UseSqlServerStorage(connectionString));
             services.AddHangfireServer();
+
+            services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloudinary");
+            services.AddKeyedTransient<IImageService, LocalImageService>("local");
 
             return services;
         }

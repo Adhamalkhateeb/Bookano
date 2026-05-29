@@ -2,7 +2,6 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
-using Bookano.Web.Services.Image;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -113,24 +112,33 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
 
             if (Input.Avatar is not null)
             {
-                var imageValidationError = _imageService.ValidateImage(Input.Avatar);
-                if (imageValidationError is not null)
+                var validationError = _imageService.ValidateImage(
+                     Input.Avatar.FileName,
+                     Input.Avatar.Length);
+
+                if (validationError is not null)
                 {
-                    ModelState.AddModelError("Input.Avatar", imageValidationError);
+                    ModelState.AddModelError("Input.Avatar", validationError);
                     await LoadAsync(user);
                     return Page();
                 }
 
-                await _imageService.DeleteAsync($"users/{user.Id}.png");
-                var imageUploadResult = await _imageService.UploadAsync(
-                    Input.Avatar,
+                var imageId = $"users/{user.Id}.png";
+
+                await _imageService.DeleteAsync(imageId);
+
+                await using var stream = Input.Avatar.OpenReadStream();
+
+                var uploadResult = await _imageService.UploadAsync(
+                    stream,
+                    Input.Avatar.FileName,
                     "users",
                     $"{user.Id}.png"
                 );
 
-                if (!imageUploadResult.IsSuccess)
+                if (!uploadResult.IsSuccess)
                 {
-                    ModelState.AddModelError("Input.Avatar", imageUploadResult.ErrorMessage);
+                    ModelState.AddModelError("Input.Avatar", uploadResult.ErrorMessage);
                     await LoadAsync(user);
                     return Page();
                 }

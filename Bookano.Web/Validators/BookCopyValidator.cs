@@ -1,12 +1,10 @@
-﻿namespace Bookano.Web.Validators
+﻿using Bookano.Application.Validators;
+
+namespace Bookano.Web.Validators
 {
-    public class BookCopyValidator : AbstractValidator<BookCopyFormViewModel>
+    public class BookCopyValidator : BookCopyCommonValidator<BookCopyFormViewModel>
     {
-        public BookCopyValidator()
-        {
-            RuleFor(x => x.EditionNumber)
-                .InclusiveBetween(1, 1000)
-                .WithMessage(Error.ShouldBeInRange);
-        }
+        public BookCopyValidator() : base(x => x.EditionNumber) { }
+        
     }
 }

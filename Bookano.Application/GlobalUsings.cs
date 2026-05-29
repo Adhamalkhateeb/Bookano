@@ -1,4 +1,5 @@
 ﻿global using AutoMapper;
+global using Bookano.Application.Common.Models;
 global using AutoMapper.QueryableExtensions;
 global using Bookano.Application.Constants;
 global using Bookano.Application.Interfaces;

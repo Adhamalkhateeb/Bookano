@@ -91,21 +91,21 @@ namespace Bookano.Web.Controllers
             var subscriber = _mapper.Map<Subscriber>(model);
 
             var imageName = $"{Guid.NewGuid()}{Path.GetExtension(model.Image!.FileName)}";
-            var uploadResult = await _imageService.UploadAsync(
-                model.Image,
-                "subscribers",
-                imageName
-            );
+            //var uploadResult = await _imageService.UploadAsync(
+            //    model.Image,
+            //    "subscribers",
+            //    imageName
+            //);
 
-            if (!uploadResult.IsSuccess)
-            {
-                ModelState.AddModelError("Image", uploadResult.ErrorMessage!);
-                return View("Form", await PopulateViewModelAsync(model));
-            }
+            //if (!uploadResult.IsSuccess)
+            //{
+            //    ModelState.AddModelError("Image", uploadResult.ErrorMessage!);
+            //    return View("Form", await PopulateViewModelAsync(model));
+            //}
 
-            subscriber.ImageUrl = uploadResult.Url!;
-            subscriber.ImagePublicId = uploadResult.PublicId!;
-            subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
+            //subscriber.ImageUrl = uploadResult.Url!;
+            //subscriber.ImagePublicId = uploadResult.PublicId!;
+            //subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
 
             var subscription = new Subscription
             {
@@ -200,42 +200,42 @@ namespace Bookano.Web.Controllers
 
             subscriber = _mapper.Map(model, subscriber);
 
-            if (model.Image is not null)
-            {
-                var imageValidationError = _imageService.ValidateImage(model.Image);
-                if (imageValidationError is not null)
-                {
-                    ModelState.AddModelError("Image", imageValidationError);
-                    return View("Form", await PopulateViewModelAsync(model));
-                }
+            //if (model.Image is not null)
+            //{
+            //    var imageValidationError = _imageService.ValidateImage(model.Image);
+            //    if (imageValidationError is not null)
+            //    {
+            //        ModelState.AddModelError("Image", imageValidationError);
+            //        return View("Form", await PopulateViewModelAsync(model));
+            //    }
 
-                if (!string.IsNullOrEmpty(subscriber.ImagePublicId))
-                {
-                    var deleteResult = await _imageService.DeleteAsync(subscriber.ImagePublicId);
-                    if (!deleteResult.IsSuccess)
-                    {
-                        ModelState.AddModelError("Image", deleteResult.ErrorMessage!);
-                        return View("Form", await PopulateViewModelAsync(model));
-                    }
-                }
+            //    if (!string.IsNullOrEmpty(subscriber.ImagePublicId))
+            //    {
+            //        var deleteResult = await _imageService.DeleteAsync(subscriber.ImagePublicId);
+            //        if (!deleteResult.IsSuccess)
+            //        {
+            //            ModelState.AddModelError("Image", deleteResult.ErrorMessage!);
+            //            return View("Form", await PopulateViewModelAsync(model));
+            //        }
+            //    }
 
-                var imageName = $"{Guid.NewGuid()}{Path.GetExtension(model.Image.FileName)}";
-                var uploadResult = await _imageService.UploadAsync(
-                    model.Image,
-                    "subscribers",
-                    imageName
-                );
+            //    var imageName = $"{Guid.NewGuid()}{Path.GetExtension(model.Image.FileName)}";
+            //    var uploadResult = await _imageService.UploadAsync(
+            //        model.Image,
+            //        "subscribers",
+            //        imageName
+            //    );
 
-                if (!uploadResult.IsSuccess)
-                {
-                    ModelState.AddModelError("Image", uploadResult.ErrorMessage!);
-                    return View("Form", await PopulateViewModelAsync(model));
-                }
+            //    if (!uploadResult.IsSuccess)
+            //    {
+            //        ModelState.AddModelError("Image", uploadResult.ErrorMessage!);
+            //        return View("Form", await PopulateViewModelAsync(model));
+            //    }
 
-                subscriber.ImageUrl = uploadResult.Url!;
-                subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
-                subscriber.ImagePublicId = uploadResult.PublicId!;
-            }
+            //    subscriber.ImageUrl = uploadResult.Url!;
+            //    subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
+            //    subscriber.ImagePublicId = uploadResult.PublicId!;
+            //}
 
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Details), new { Id = model.Key });
@@ -390,8 +390,6 @@ namespace Bookano.Web.Controllers
 
             var governorates = await _context
                 .Governorates.GetQueryable()
-                .AsNoTracking()
-                .Where(g => !g.IsDeleted)
                 .OrderBy(g => g.Name)
                 .ToListAsync();
 

@@ -6,6 +6,7 @@ namespace Bookano.Web.Core.ViewModels
     public class BookFormViewModel
     {
         public int Id { get; set; }
+        public string IdempotencyKey { get; set; } = Guid.NewGuid().ToString();
 
         [Remote("AllowItem", null!, AdditionalFields = nameof(Id), ErrorMessage = Error.Duplicated)]
         [Display(Name = "ISBN")]
@@ -19,19 +20,17 @@ namespace Bookano.Web.Core.ViewModels
         [Display(Name = "Publishing Date")]
         [AssertThat("PublishingDate <= Today()", ErrorMessage = Error.NotAllowFutureDates)]
         public DateTime PublishingDate { get; set; } = DateTime.Today;
-        public IFormFile? Image { get; set; }
-        public string? ImageUrl { get; set; }
-        public string? ImageThumbnailUrl { get; set; }
-        public string? ExistingImagePublicId { get; set; }
-        public bool RemoveImage { get; set; }
-        public string IdempotencyKey { get; set; } = Guid.NewGuid().ToString();
-        public byte[]? RowVersion { get; set; }
-
         public string Hall { get; set; } = null!;
 
         [Display(Name = "Is available for rental?")]
         public bool IsAvailableForRental { get; set; }
         public string Description { get; set; } = null!;
+        public IFormFile? Image { get; set; }
+        public string? ImageUrl { get; set; }
+        public string? ImageThumbnailUrl { get; set; }
+        public string? ExistingImagePublicId { get; set; }
+        public bool RemoveImage { get; set; }
+        public byte[]? RowVersion { get; set; }
 
         [Display(Name = "Categories")]
         public IList<int> SelectedCategories { get; set; } = [];

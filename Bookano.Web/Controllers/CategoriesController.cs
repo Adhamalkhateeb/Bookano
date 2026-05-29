@@ -1,4 +1,4 @@
-﻿using Bookano.Application.DTOs.Categories;
+using Bookano.Application.DTOs.Categories;
 using Bookano.Application.Interfaces;
 using Bookano.Application.Services.Categories;
 
@@ -7,12 +7,10 @@ namespace Bookano.Web.Controllers;
 [Authorize(Roles = AppRoles.Archive)]
 public class CategoriesController(
     IMapper mapper,
-    IValidator<CategoryFormViewModel> validator,
     ICategoryService categoryService
 ) : Controller
 {
     private readonly IMapper _mapper = mapper;
-    private readonly IValidator<CategoryFormViewModel> _validator = validator;
     private readonly ICategoryService _categoryService = categoryService;
 
     [HttpGet]
@@ -35,16 +33,15 @@ public class CategoriesController(
     [HttpPost]
     public async Task<IActionResult> Create(CategoryFormViewModel model, CancellationToken ct = default)
     {
-        var validationResult = _validator.Validate(model);
-        validationResult.AddToModelState(ModelState);
+        var dto = _mapper.Map<CategoryFormDto>(model);
+        var result = await _categoryService.AddAsync(dto, ct);
+
+        result.AddToModelState(ModelState);
 
         if (!ModelState.IsValid)
             return BadRequest();
 
-        var dto = _mapper.Map<CategoryFormDto>(model);
-        var result = await _categoryService.AddAsync(dto, ct);
-
-        var categoryViewModel = _mapper.Map<CategoryViewModel>(result);
+        var categoryViewModel = _mapper.Map<CategoryViewModel>(result.Value);
 
         return PartialView("_CategoryRow", categoryViewModel);
     }
@@ -66,19 +63,15 @@ public class CategoriesController(
     [HttpPost]
     public async Task<IActionResult> Edit(CategoryFormViewModel model, CancellationToken ct = default)
     {
-        var validationResult = _validator.Validate(model);
-        validationResult.AddToModelState(ModelState);
+        var dto = _mapper.Map<CategoryFormDto>(model);
+        var result = await _categoryService.UpdateAsync(model.Id, dto, ct);
+
+        result.AddToModelState(ModelState);
 
         if (!ModelState.IsValid)
             return BadRequest();
 
-        var dto = _mapper.Map<CategoryFormDto>(model);
-        var result = await _categoryService.UpdateAsync(model.Id, dto, ct);
-
-        if (result is null)
-            return NotFound();
-
-        var categoryViewModel = _mapper.Map<CategoryViewModel>(result);
+        var categoryViewModel = _mapper.Map<CategoryViewModel>(result.Value);
 
         return PartialView("_CategoryRow", categoryViewModel);
     }
@@ -86,12 +79,12 @@ public class CategoriesController(
     [HttpPost]
     public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct = default)
     {
-        var result = await _categoryService.ToggleAsync(id, ct);
+        var lastUpdatedOnUtc = await _categoryService.ToggleAsync(id, ct);
 
-        if (result is null)
+        if (!lastUpdatedOnUtc.HasValue)
             return NotFound();
 
-        return Ok(result.LastUpdatedOnUtc.ToString());
+        return Ok(lastUpdatedOnUtc.Value.ToString());
     }
 
     public async Task<IActionResult> AllowItem(CategoryFormViewModel model, CancellationToken ct = default)

@@ -1,4 +1,4 @@
-﻿using Bookano.Application.DTOs.Governorates;
+﻿using Bookano.Application.DTOs.Areas;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookano.Web.Core.Mapping

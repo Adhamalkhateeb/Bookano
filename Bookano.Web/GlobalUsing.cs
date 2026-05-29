@@ -1,10 +1,8 @@
 ﻿global using System.ComponentModel.DataAnnotations;
 global using System.Security.Claims;
 global using AutoMapper;
-global using Bookano.Application.Common.DTOs;
 global using Bookano.Application.Common.Interfaces;
 global using Bookano.Application.Constants;
-global using Bookano.Domain.Common;
 global using Bookano.Domain.Common.Constants;
 global using Bookano.Domain.Entities;
 global using Bookano.Domain.Enums;

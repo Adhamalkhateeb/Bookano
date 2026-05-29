@@ -12,8 +12,7 @@ public class PublisherProfile : Profile
         CreateMap<PublisherFormViewModel, PublisherFormDto>().ReverseMap();
 
 
-        //TODO: Replace Model with dto
-        CreateMap<Publisher, SelectListItem>()
+        CreateMap<PublisherDto, SelectListItem>()
             .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
             .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
     }

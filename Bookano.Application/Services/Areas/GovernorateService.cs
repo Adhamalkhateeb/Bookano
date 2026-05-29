@@ -1,6 +1,6 @@
-﻿using Bookano.Application.DTOs.Governorates;
+﻿using Bookano.Application.DTOs.Areas;
 
-namespace Bookano.Application.Services.Governorates;
+namespace Bookano.Application.Services.Areas;
 
 internal class GovernorateService(IUnitOfWork unitOfWork, IMapper mapper) : IGovernorateService
 {

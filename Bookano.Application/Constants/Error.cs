@@ -1,4 +1,4 @@
-﻿namespace Bookano.Application.Constants;
+namespace Bookano.Application.Constants;
 
 public static class Error
 {
@@ -43,4 +43,5 @@ public static class Error
     public const string InvalidDuration = "Invalid duration.";
     public const string InvalidEndDate = "Invalid end date.";
     public const string InvalidStartDate = "Invalid start date.";
+    public const string ConcurrencyError = "Another user has updated this record. Please refresh and try again.";
 }

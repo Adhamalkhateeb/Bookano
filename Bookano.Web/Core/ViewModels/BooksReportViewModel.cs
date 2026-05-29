@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Bookano.Application.Common.Models;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookano.Web.Core.ViewModels
 {

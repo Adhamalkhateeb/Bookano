@@ -52,8 +52,7 @@ namespace Bookano.Web
                 );
             });
 
-            services.AddKeyedTransient<IImageService, CloudinaryImageService>("cloudinary");
-            services.AddKeyedTransient<IImageService, LocalImageService>("local");
+
 
             services.AddScoped<IViewRendererService, ViewRendererService>();
 

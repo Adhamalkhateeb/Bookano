@@ -1,13 +1,12 @@
-﻿
-
 using Bookano.Application.DTOs.Areas;
 
 namespace Bookano.Application.Services.Areas;
 
-internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper) : IAreaService
+internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<AreaFormDto> validator) : IAreaService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IMapper _mapper = mapper;
+    private readonly IValidator<AreaFormDto> _validator = validator;
 
     public async Task<IEnumerable<AreaDto>> GetAllAsync(CancellationToken ct = default)
     {
@@ -25,36 +24,48 @@ internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper) : IAreaServic
             .FirstOrDefaultAsync(a => a.Id == id, ct);
     }
 
-    public async Task<AreaDto?> AddAsync(AreaFormDto areaDto, CancellationToken ct = default)
+    public async Task<Result<AreaDto>> AddAsync(AreaFormDto areaDto, CancellationToken ct = default)
     {
+        var validationResult = await _validator.ValidateAsync(areaDto, ct);
+        if (!validationResult.IsValid)
+            return Result<AreaDto>.Failure(validationResult.ToValidationErrors());
+
         var area = _mapper.Map<Area>(areaDto);
 
         _unitOfWork.Areas.Add(area);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return await GetAsync(area.Id, ct);
-    }
+        var dtoResult = await GetAsync(area.Id, ct);
 
-    public async Task<AreaDto?> UpdateAsync(
+        return Result<AreaDto>.Success(dtoResult!);
+
+    } 
+
+    public async Task<Result<AreaDto>> UpdateAsync(
         int id,
         AreaFormDto dto,
         CancellationToken ct = default
     )
     {
+        var validationResult = await _validator.ValidateAsync(dto, ct);
+        if (!validationResult.IsValid)
+            return Result<AreaDto>.Failure(validationResult.ToValidationErrors());
+
         var area = await _unitOfWork.Areas.GetByIdAsync(id, ct);
 
         if (area is null)
-            return null;
+            return Result<AreaDto>.Failure("Area not found.");
 
         _mapper.Map(dto, area);
 
         _unitOfWork.Areas.Update(area);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return await GetAsync(id, ct);
+        var dtoResult = await GetAsync(id, ct);
+        return Result<AreaDto>.Success(dtoResult!);
     }
 
-    public async Task<AreaDto?> ToggleAsync(int id, CancellationToken ct = default)
+    public async Task<DateTimeOffset?> ToggleAsync(int id, CancellationToken ct = default)
     {
         var area = await _unitOfWork.Areas.GetByIdAsync(id, ct);
 
@@ -66,7 +77,7 @@ internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper) : IAreaServic
         _unitOfWork.Areas.Update(area);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return _mapper.Map<AreaDto>(area);
+        return area.LastUpdatedOnUtc;
     }
 
     public async Task<bool> IsAreaAvailableAsync(

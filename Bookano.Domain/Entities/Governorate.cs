@@ -1,6 +1,6 @@
 ﻿namespace Bookano.Domain.Entities;
 
-public sealed class Governorate : BaseEntity
+public sealed class Governorate
 {
     public int Id { get; set; }
 

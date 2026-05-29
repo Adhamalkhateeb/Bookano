@@ -154,8 +154,8 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
@@ -168,7 +168,7 @@ namespace Bookano.Infrastructure.Persistence
                     b.HasIndex("Name", "GovernorateId")
                         .IsUnique();
 
-                    b.ToTable("Areas", (string)null);
+                    b.ToTable("Areas");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Author", b =>
@@ -214,7 +214,7 @@ namespace Bookano.Infrastructure.Persistence
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Authors", (string)null);
+                    b.ToTable("Authors");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Book", b =>
@@ -226,10 +226,13 @@ namespace Bookano.Infrastructure.Persistence
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CreatedById")
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset>("CreatedOnUtc")
-                        .HasColumnType("datetimeoffset");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetimeoffset")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -263,7 +266,9 @@ namespace Bookano.Infrastructure.Persistence
                         .HasDefaultValue(false);
 
                     b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("Isbn")
                         .HasMaxLength(20)
@@ -271,6 +276,7 @@ namespace Bookano.Infrastructure.Persistence
                         .HasColumnType("varchar(20)");
 
                     b.Property<string>("LastUpdatedById")
+                        .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset?>("LastUpdatedOnUtc")
@@ -279,7 +285,7 @@ namespace Bookano.Infrastructure.Persistence
                     b.Property<int>("PublisherId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("PublishingDate")
+                    b.Property<DateOnly>("PublishingDate")
                         .HasColumnType("date");
 
                     b.Property<byte[]>("RowVersion")
@@ -290,8 +296,8 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 
@@ -309,7 +315,7 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.HasIndex("PublisherId");
 
-                    b.ToTable("Books", (string)null);
+                    b.ToTable("Books");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.BookAuthor", b =>
@@ -324,7 +330,7 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("BookAuthors", (string)null);
+                    b.ToTable("BookAuthors");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.BookCategory", b =>
@@ -339,7 +345,7 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("BookCategories", (string)null);
+                    b.ToTable("BookCategories");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.BookCopy", b =>
@@ -396,7 +402,7 @@ namespace Bookano.Infrastructure.Persistence
                     b.HasIndex("BookId", "SerialNumber")
                         .IsUnique();
 
-                    b.ToTable("BookCopies", (string)null);
+                    b.ToTable("BookCopies");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Category", b =>
@@ -442,7 +448,7 @@ namespace Bookano.Infrastructure.Persistence
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Governorate", b =>
@@ -453,27 +459,6 @@ namespace Bookano.Infrastructure.Persistence
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("CreatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTimeOffset>("CreatedOnUtc")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetimeoffset")
-                        .HasDefaultValueSql("SYSUTCDATETIME()");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("LastUpdatedById")
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTimeOffset?>("LastUpdatedOnUtc")
-                        .HasColumnType("datetimeoffset");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -481,14 +466,10 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("LastUpdatedById");
-
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Governorates", (string)null);
+                    b.ToTable("Governorates");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Publisher", b =>
@@ -534,7 +515,7 @@ namespace Bookano.Infrastructure.Persistence
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Publishers", (string)null);
+                    b.ToTable("Publishers");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Rental", b =>
@@ -587,7 +568,7 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.HasIndex("SubscriberId");
 
-                    b.ToTable("Rentals", (string)null);
+                    b.ToTable("Rentals");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.RentalCopy", b =>
@@ -620,7 +601,7 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.HasIndex("ReturnDate");
 
-                    b.ToTable("RentalCopies", (string)null);
+                    b.ToTable("RentalCopies");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Subscriber", b =>
@@ -658,11 +639,8 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("GovernorateId")
-                        .HasColumnType("int");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<bool>("HasWhatsApp")
                         .ValueGeneratedOnAdd()
@@ -695,8 +673,8 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("LastUpdatedById")
                         .HasMaxLength(450)
@@ -724,8 +702,6 @@ namespace Bookano.Infrastructure.Persistence
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.HasIndex("GovernorateId");
-
                     b.HasIndex("LastUpdatedById");
 
                     b.HasIndex("MobileNumber")
@@ -734,7 +710,7 @@ namespace Bookano.Infrastructure.Persistence
                     b.HasIndex("NationalId")
                         .IsUnique();
 
-                    b.ToTable("Subscribers", (string)null);
+                    b.ToTable("Subscribers");
                 });
 
             modelBuilder.Entity("Bookano.Domain.Entities.Subscription", b =>
@@ -756,6 +732,12 @@ namespace Bookano.Infrastructure.Persistence
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date");
 
+                    b.Property<string>("LastUpdatedById")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset?>("LastUpdatedOnUtc")
+                        .HasColumnType("datetimeoffset");
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
@@ -768,7 +750,7 @@ namespace Bookano.Infrastructure.Persistence
 
                     b.HasIndex("SubscriberId");
 
-                    b.ToTable("Subscriptions", (string)null);
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -950,11 +932,13 @@ namespace Bookano.Infrastructure.Persistence
                 {
                     b.HasOne("Bookano.Domain.Entities.ApplicationUser", "CreatedBy")
                         .WithMany()
-                        .HasForeignKey("CreatedById");
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Bookano.Domain.Entities.ApplicationUser", "LastUpdatedBy")
                         .WithMany()
-                        .HasForeignKey("LastUpdatedById");
+                        .HasForeignKey("LastUpdatedById")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Bookano.Domain.Entities.Publisher", "Publisher")
                         .WithMany("Books")
@@ -1049,23 +1033,6 @@ namespace Bookano.Infrastructure.Persistence
                     b.Navigation("LastUpdatedBy");
                 });
 
-            modelBuilder.Entity("Bookano.Domain.Entities.Governorate", b =>
-                {
-                    b.HasOne("Bookano.Domain.Entities.ApplicationUser", "CreatedBy")
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Bookano.Domain.Entities.ApplicationUser", "LastUpdatedBy")
-                        .WithMany()
-                        .HasForeignKey("LastUpdatedById")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("CreatedBy");
-
-                    b.Navigation("LastUpdatedBy");
-                });
-
             modelBuilder.Entity("Bookano.Domain.Entities.Publisher", b =>
                 {
                     b.HasOne("Bookano.Domain.Entities.ApplicationUser", "CreatedBy")
@@ -1140,12 +1107,6 @@ namespace Bookano.Infrastructure.Persistence
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.NoAction);
 
-                    b.HasOne("Bookano.Domain.Entities.Governorate", "Governorate")
-                        .WithMany()
-                        .HasForeignKey("GovernorateId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Bookano.Domain.Entities.ApplicationUser", "LastUpdatedBy")
                         .WithMany()
                         .HasForeignKey("LastUpdatedById")
@@ -1154,8 +1115,6 @@ namespace Bookano.Infrastructure.Persistence
                     b.Navigation("Area");
 
                     b.Navigation("CreatedBy");
-
-                    b.Navigation("Governorate");
 
                     b.Navigation("LastUpdatedBy");
                 });

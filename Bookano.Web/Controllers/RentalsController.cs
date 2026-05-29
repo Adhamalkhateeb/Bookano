@@ -1,6 +1,5 @@
 ﻿using System.Linq.Dynamic.Core;
 using Bookano.Application.Interfaces;
-using Bookano.Domain.Enums;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Bookano.Web.Controllers

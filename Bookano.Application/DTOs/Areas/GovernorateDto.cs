@@ -1,5 +1,4 @@
-﻿
-namespace Bookano.Application.DTOs.Governorates;
+﻿namespace Bookano.Application.DTOs.Areas;
 
 public class GovernorateDto
 {

@@ -1,6 +1,5 @@
-﻿using Bookano.Application.DTOs.Areas;
+using Bookano.Application.DTOs.Areas;
 using Bookano.Application.Services.Areas;
-using Bookano.Application.Services.Governorates;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookano.Web.Controllers
@@ -8,13 +7,11 @@ namespace Bookano.Web.Controllers
     [Authorize(Roles = AppRoles.Reception)]
     public class AreasController(
         IMapper mapper,
-        IValidator<AreaFormViewModel> validator,
          IAreaService areaService,
          IGovernorateService governorateService
     ) : Controller
     {
         private readonly IMapper _mapper = mapper;
-        private readonly IValidator<AreaFormViewModel> _validator = validator;
         private readonly IAreaService _areaService = areaService;
         private readonly IGovernorateService _governorateService = governorateService;
 
@@ -38,17 +35,16 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(AreaFormViewModel model,CancellationToken ct)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
             var dto = _mapper.Map<AreaFormDto>(model);
 
             var result = await _areaService.AddAsync(dto,ct); 
+
+            result.AddToModelState(ModelState);
+
+            if (!ModelState.IsValid)
+                return BadRequest();
             
-            var vm = _mapper.Map<AreaViewModel>(result);
+            var vm = _mapper.Map<AreaViewModel>(result.Value);
 
             return PartialView("_AreaRow", vm);
         }
@@ -71,32 +67,28 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(AreaFormViewModel model,CancellationToken ct)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
             var dto = _mapper.Map<AreaFormDto>(model);
             
             var result = await _areaService.UpdateAsync(model.Id,dto,ct);
 
-            if (result is null)
-                return NotFound();
+            result.AddToModelState(ModelState);
 
-            var vm = _mapper.Map<AreaViewModel>(result);
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var vm = _mapper.Map<AreaViewModel>(result.Value);
             return PartialView("_AreaRow", vm);
         }
 
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
-            var result = await _areaService.ToggleAsync(id,ct);
+            var lastUpdatedOnUtc = await _areaService.ToggleAsync(id,ct);
 
-            if (result is null)
+            if (!lastUpdatedOnUtc.HasValue)
                 return NotFound();
 
-            return Ok(result.LastUpdatedOnUtc.ToString());
+            return Ok(lastUpdatedOnUtc.Value.ToString());
         }
 
         public async Task<IActionResult> AllowItem(AreaFormViewModel model,CancellationToken ct)

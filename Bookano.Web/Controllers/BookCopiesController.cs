@@ -1,17 +1,17 @@
-﻿using Bookano.Application.Interfaces;
+﻿using Bookano.Application.DTOs.BookCopies;
+using Bookano.Application.Services.BookCopies;
+using Bookano.Application.Services.Books;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
     public class BookCopiesController(
-        IUnitOfWork unitOfWork,
-        IMapper mapper,
-        IValidator<BookCopyFormViewModel> validator
+        IBookCopiesService bookCopiesService,
+        IMapper mapper
     ) : Controller
     {
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly IBookCopiesService _bookCopiesService = bookCopiesService;
         private readonly IMapper _mapper = mapper;
-        private readonly IValidator<BookCopyFormViewModel> _validator = validator;
 
         public IActionResult Index()
         {
@@ -22,10 +22,7 @@ namespace Bookano.Web.Controllers
         [AjaxOnly]
         public async Task<IActionResult> Create(int bookId)
         {
-            var book = await _unitOfWork
-                .Books.GetQueryable()
-                .SingleOrDefaultAsync(b => b.Id == bookId);
-
+            var book = await _bookCopiesService.GetBook(bookId);
             if (book is null)
                 return NotFound();
 
@@ -34,133 +31,80 @@ namespace Bookano.Web.Controllers
                 BookId = bookId,
                 ShowRentalInput = book.IsAvailableForRental,
             };
+
             return PartialView("_Form", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(BookCopyFormViewModel model)
+        public async Task<IActionResult> Create(BookCopyFormViewModel model,CancellationToken ct)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
-
-            if (!ModelState.IsValid)
-                return PartialView("_Form", model);
-
-            var book = await _unitOfWork
-                .Books.GetQueryable()
-                .SingleOrDefaultAsync(b => b.Id == model.BookId);
-
-            if (book is null)
-                return NotFound();
-
-            var copy = new BookCopy
+            var dto = _mapper.Map<BookCopyFormDto>(model);
+            
+            var result = await _bookCopiesService.AddAsync(dto,ct);
+            if (result.IsFailure)
             {
-                EditionNumber = model.EditionNumber,
-                IsAvailableForRental = book.IsAvailableForRental && model.IsAvailableForRental,
-            };
+                result.AddToModelState(ModelState);
+                return PartialView("_Form", model);
+            }
 
-            book.Copies.Add(copy);
-            await _unitOfWork.SaveChangesAsync();
+            var vm = _mapper.Map<BookCopyRowViewModel>(result.Value);
 
-            var viewModel = _mapper.Map<BookCopyViewModel>(copy);
-            return PartialView("_BookCopyRow", viewModel);
+            return PartialView("_BookCopyRow", vm);
         }
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id,CancellationToken ct)
         {
-            var copy = await _unitOfWork
-                .BookCopies.GetQueryable()
-                .Include(c => c.Book)
-                .SingleOrDefaultAsync(c => c.Id == id);
 
-            if (copy is null)
+            var copy = await _bookCopiesService.GetByIdAsync(id, ct);
+
+            if(copy is null)
                 return NotFound();
-
+            
             var viewModel = _mapper.Map<BookCopyFormViewModel>(copy);
-            viewModel.ShowRentalInput = copy.Book!.IsAvailableForRental;
+            viewModel.ShowRentalInput = !copy.BookIsAvailableForRental;
 
             return PartialView("_Form", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(BookCopyFormViewModel model)
+        public async Task<IActionResult> Edit(BookCopyFormViewModel model,CancellationToken ct)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
+            var dto = _mapper.Map<BookCopyFormDto>(model);
 
-            if (!ModelState.IsValid)
+            var result = await _bookCopiesService.UpdateAsync(dto,ct);
+            if (result.IsFailure)
+            {
+                result.AddToModelState(ModelState);
                 return PartialView("_Form", model);
+            }
 
-            var copy = await _unitOfWork
-                .BookCopies.GetQueryable()
-                .Include(c => c.Book)
-                .SingleOrDefaultAsync(c => c.Id == model.Id);
+            var vm = _mapper.Map<BookCopyRowViewModel>(result.Value);
 
-            if (copy is null)
-                return NotFound();
-
-            copy.EditionNumber = model.EditionNumber;
-            copy.IsAvailableForRental =
-                copy.Book!.IsAvailableForRental && model.IsAvailableForRental;
-
-            await _unitOfWork.SaveChangesAsync();
-
-            var viewModel = _mapper.Map<BookCopyViewModel>(copy);
-
-            return PartialView("_BookCopyRow", viewModel);
+            return PartialView("_BookCopyRow", vm);
         }
 
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id)
         {
-            var copy = await _unitOfWork
-                .BookCopies.GetQueryable()
-                .SingleOrDefaultAsync(c => c.Id == id);
-
-            if (copy is null)
+            var lastUpdatedOnUtc = await _bookCopiesService.ToggleAsync(id);
+            if (lastUpdatedOnUtc is null)
                 return NotFound();
 
-            copy.IsDeleted = !copy.IsDeleted;
-
-            await _unitOfWork.SaveChangesAsync();
-
-            return Ok(copy.LastUpdatedOnUtc.ToString());
+            return Ok(lastUpdatedOnUtc.Value.ToString());
         }
 
-        public async Task<IActionResult> RentalHistory(int id)
+        public async Task<IActionResult> RentalHistory(int id,CancellationToken ct)
         {
-            var viewModel = await _unitOfWork
-                .RentalCopies.GetQueryable()
-                .Where(rc => rc.BookCopy!.Id == id)
-                .Select(c => new CopyHistoyViewModel
-                {
-                    SubscriberName =
-                        $"{c.Rental!.Subscriber!.FirstName} {c.Rental.Subscriber.LastName}",
-                    SubscriberMobile = c.Rental.Subscriber.MobileNumber,
+            var histroy = await _bookCopiesService.GetRentalHistoryAsync(id);
 
-                    StartDate = c.RentalDate.ToDateTime(TimeOnly.MinValue),
-                    EndDate = c.EndDate.ToDateTime(TimeOnly.MinValue),
-
-                    ReturnDate = c.ReturnDate.HasValue
-                        ? c.ReturnDate.Value.ToDateTime(TimeOnly.MinValue)
-                        : null,
-
-                    ExtendedOn = c.ExtendedOn.HasValue
-                        ? c.ExtendedOn.Value.ToDateTime(TimeOnly.MinValue)
-                        : null,
-                })
-                .OrderByDescending(c => c.StartDate)
-                .ToListAsync();
-
-            if (
-                viewModel.Count == 0
-                && !await _unitOfWork.BookCopies.GetQueryable().AnyAsync(c => c.Id == id)
-            )
+            var viewModel = _mapper.Map<IEnumerable<CopyHistoyViewModel>>(histroy);
+            if (viewModel is null)
                 return NotFound();
 
             return View(viewModel);
+
         }
     }
 }

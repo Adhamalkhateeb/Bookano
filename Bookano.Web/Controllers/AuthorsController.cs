@@ -1,4 +1,4 @@
-﻿using Bookano.Application.DTOs.Authors;
+using Bookano.Application.DTOs.Authors;
 using Bookano.Application.Services.Authors;
 
 namespace Bookano.Web.Controllers
@@ -6,12 +6,10 @@ namespace Bookano.Web.Controllers
     [Authorize(Roles = AppRoles.Archive)]
     public class AuthorsController(
         IMapper mapper,
-        IValidator<AuthorFormViewModel> validator,
         IAuthorService authorService
     ) : Controller
     {
         private readonly IMapper _mapper = mapper;
-        private readonly IValidator<AuthorFormViewModel> _validator = validator;
         private readonly IAuthorService _authorService = authorService;
 
         public async Task<IActionResult> Index(CancellationToken ct)
@@ -33,17 +31,16 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(AuthorFormViewModel model, CancellationToken ct)
         {
-            var validation = _validator.Validate(model);
-            validation.AddToModelState(ModelState);
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
             var dto = _mapper.Map<AuthorFormDto>(model);
 
             var result = await _authorService.AddAsync(dto, ct);
 
-            var vm = _mapper.Map<AuthorViewModel>(result);
+            result.AddToModelState(ModelState);
+
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var vm = _mapper.Map<AuthorViewModel>(result.Value);
 
             return PartialView("_AuthorRow", vm);
         }
@@ -65,20 +62,16 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(AuthorFormViewModel model, CancellationToken ct)
         {
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
-
-            if (!ModelState.IsValid)
-                return BadRequest();
-
             var dto = _mapper.Map<AuthorFormDto>(model);
 
             var result = await _authorService.UpdateAsync(model.Id, dto, ct);
 
-            if (result is null)
-                return NotFound();
+            result.AddToModelState(ModelState);
 
-            var vm = _mapper.Map<AuthorViewModel>(result);
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var vm = _mapper.Map<AuthorViewModel>(result.Value);
 
             return PartialView("_AuthorRow", vm);
         }
@@ -86,12 +79,12 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
-            var result = await _authorService.ToggleAsync(id, ct);
+            var lastUpdatedOnUtc = await _authorService.ToggleAsync(id, ct);
 
-            if (result is null)
+            if (!lastUpdatedOnUtc.HasValue)
                 return NotFound();
 
-            return Ok(result.LastUpdatedOnUtc.ToString());
+            return Ok(lastUpdatedOnUtc.Value.ToString());
         }
 
         public async Task<IActionResult> AllowItem(AuthorFormViewModel model, CancellationToken ct)
