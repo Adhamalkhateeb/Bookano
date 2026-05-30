@@ -9,8 +9,10 @@
         {
             get
             {
-                return DateTime.Today > EndDate ? SubscriptionStatus.Expired.ToString()
-                    : DateTime.Today >= StartDate ? SubscriptionStatus.Active.ToString()
+                var today = DateTime.Today;
+
+                return today > EndDate ? SubscriptionStatus.Expired.ToString()
+                    : today >= StartDate ? SubscriptionStatus.Active.ToString()
                     : string.Empty;
             }
         }

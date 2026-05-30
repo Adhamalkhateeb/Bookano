@@ -16,5 +16,6 @@ global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Identity.UI.Services;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.EntityFrameworkCore;
-global using WhatsAppCloudApi;
-global using WhatsAppCloudApi.Services;
+global using Bookano.Application.Interfaces;
+global using Bookano.Application.Common.Models;
+

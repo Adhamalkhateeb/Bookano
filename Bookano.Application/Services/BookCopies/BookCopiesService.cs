@@ -99,7 +99,7 @@ public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
     public async Task<IEnumerable<BookCopyRentalHistoryDto>?> GetRentalHistoryAsync(int id, CancellationToken ct = default)
     {
         
-        var copyExists = await _unitOfWork.BookCopies.IsExistsAsync(c => c.Id == id);
+        var copyExists = await _unitOfWork.BookCopies.IsExistsAsync(c => c.Id == id,ct);
         if (!copyExists)
             return null;
 

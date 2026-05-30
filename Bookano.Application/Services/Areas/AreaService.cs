@@ -16,6 +16,15 @@ internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<Ar
             .ToListAsync(ct);
     }
 
+    public async Task<IEnumerable<AreaDto>> GetGovernorateAreasAsync(int governorateId,CancellationToken ct = default)
+    {
+        return await _unitOfWork
+            .Areas.GetQueryable()
+            .Where(x => x.GovernorateId == governorateId && !x.IsDeleted)
+            .ProjectTo<AreaDto>(_mapper.ConfigurationProvider)
+            .ToListAsync(ct);
+    }
+
     public async Task<AreaDto?> GetAsync(int id, CancellationToken ct = default)
     {
         return await _unitOfWork
@@ -91,4 +100,6 @@ internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<Ar
             .Areas.GetQueryable()
             .AnyAsync(x => x.Name == name && x.GovernorateId == governorateId && x.Id != id, ct);
     }
+
+    
 }

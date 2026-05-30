@@ -11,7 +11,7 @@ namespace Bookano.Web.Services.Image
         private readonly IWebHostEnvironment _env = env;
         private const string ImagesRoot = "images";
         private const string ThumbFolder = "thumb";
-        private readonly string[] _imageAllowedExtensions = ["png", "jpg", "jpeg","webp"];
+        private readonly string[] _imageAllowedExtensions = [".png", ".jpg", ".jpeg",".webp"];
 
 
         public async Task<ImageUploadResult> UploadAsync(

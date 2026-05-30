@@ -6,6 +6,7 @@ using Bookano.Application.Services.BookCopies;
 using Bookano.Application.Services.Books;
 using Bookano.Application.Services.Categories;
 using Bookano.Application.Services.Publishers;
+using Bookano.Application.Services.Subscribers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Bookano.Application
@@ -25,6 +26,7 @@ namespace Bookano.Application
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IPublisherService, PublisherService>();
             services.AddScoped<IGovernorateService, GovernorateService>();
+            services.AddScoped<ISubscriberService, SubscriberService>();
             return services;
         }
     }

@@ -2,5 +2,5 @@
 
 public interface IWhatsAppService
 {
-    Task SendWhatsApp(string mobileNumber, string template, List<object>? parameters = null);
+    Task SendWhatsApp(string mobileNumber, string template, string languageCode, List<object>? parameters = null);
 }

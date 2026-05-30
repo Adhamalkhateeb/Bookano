@@ -55,6 +55,7 @@ namespace Bookano.Infrastructure
             services.AddTransient<IEmailSender, EmailSender>();
             services.AddTransient<IEmailBodyBuilder, EmailBodyBuilder>();
             services.AddScoped<IWhatsAppService, WhatsAppService>();
+            services.AddScoped<ISubscriberNotificationService, SubscriberNotificationService>();
 
             services.AddHttpContextAccessor();
             services.AddScoped<AuditableInterceptor>();

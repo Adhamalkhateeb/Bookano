@@ -1,5 +1,4 @@
-﻿using Bookano.Infrastructure.Settings;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using WhatsAppCloudApi;
 using WhatsAppCloudApi.Services;
 
@@ -16,6 +15,7 @@ namespace Bookano.Infrastructure.Services
         public async Task SendWhatsApp(
             string mobileNumber,
             string template,
+            string languageCode,
             List<object>? parameters = null
         )
         {
@@ -32,7 +32,7 @@ namespace Bookano.Infrastructure.Services
 
             await _whatsAppClient.SendMessage(
                 $"2{usedMobileNumber}",
-                WhatsAppLanguageCode.English,
+                languageCode,
                 template,
                 components
             );

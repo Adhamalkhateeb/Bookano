@@ -1,4 +1,6 @@
-﻿namespace Bookano.Web.Core.Mapping;
+﻿using Bookano.Application.DTOs.Subscribers;
+
+namespace Bookano.Web.Core.Mapping;
 
 public class MappingProfile : Profile
 {
@@ -8,35 +10,10 @@ public class MappingProfile : Profile
 
         CreateMap<DateTime, DateOnly>().ConvertUsing(d => DateOnly.FromDateTime(d));
 
-
-
-
         //Rentals
         CreateMap<Rental, RentalViewModel>();
         CreateMap<RentalCopy, RentalCopyViewModel>();
 
-        //Subscribers
-        CreateMap<Subscriber, SubscriberViewModel>()
-            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(s => s.Area!.Governorate!.Name))
-            .ForMember(dest => dest.Area, opt => opt.MapFrom(s => s.Area!.Name))
-            .ForMember(
-                dest => dest.FullName,
-                opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
-            );
-        ;
-        CreateMap<Subscriber, SubscriberFormViewModel>();
-        CreateMap<SubscriberFormViewModel, Subscriber>()
-            .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
-            .ForMember(dest => dest.ImageThumbnailUrl, opt => opt.Ignore())
-            .ForMember(dest => dest.ImagePublicId, opt => opt.Ignore());
-        CreateMap<Subscriber, SubscriberSearchResultViewModel>()
-            .ForMember(
-                dest => dest.FullName,
-                opt => opt.MapFrom(s => $"{s.FirstName} {s.LastName}")
-            );
-
-        //Subscription
-        CreateMap<Subscription, SubscriptionViewModel>();
 
         //Users
         CreateMap<ApplicationUser, UserViewModel>()

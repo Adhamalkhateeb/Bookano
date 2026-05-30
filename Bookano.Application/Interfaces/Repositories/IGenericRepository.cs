@@ -24,6 +24,12 @@ public interface IGenericRepository<T>
     void Update(T entity);
     void Remove(T entity);
 
-    Task<bool> IsExistsAsync(Expression<Func<T, bool>> expression);
-    Task<int> CountAsync(Expression<Func<T, bool>>? expression = null);
+    Task<bool> IsExistsAsync(
+        Expression<Func<T, bool>> expression,
+        CancellationToken cancellationToken = default
+    );
+    Task<int> CountAsync(
+        Expression<Func<T, bool>>? expression = null,
+        CancellationToken cancellationToken = default
+    );
 }

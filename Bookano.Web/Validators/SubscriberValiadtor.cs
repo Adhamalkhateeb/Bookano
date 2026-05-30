@@ -1,42 +1,12 @@
-﻿using CloudinaryDotNet.Core;
+﻿using Bookano.Application.Validators;
+using CloudinaryDotNet.Core;
 
 namespace Bookano.Web.Validators
 {
-    public class SubscriberValiadtor : AbstractValidator<SubscriberFormViewModel>
+    public class SubscriberValiadtor : SubscriberCommonValidator<SubscriberFormViewModel>
     {
-        public SubscriberValiadtor()
-        {
-            RuleFor(x => x.FirstName)
-                .MaximumLength(50)
-                .WithMessage(Error.MaxLength)
-                .Matches(RegexPatterns.DenySpecialCharacters)
-                .WithMessage(Error.DenySpecialCharacters);
-
-            RuleFor(x => x.LastName)
-                .MaximumLength(50)
-                .WithMessage(Error.MaxLength)
-                .Matches(RegexPatterns.DenySpecialCharacters)
-                .WithMessage(Error.DenySpecialCharacters);
-
-            RuleFor(x => x.NationalId)
-                .MaximumLength(14)
-                .WithMessage(Error.MaxLength)
-                .Matches(RegexPatterns.NationalId)
-                .WithMessage(Error.InvalidNationalId);
-
-            RuleFor(x => x.Email)
-                .EmailAddress()
-                .WithMessage("Invalid Email")
-                .MaximumLength(150)
-                .WithMessage(Error.MaxLength);
-
-            RuleFor(x => x.MobileNumber)
-                .Matches(RegexPatterns.MobileNumber)
-                .WithMessage(Error.InvalidMobileNumber)
-                .MaximumLength(11)
-                .WithMessage(Error.MaxLength);
-
-            RuleFor(x => x.Address).MaximumLength(500).WithMessage(Error.MaxLength);
-        }
+        public SubscriberValiadtor() :
+            base(x => x.FirstName, x => x.LastName, x => x.NationalId, x => x.Email, x => x.MobileNumber, x => x.Address)
+        { }
     }
 }

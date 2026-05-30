@@ -22,9 +22,14 @@ namespace Bookano.Infrastructure.Persistence.Repositories
 
         public async Task<int> CountAsync() => await _context.Set<T>().CountAsync();
 
-        public async Task<int> CountAsync(Expression<Func<T, bool>> expression)
+        public async Task<int> CountAsync(
+            Expression<Func<T, bool>>? expression,
+            CancellationToken cancellationToken = default
+        )
         {
-            return await _context.Set<T>().CountAsync(expression);
+            return expression is null
+                ? await _context.Set<T>().CountAsync(cancellationToken)
+                : await _context.Set<T>().CountAsync(expression, cancellationToken);
         }
 
         public async Task DeleteBulkAsync(Expression<Func<T, bool>> expression) =>
@@ -174,8 +179,10 @@ namespace Bookano.Infrastructure.Persistence.Repositories
             return query;
         }
 
-        public async Task<bool> IsExistsAsync(Expression<Func<T, bool>> expression) =>
-            await _context.Set<T>().AnyAsync(expression);
+        public async Task<bool> IsExistsAsync(
+            Expression<Func<T, bool>> expression,
+            CancellationToken cancellationToken = default
+        ) => await _context.Set<T>().AnyAsync(expression, cancellationToken);
 
         public void Remove(T entity) => _context.Remove(entity);
 

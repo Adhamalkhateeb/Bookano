@@ -10,6 +10,7 @@ internal class GovernorateService(IUnitOfWork unitOfWork, IMapper mapper) : IGov
     public async Task<IEnumerable<GovernorateDto>> GetAllAsync(CancellationToken ct = default)
     {
         return await _unitOfWork.Governorates.GetQueryable()
+            .OrderBy(g => g.Name)
             .ProjectTo<GovernorateDto>(_mapper.ConfigurationProvider)
             .ToListAsync(ct);
     }

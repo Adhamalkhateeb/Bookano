@@ -1,23 +1,6 @@
 ﻿@model SubscriberViewModel
 @{
     ViewData["Title"] = "Details";
-    var lastSubscription = Model.Subscriptions.OrderBy(s => s.EndDate).Last();
-
-
-    var subscriberStatus = Model.IsBlackListed ? SubscriberStatus.Banned
-        : lastSubscription.EndDate < DateTime.Today
-        ? SubscriberStatus.Inactive : SubscriberStatus.Active;
-
-    var statusClass = Model.IsBlackListed ? "danger"
-        : lastSubscription.EndDate < DateTime.Today
-        ? "warning" : "success";
-
-    string statusIcon = subscriberStatus switch
-    {
-        SubscriberStatus.Active => "fa-award",
-        SubscriberStatus.Banned => "fa-ban",
-        _ => "fa-triangle-exclamation"
-    };
 }
 
 <!--begin::header-->
@@ -88,7 +71,7 @@
                         </div>
 
                         <!--begin::Badge-->
-                        <div id="BadgeStatus" class="badge badge-light-@statusClass d-inline">@subscriberStatus Subscriber</div>
+                        <div id="BadgeStatus" class="badge badge-light-@Model.StatusClass d-inline">@Model.Status Subscriber</div>
                         <!--begin::Badge-->
                     </div>
                     <!--end::Details toggle-->
@@ -164,7 +147,7 @@
                                         <div class="d-flex">
                                             <i class="fa-solid fa-heart text-info fs-2x"></i>
                                             <div class="ms-3 js-totalCopies">
-                                                @Model.Rentals.Sum(r => r.NumberOfCopies)
+                                                @Model.TotalRentalCopies
                                             </div>
                                         </div>
                                         <div class="fs-7 fw-normal text-muted">Total number of copies.</div>
@@ -178,12 +161,12 @@
 
                         <div class="col">
                             <!--begin::Reward Tier-->
-                            <a id="CardStatus" href="#" class="card  bg-@statusClass  hoverable h-md-100">
+                            <a id="CardStatus" href="#" class="card  bg-@Model.StatusClass  hoverable h-md-100">
                                 <!--begin::Body-->
                                 <div class="card-body">
-                                    <i id="ActiveStatusIcon" class="fa-solid @statusIcon text-white fs-3x"></i>
+                                    <i id="ActiveStatusIcon" class="fa-solid @Model.StatusIcon text-white fs-3x"></i>
                                     <div id="ActiveCard" class="text-white fw-bold fs-2 mt-5">
-                                        @subscriberStatus Subscriber
+                                        @Model.Status Subscriber
                                     </div>
 
                                     <div class="fw-semibold text-white">
@@ -260,12 +243,7 @@
                             <h3 class="card-title align-items-start flex-column">
                                 <span class="card-label fw-bold fs-3 mb-1">Rentals</span>
                             </h3>
-                            @{
-                                var IsAddRentalBtnVisable = !Model.IsBlackListed
-                                && lastSubscription.EndDate >= DateTime.Today.AddDays(RentalConstants.RentalDuration)
-                                && Model.Rentals.Sum(r => r.ActiveCopies) < RentalConstants.MaxAllowedCopies;
-                            }
-                            <div id="AddRental" class="card-toolbar @(IsAddRentalBtnVisable ? "" : "d-none")">
+                            <div id="AddRental" class="card-toolbar @(Model.CanAddRental ? "" : "d-none")">
                                 <a asp-controller="Rentals" asp-action="Create" asp-route-subscriberkey="@Model.Key" class="btn btn-sm btn-light-primary">
                                     <i class="bi bi-plus-square-dotted fs-5"></i>
                                     Add Rental

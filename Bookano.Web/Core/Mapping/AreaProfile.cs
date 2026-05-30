@@ -12,8 +12,7 @@ namespace Bookano.Web.Core.Mapping
             CreateMap<AreaDto, AreaFormViewModel>().ReverseMap();
 
 
-            //TODO: Replace Model with dto
-            CreateMap<Area, SelectListItem>()
+            CreateMap<AreaDto, SelectListItem>()
                 .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))
                 .ForMember(dest => dest.Text, opt => opt.MapFrom(c => c.Name));
         }

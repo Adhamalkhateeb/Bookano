@@ -7,7 +7,8 @@ public static class ResultExtensions
 {
     public static void AddToModelState(this Result result, ModelStateDictionary modelState)
     {
-        if (result.IsSuccess) return;
+        if (result.IsSuccess)
+            return;
 
         foreach (var error in result.Errors)
         {

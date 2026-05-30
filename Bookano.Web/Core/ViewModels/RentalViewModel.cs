@@ -4,18 +4,16 @@
     {
         public int Id { get; set; }
 
-        public SubscriberViewModel? Subscriber { get; set; }
-
-        public DateTime StartDate { get; set; } = DateTime.Today;
+        public DateOnly StartDate { get; set; }
 
         public bool PenaltyPaid { get; set; }
 
         public DateTimeOffset CreatedOnUtc { get; set; }
 
-        public IEnumerable<RentalCopyViewModel> RentalCopies = [];
+        public IEnumerable<RentalCopyViewModel> RentalCopies { get; set; } = [];
 
-        public int TotalDelayInDays => RentalCopies.Sum(c => c.DelayInDays);
-        public int NumberOfCopies => RentalCopies.Count();
-        public int ActiveCopies => RentalCopies.Count(c => !c.ReturnDate.HasValue);
+        public int TotalDelayInDays { get; set; }
+        public int NumberOfCopies { get; set; }
+        public int ActiveCopies { get; set; }
     }
 }

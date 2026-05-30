@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Bookano.Application.Interfaces;
+using WhatsAppCloudApi;
 
 namespace Bookano.Infrastructure.BackgroundServices
 {
@@ -73,7 +74,8 @@ namespace Bookano.Infrastructure.BackgroundServices
                 if (rental.Subscriber.HasWhatsApp)
                     await _whatsAppService.SendWhatsApp(
                         rental.Subscriber.MobileNumber,
-                        WhatsAppTemplates.RentalExpiringSoon
+                        WhatsAppTemplates.RentalExpiringSoon,
+                        WhatsAppLanguageCode.English
                     );
             }
         }

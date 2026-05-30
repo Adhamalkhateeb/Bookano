@@ -1,5 +1,4 @@
 ﻿using Bookano.Application.Interfaces;
-using Bookano.Domain.Common.Constants;
 using WhatsAppCloudApi;
 
 namespace Bookano.Infrastructure.BackgroundServices
@@ -82,6 +81,7 @@ namespace Bookano.Infrastructure.BackgroundServices
                     await _whatsAppService.SendWhatsApp(
                         subscriber.MobileNumber,
                         WhatsAppTemplates.SubscriptionExpiration,
+                        WhatsAppLanguageCode.English,
                         [
                             new WhatsAppTextParameter { Text = subscriber.FirstName },
                             new WhatsAppTextParameter { Text = endDateFormatted },
@@ -122,6 +122,7 @@ namespace Bookano.Infrastructure.BackgroundServices
                     await _whatsAppService.SendWhatsApp(
                         subscriber.MobileNumber,
                         WhatsAppTemplates.SubscriptionExpired,
+                        WhatsAppLanguageCode.English,
                         [
                             new WhatsAppTextParameter { Text = subscriber.FirstName },
                             new WhatsAppTextParameter { Text = endDateFormatted },
