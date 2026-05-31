@@ -1,14 +1,15 @@
-﻿using Bookano.Application.Interfaces;
+using Bookano.Application.Services.Search;
+using Bookano.Web.ViewModels.Books;
 using HashidsNet;
 
 namespace Bookano.Web.Controllers
 {
-    public class SearchController(IUnitOfWork unitOfWork, IHashids hashids, IMapper mapper)
+    public class SearchController(ISearchService searchService, IHashids hashids, IMapper mapper)
         : Controller
     {
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
-        private readonly IMapper _mapper = mapper;
+        private readonly ISearchService _searchService = searchService;
         private readonly IHashids _hashids = hashids;
+        private readonly IMapper _mapper = mapper;
 
         public IActionResult Index()
         {
@@ -17,53 +18,31 @@ namespace Bookano.Web.Controllers
 
         public async Task<IActionResult> Find(string query)
         {
-            query = query.Trim();
+            var data = await _searchService.FindBooksAsync(query);
 
-            var books = await _unitOfWork
-                .Books.GetQueryable()
-                .AsNoTracking()
-                .Include(b => b.Authors)
-                    .ThenInclude(a => a.Author)
-                .Where(b =>
-                    !b.IsDeleted
-                    && (
-                        b.Title.Contains(query)
-                        || b.Authors.Any(a => a.Author!.Name.Contains(query))
-                        || (b.Isbn != null && b.Isbn.Contains(query))
-                    )
-                )
-                .Select(b => new
-                {
-                    Key = _hashids.EncodeHex(b.Id.ToString()),
-                    b.Title,
-                    Authors = string.Join(", ", b.Authors.Select(a => a.Author!.Name)),
-                })
-                .ToListAsync();
+            var books = data.Select(b => new
+            {
+                Key = _hashids.EncodeHex(b.Id.ToString()),
+                b.Title,
+                b.Authors,
+            });
 
             return Ok(books);
         }
 
-        public async Task<IActionResult> BookDetails(string bookKey)
+        public async Task<IActionResult> BookDetails(string bookKey, CancellationToken ct)
         {
-            var bookId = _hashids.DecodeHex(bookKey);
+            var bookIdStr = _hashids.DecodeHex(bookKey);
 
-            if (bookId.Length == 0)
+            if (bookIdStr.Length == 0 || !int.TryParse(bookIdStr, out var bookId))
                 return NotFound();
 
-            var book = await _unitOfWork
-                .Books.GetQueryable()
-                .Include(b => b.Copies)
-                .Include(b => b.Publisher)
-                .Include(b => b.Authors)
-                    .ThenInclude(a => a.Author)
-                .Include(b => b.Categories)
-                    .ThenInclude(c => c.Category)
-                .SingleOrDefaultAsync(b => !b.IsDeleted && b.Id == int.Parse(bookId));
+            var bookDto = await _searchService.GetBookDetailsAsync(bookId, ct);
 
-            if (book is null)
+            if (bookDto is null)
                 return NotFound();
 
-            var viewModel = _mapper.Map<BookViewModel>(book);
+            var viewModel = _mapper.Map<BookViewModel>(bookDto);
 
             return View(viewModel);
         }

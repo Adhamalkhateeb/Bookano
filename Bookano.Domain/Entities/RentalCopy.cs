@@ -1,4 +1,4 @@
-﻿using Bookano.Domain.Common.Constants;
+using Bookano.Domain.Common.Constants;
 
 namespace Bookano.Domain.Entities;
 
@@ -16,4 +16,13 @@ public sealed class RentalCopy
     public DateOnly? ReturnDate { get; set; }
 
     public DateOnly? ExtendedOn { get; set; }
+
+    public int GetDelayInDays(DateOnly today)
+    {
+        if (ReturnDate.HasValue)
+        {
+            return ReturnDate.Value > EndDate ? ReturnDate.Value.DayNumber - EndDate.DayNumber : 0;
+        }
+        return today > EndDate ? today.DayNumber - EndDate.DayNumber : 0;
+    }
 }

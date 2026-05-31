@@ -1,10 +1,9 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
 using System.Text;
 using System.Text.Encodings.Web;
-using Bookano.Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
@@ -14,14 +13,12 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
     public class EmailModel(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
-        IEmailSender emailSender,
-        IEmailBodyBuilder emailBodyBuilder
+        IUserNotificationService userNotificationService
     ) : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
-        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
-        private readonly IEmailSender _emailSender = emailSender;
+        private readonly IUserNotificationService _userNotificationService = userNotificationService;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -60,8 +57,6 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [EmailAddress]
             [Display(Name = "New email")]
             public string NewEmail { get; set; }
         }
@@ -77,7 +72,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
         public async Task<IActionResult> OnGetAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
@@ -89,7 +84,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
         public async Task<IActionResult> OnPostChangeEmailAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
@@ -119,24 +114,11 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
                     protocol: Request.Scheme
                 );
 
-                var placeholders = new Dictionary<string, string>
-                {
-                    {
-                        "imageUrl",
-                        "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg"
-                    },
-                    { "header", $"Hey {user.FullName}" },
-                    {
-                        "body",
-                        "We received a request to change your email. You can do so by clicking the button below:"
-                    },
-                    { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
-                    { "linkTitle", "Change Email" },
-                };
-
-                var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
-
-                await _emailSender.SendEmailAsync(Input.NewEmail, "Change your email", body);
+                await _userNotificationService.SendEmailChangeConfirmationAsync(
+                    Input.NewEmail,
+                    user.FullName,
+                    HtmlEncoder.Default.Encode(callbackUrl!)
+                );
 
                 StatusMessage = "Confirmation link to change email sent. Please check your email.";
                 return RedirectToPage();
@@ -149,7 +131,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
         public async Task<IActionResult> OnPostSendVerificationEmailAsync()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
@@ -176,21 +158,11 @@ namespace Bookano.Web.Areas.Identity.Pages.Account.Manage
                 protocol: Request.Scheme
             );
 
-            var placeholders = new Dictionary<string, string>
-            {
-                {
-                    "imageUrl",
-                    "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg"
-                },
-                { "header", $"Hey {user.FullName}" },
-                { "body", "please confirm your account." },
-                { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
-                { "linkTitle", "Confirm Email!" },
-            };
-
-            var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
-
-            await _emailSender.SendEmailAsync(email, "Confirm your email", body);
+            await _userNotificationService.SendEmailConfirmationAsync(
+                email,
+                user.FullName,
+                HtmlEncoder.Default.Encode(callbackUrl!)
+            );
 
             StatusMessage = "Verification email sent. Please check your email.";
             return RedirectToPage();

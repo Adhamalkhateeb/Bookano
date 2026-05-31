@@ -17,7 +17,6 @@ public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
             .ProjectTo<BookCopyDto>(_mapper.ConfigurationProvider)
             .SingleOrDefaultAsync(c => c.Id == id, ct);
 
-
         return copy;
 
     }
@@ -31,7 +30,6 @@ public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
                 BookId = b.Id,
                 IsAvailableForRental = b.IsAvailableForRental,
             }).SingleOrDefaultAsync(ct); ;
-
 
         return book;
 
@@ -68,7 +66,7 @@ public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
             return Result<BookCopyDto?>.Failure(validationResult.ToValidationErrors());
 
         var copy = await _unitOfWork
-            .BookCopies.GetQueryable()
+            .BookCopies.GetQueryable(true)
             .Include(c => c.Book)
             .SingleOrDefaultAsync(c => c.Id == dto.Id, ct);
 

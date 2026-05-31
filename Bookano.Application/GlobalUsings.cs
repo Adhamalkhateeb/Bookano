@@ -7,3 +7,4 @@ global using Bookano.Domain.Common.Constants;
 global using Bookano.Domain.Entities;
 global using FluentValidation;
 global using Microsoft.EntityFrameworkCore;
+global using Bookano.Application.Common;

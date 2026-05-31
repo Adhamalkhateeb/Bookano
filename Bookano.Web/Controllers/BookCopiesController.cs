@@ -1,6 +1,6 @@
 ﻿using Bookano.Application.DTOs.BookCopies;
 using Bookano.Application.Services.BookCopies;
-using Bookano.Application.Services.Books;
+using Bookano.Web.ViewModels.BookCopies;
 
 namespace Bookano.Web.Controllers
 {

@@ -1,10 +1,10 @@
-﻿using Bookano.Application.Common.Models;
+using Bookano.Application.Common.Models;
 using Bookano.Application.Constants;
 using Microsoft.AspNetCore.Hosting;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 
-namespace Bookano.Web.Services.Image
+namespace Bookano.Infrastructure.Services
 {
     public sealed class LocalImageService(IWebHostEnvironment env) : IImageService
     {

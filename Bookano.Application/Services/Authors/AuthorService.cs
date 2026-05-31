@@ -28,10 +28,9 @@ internal class AuthorService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<
 
     public async Task<AuthorDto?> GetAsync(int id, CancellationToken ct = default)
     {
-        return await _unitOfWork
-            .Authors.GetQueryable()
-            .ProjectTo<AuthorDto>(_mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync(a => a.Id == id, ct);
+        var author = await _unitOfWork.Authors.FindAsync(x => x.Id == id,isTracking:false, ct);
+       
+        return _mapper.Map<AuthorDto>(author);
     }
 
     public async Task<Result<AuthorDto>> AddAsync(AuthorFormDto authorDto, CancellationToken ct = default)
@@ -92,9 +91,7 @@ internal class AuthorService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<
         CancellationToken ct = default
     )
     {
-        return !await _unitOfWork
-            .Authors.GetQueryable()
-            .AnyAsync(x => x.Name == name && x.Id != id, ct);
+        return !await _unitOfWork.Authors.IsExistsAsync(x => x.Name == name && x.Id != id, ct);
     }
 
 

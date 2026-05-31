@@ -1,12 +1,15 @@
-using Bookano.Application.Interfaces;
+using Bookano.Application.Services.Home;
+using Bookano.Web.ViewModels;
+using Bookano.Web.ViewModels.Books;
 using HashidsNet;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookano.Web.Controllers
 {
-    public class HomeController(IUnitOfWork unitOfWork, IHashids hashids) : Controller
+    public class HomeController(IHomeService homeService, IMapper mapper, IHashids hashids) : Controller
     {
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly IHomeService _homeService = homeService;
+        private readonly IMapper _mapper = mapper;
         private readonly IHashids _hashids = hashids;
 
         public async Task<IActionResult> Index()
@@ -14,25 +17,18 @@ namespace Bookano.Web.Controllers
             if (User is not null && User.Identity!.IsAuthenticated)
                 return RedirectToAction(nameof(Index), "Dashboard");
 
-            var recentlyAddedBooks = await _unitOfWork
-                .Books.GetQueryable()
-                .Where(b => !b.IsDeleted)
-                .OrderByDescending(b => b.CreatedOnUtc)
-                .Take(10)
-                .Select(b => new BookViewModel
-                {
-                    Id = b.Id,
-                    Key = _hashids.EncodeHex(b.Id.ToString()),
-                    Title = b.Title,
-                    ImageUrl = b.ImageUrl,
-                    Authors = b.Authors.Select(a => a.Author!.Name).ToList(),
-                })
-                .ToListAsync();
+            var recentlyAddedBooks = await _homeService.GetRecentlyAddedBooksAsync();
 
-            return View(recentlyAddedBooks);
+            var viewModel = _mapper.Map<IEnumerable<BookViewModel>>(recentlyAddedBooks);
+
+            foreach (var vm in viewModel)
+            {
+                vm.Key = _hashids.EncodeHex(vm.Id.ToString());
+            }
+
+            return View(viewModel);
         }
 
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error(int statusCode = 500)
         {
             return View(

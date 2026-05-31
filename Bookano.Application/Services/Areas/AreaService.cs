@@ -18,11 +18,10 @@ internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<Ar
 
     public async Task<IEnumerable<AreaDto>> GetGovernorateAreasAsync(int governorateId,CancellationToken ct = default)
     {
-        return await _unitOfWork
-            .Areas.GetQueryable()
-            .Where(x => x.GovernorateId == governorateId && !x.IsDeleted)
-            .ProjectTo<AreaDto>(_mapper.ConfigurationProvider)
-            .ToListAsync(ct);
+         var area = await _unitOfWork
+            .Areas.FindAllAsync(x => x.GovernorateId == governorateId && !x.IsDeleted, isTracking: false, cancellationToken: ct);
+
+        return _mapper.Map<IEnumerable<AreaDto>>(area);
     }
 
     public async Task<AreaDto?> GetAsync(int id, CancellationToken ct = default)
@@ -97,8 +96,7 @@ internal class AreaService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<Ar
     )
     {
         return !await _unitOfWork
-            .Areas.GetQueryable()
-            .AnyAsync(x => x.Name == name && x.GovernorateId == governorateId && x.Id != id, ct);
+            .Areas.IsExistsAsync(x => x.Name == name && x.GovernorateId == governorateId && x.Id != id, ct);
     }
 
     

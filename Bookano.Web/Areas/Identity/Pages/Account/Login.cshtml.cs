@@ -12,7 +12,6 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly ILogger<LoginModel> _logger;
 
         public LoginModel(
             SignInManager<ApplicationUser> signInManager,
@@ -22,7 +21,6 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
         {
             _signInManager = signInManager;
             _userManager = userManager;
-            _logger = logger;
         }
 
         /// <summary>
@@ -121,19 +119,18 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
                 );
                 if (result.Succeeded)
                 {
-                    _logger.LogInformation("User logged in.");
+                   
                     return LocalRedirect(returnUrl);
                 }
                 if (result.IsLockedOut)
                 {
-                    _logger.LogWarning("User account locked out.");
                     return RedirectToPage("./Lockout");
                 }
                 if (result.IsNotAllowed)
                 {
                     return RedirectToPage(
                         "./ResendEmailConfirmation",
-                        new { Username = Input.Username }
+                        new { Input.Username }
                     );
                 }
                 else

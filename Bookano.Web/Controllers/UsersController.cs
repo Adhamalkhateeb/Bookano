@@ -1,32 +1,19 @@
-﻿using System.Linq.Dynamic.Core;
-using System.Text;
-using System.Text.Encodings.Web;
-using Bookano.Application.Interfaces;
-using Microsoft.AspNetCore.Identity;
+using Bookano.Application.DTOs.Users;
+using Bookano.Application.Services.Users;
+using Bookano.Web.Binders;
+using Bookano.Web.ViewModels.Users;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.WebUtilities;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Admin)]
     public class UsersController(
-        UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager,
-        IEmailBodyBuilder emailBodyBuilder,
-        IEmailSender emailSender,
-        IMapper mapper,
-        IValidator<UserFormViewModel> formValidator,
-        IValidator<ResetPasswordFormViewModel> resetPasswordFormValidator
+        IUserService userService,
+        IMapper mapper
     ) : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager = userManager;
-        private readonly RoleManager<IdentityRole> _roleManager = roleManager;
-        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
-        private readonly IEmailSender _emailSender = emailSender;
+        private readonly IUserService _userService = userService;
         private readonly IMapper _mapper = mapper;
-        private readonly IValidator<UserFormViewModel> _formValidator = formValidator;
-        private readonly IValidator<ResetPasswordFormViewModel> _resetPasswordFormValidator =
-            resetPasswordFormValidator;
 
         public async Task<IActionResult> Index()
         {
@@ -34,299 +21,167 @@ namespace Bookano.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers(CancellationToken ct)
         {
-            int skip = int.TryParse(Request.Form["start"], out var parsedSkip) ? parsedSkip : 0;
-            int pageSize =
-                int.TryParse(Request.Form["length"], out var parsedPageSize) && parsedPageSize > 0
-                    ? parsedPageSize
-                    : 10;
-            var searchValue = Request.Form["search[value]"].ToString();
+            var request = DataTableRequestBinder.Bind(Request.Form);
 
-            var sortColumnIndex = int.TryParse(
-                Request.Form["order[0][column]"],
-                out var parsedSortColumnIndex
-            )
-                ? parsedSortColumnIndex
-                : 0;
+            var data = await _userService.GetPagedAsync(request, ct);
 
-            var allowedSortColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "Id",
-                "FullName",
-                "UserName",
-                "Email",
-                "IsDeleted",
-                "CreatedOnUtc",
-                "LastUpdatedOnUtc",
-            };
-
-            var requestedColumn = Request.Form[$"columns[{sortColumnIndex}][name]"].ToString();
-            var sortColumn = allowedSortColumns.Contains(requestedColumn) ? requestedColumn : "Id";
-
-            var isDescending = string.Equals(
-                Request.Form["order[0][dir]"].ToString(),
-                "desc",
-                StringComparison.OrdinalIgnoreCase
-            );
-            var sortDirection = isDescending ? "desc" : "asc";
-
-            var usersQuery = _userManager.Users.AsNoTracking().AsQueryable();
-
-            var totalRecords = await usersQuery.CountAsync();
-
-            if (!string.IsNullOrWhiteSpace(searchValue))
-            {
-                usersQuery = usersQuery.Where(b =>
-                    b.UserName!.Contains(searchValue) || b.Email!.Contains(searchValue)
-                );
-            }
-
-            usersQuery = usersQuery.OrderBy($"{sortColumn} {sortDirection}");
-
-            var filteredRecords = await usersQuery.CountAsync();
-
-            var result = await usersQuery
-                .Skip(skip)
-                .Take(pageSize)
-                .Select(u => new UserViewModel
-                {
-                    Id = u.Id,
-                    FullName = u.FullName,
-                    UserName = u.UserName ?? string.Empty,
-                    Email = u.Email ?? string.Empty,
-                    IsDeleted = u.IsDeleted,
-                    CreatedOn = u.CreatedOnUtc,
-                    LastUpdatedOn = u.LastUpdatedOnUtc,
-                })
-                .ToListAsync();
+            var mappedData = _mapper.Map<IEnumerable<UserViewModel>>(data.Data);
 
             return Ok(
                 new
                 {
-                    recordsTotal = totalRecords,
-                    recordsFiltered = filteredRecords,
-                    data = result,
+                    recordsTotal = data.RecordsTotal,
+                    recordsFiltered = data.RecordsFiltered,
+                    data = mappedData,
                 }
             );
         }
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(CancellationToken ct)
         {
             var viewModel = new UserFormViewModel
             {
-                Roles = await _roleManager
-                    .Roles.Select(r => new SelectListItem { Text = r.Name, Value = r.Name })
-                    .ToListAsync(),
+                Roles = await GetRolesSelectItemsAsync(ct),
             };
             return PartialView("_Form", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(UserFormViewModel model)
+        public async Task<IActionResult> Create(UserFormViewModel model, CancellationToken ct)
         {
-            var validationResult = _formValidator.Validate(model);
-            validationResult.AddToModelState(ModelState);
-
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var user = new ApplicationUser
-            {
-                FullName = model.FullName,
-                UserName = model.UserName,
-                Email = model.Email,
-            };
-            var result = await _userManager.CreateAsync(user, model.Password!);
+            var dto = _mapper.Map<UserFormDto>(model);
 
-            if (result.Succeeded)
-            {
-                await _userManager.AddToRolesAsync(user, model.SelectedRoles);
-
-                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                var callbackUrl = Url.Page(
+            var result = await _userService.CreateAsync(
+                dto,
+                (userId, code) => Url.Page(
                     "/Account/ConfirmEmail",
                     pageHandler: null,
-                    values: new
-                    {
-                        area = "Identity",
-                        userId = user.Id,
-                        code,
-                    },
+                    values: new { area = "Identity", userId, code },
                     protocol: Request.Scheme
-                );
+                )!,
+                ct
+            );
 
-                var placeholders = new Dictionary<string, string>
-                {
-                    {
-                        "imageUrl",
-                        "https://res.cloudinary.com/bookano/image/upload/v1777605605/icon-positive-vote-1_zw88ur.svg"
-                    },
-                    { "header", $"Hey {user.FullName}, thanks for joining us!" },
-                    { "body", "Please confirm your email" },
-                    { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
-                    { "linkTitle", "Active Account!" },
-                };
+            result.AddToModelState(ModelState);
 
-                var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
+            if (!ModelState.IsValid)
+                return BadRequest();
 
-                await _emailSender.SendEmailAsync(user.Email, "Confirm your email", body);
-                return Ok();
-            }
-
-            return BadRequest(string.Join(", ", result.Errors.Select(e => e.Description)));
+            return Ok();
         }
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(string id, CancellationToken ct)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var userFormDto = await _userService.GetUserFormAsync(id, ct);
 
-            if (user is null)
+            if (userFormDto is null)
                 return NotFound();
 
-            var viewModel = _mapper.Map<UserFormViewModel>(user);
-            viewModel.SelectedRoles = await _userManager.GetRolesAsync(user);
-            viewModel.Roles = await _roleManager
-                .Roles.Select(r => new SelectListItem { Text = r.Name, Value = r.Name })
-                .ToListAsync();
+            var viewModel = _mapper.Map<UserFormViewModel>(userFormDto);
+            viewModel.Roles = await GetRolesSelectItemsAsync(ct);
 
             return PartialView("_Form", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(UserFormViewModel model)
+        public async Task<IActionResult> Edit(UserFormViewModel model, CancellationToken ct)
         {
-            var validationResult = _formValidator.Validate(model);
-            validationResult.AddToModelState(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var dto = _mapper.Map<UserFormDto>(model);
+
+            var result = await _userService.UpdateAsync(dto, ct);
+
+            result.AddToModelState(ModelState);
 
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var user = await _userManager.FindByIdAsync(model.Id!);
-
-            if (user is null)
-                return NotFound();
-
-            user = _mapper.Map(model, user);
-
-            var result = await _userManager.UpdateAsync(user);
-
-            if (result.Succeeded)
-            {
-                var currentRoles = await _userManager.GetRolesAsync(user);
-                var rolesUpdated = !currentRoles.SequenceEqual(model.SelectedRoles);
-
-                if (rolesUpdated)
-                {
-                    await _userManager.RemoveFromRolesAsync(user, currentRoles);
-                    await _userManager.AddToRolesAsync(user, model.SelectedRoles);
-                }
-
-                await _userManager.UpdateSecurityStampAsync(user);
-
-                return Ok();
-            }
-
-            return BadRequest(string.Join(", ", result.Errors.Select(e => e.Description)));
+            return Ok();
         }
 
         [HttpPost]
-        public async Task<IActionResult> ToggleStatus(string id)
+        public async Task<IActionResult> ToggleStatus(string id, CancellationToken ct)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var result = await _userService.ToggleStatusAsync(id, ct);
 
-            if (user is null)
+            if (result.IsFailure)
                 return NotFound();
 
-            user.IsDeleted = !user.IsDeleted;
-
-            await _userManager.UpdateAsync(user);
-            if (user.IsDeleted)
-                await _userManager.UpdateSecurityStampAsync(user);
-
-            return Ok(user.LastUpdatedOnUtc.ToString());
+            return Ok(result.Value);
         }
 
         [HttpGet]
         [AjaxOnly]
-        public async Task<IActionResult> ResetPassword(string id)
+        public async Task<IActionResult> ResetPassword(string id, CancellationToken ct)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var userFormDto = await _userService.GetUserFormAsync(id, ct);
 
-            if (user is null)
+            if (userFormDto is null)
                 return NotFound();
 
-            var viewModel = new ResetPasswordFormViewModel { Id = user.Id };
+            var viewModel = new ResetPasswordFormViewModel { Id = userFormDto.Id! };
 
             return PartialView("_ResetPassword", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> ResetPassword(ResetPasswordFormViewModel model)
+        public async Task<IActionResult> ResetPassword(ResetPasswordFormViewModel model, CancellationToken ct)
         {
-            var validationResult = _resetPasswordFormValidator.Validate(model);
-            validationResult.AddToModelState(ModelState);
+            if (!ModelState.IsValid)
+                return BadRequest();
+
+            var dto = _mapper.Map<UserResetPasswordDto>(model);
+
+            var result = await _userService.ResetPasswordAsync(dto, ct);
+
+            result.AddToModelState(ModelState);
 
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var user = await _userManager.FindByIdAsync(model.Id!);
-
-            if (user is null)
-                return NotFound();
-
-            var currentPasswordHash = user.PasswordHash;
-
-            await _userManager.RemovePasswordAsync(user);
-            var result = await _userManager.AddPasswordAsync(user, model.Password);
-
-            if (result.Succeeded)
-            {
-                await _userManager.UpdateAsync(user);
-                return Ok();
-            }
-
-            user.PasswordHash = currentPasswordHash;
-            await _userManager.UpdateAsync(user);
-
-            return BadRequest(string.Join(", ", result.Errors.Select(e => e.Description)));
+            return Ok();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Unlock(string id)
+        public async Task<IActionResult> Unlock(string id, CancellationToken ct)
         {
-            var user = await _userManager.FindByIdAsync(id);
+            var result = await _userService.UnlockAsync(id, ct);
 
-            if (user is null)
+            if (result.IsFailure)
                 return NotFound();
-
-            var isLockedOut = await _userManager.IsLockedOutAsync(user);
-
-            if (isLockedOut)
-                await _userManager.SetLockoutEndDateAsync(user, null);
 
             return Ok();
         }
 
-        public async Task<IActionResult> AllowUserName(UserFormViewModel model)
+        public async Task<IActionResult> AllowUserName(UserFormViewModel model, CancellationToken ct)
         {
-            var user = await _userManager.FindByNameAsync(model.UserName);
-            var isAllowed = user is null || user.Id.Equals(model.Id);
+            var isAllowed = await _userService.IsUserNameUniqueAsync(model.UserName, model.Id, ct);
 
             return Json(isAllowed);
         }
 
-        public async Task<IActionResult> AllowEmail(UserFormViewModel model)
+        public async Task<IActionResult> AllowEmail(UserFormViewModel model, CancellationToken ct)
         {
-            var user = await _userManager.FindByEmailAsync(model.Email);
-            var isAllowed = user is null || user.Id.Equals(model.Id);
+            var isAllowed = await _userService.IsEmailUniqueAsync(model.Email, model.Id, ct);
 
             return Json(isAllowed);
+        }
+
+        private async Task<IEnumerable<SelectListItem>> GetRolesSelectItemsAsync(CancellationToken ct)
+        {
+            var roles = await _userService.GetRolesAsync(ct);
+            return roles.Select(r => new SelectListItem { Text = r, Value = r });
         }
     }
 }

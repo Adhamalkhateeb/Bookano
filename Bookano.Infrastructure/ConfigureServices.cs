@@ -1,10 +1,9 @@
-﻿using Bookano.Application.Interfaces;
+using Bookano.Application.Interfaces;
 using Bookano.Infrastructure.BackgroundServices;
 using Bookano.Infrastructure.Identity;
 using Bookano.Infrastructure.Persistence;
 using Bookano.Infrastructure.Persistence.Interceptors;
 using Bookano.Infrastructure.Persistence.Repositories;
-using Bookano.Web.Services.Image;
 using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -36,11 +35,7 @@ namespace Bookano.Infrastructure
                                     typeof(ApplicationDbContext).Assembly.FullName
                                 )
                         )
-                        .AddInterceptors(sp.GetRequiredService<AuditableInterceptor>())
-                        .LogTo(
-                            Console.WriteLine,
-                            Microsoft.Extensions.Logging.LogLevel.Information
-                        );
+                        .AddInterceptors(sp.GetRequiredService<AuditableInterceptor>());
                 }
             );
 
@@ -56,6 +51,7 @@ namespace Bookano.Infrastructure
             services.AddTransient<IEmailBodyBuilder, EmailBodyBuilder>();
             services.AddScoped<IWhatsAppService, WhatsAppService>();
             services.AddScoped<ISubscriberNotificationService, SubscriberNotificationService>();
+            services.AddScoped<IUserNotificationService, UserNotificationService>();
 
             services.AddHttpContextAccessor();
             services.AddScoped<AuditableInterceptor>();

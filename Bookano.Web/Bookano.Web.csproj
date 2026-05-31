@@ -26,12 +26,15 @@
     <PackageReference Include="NuGet.Packaging" Version="7.6.0" />
     <PackageReference Include="NuGet.Protocol" Version="7.6.0" />
     <PackageReference Include="OpenHtmlToPdf.netcore" Version="1.13.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Seq" Version="9.1.0" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.2" />
     <PackageReference Include="UoN.ExpressiveAnnotations.NetCore" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\Image\Result\" />
     <Folder Include="wwwroot\images\users\" />
   </ItemGroup>
 
@@ -39,4 +42,5 @@
     <ProjectReference Include="..\Bookano.Application\Bookano.Application.csproj" />
     <ProjectReference Include="..\Bookano.Infrastructure\Bookano.Infrastructure.csproj" />
   </ItemGroup>
+	
 </Project>

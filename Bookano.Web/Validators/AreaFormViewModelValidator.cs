@@ -1,4 +1,5 @@
 ﻿using Bookano.Application.Validators.Common;
+using Bookano.Web.ViewModels.Areas;
 
 namespace Bookano.Web.Validators;
 

@@ -1,3 +1,5 @@
+using Bookano.Domain.Enums;
+
 namespace Bookano.Application.DTOs.Subscribers;
 
 public sealed class SubscriberDto
@@ -17,4 +19,7 @@ public sealed class SubscriberDto
     public DateTimeOffset CreatedOnUtc { get; set; }
     public IEnumerable<SubscriptionDto> Subscriptions { get; set; } = [];
     public IEnumerable<SubscriberRentalDto> Rentals { get; set; } = [];
+
+    public SubscriberStatus Status { get; set; }
+    public bool CanAddRental { get; set; }
 }
