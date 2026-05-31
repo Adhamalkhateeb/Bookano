@@ -1,0 +1,15 @@
+﻿namespace Bookano.Web.ViewModels.BookCopies
+{
+    public class BookCopyFormViewModel
+    {
+        public int Id { get; set; }
+        public int BookId { get; set; }
+
+        [Display(Name = "Edition Number")]
+        public int EditionNumber { get; set; }
+
+        [Display(Name = "Is available for rental?")]
+        public bool IsAvailableForRental { get; set; }
+        public bool ShowRentalInput { get; set; }
+    }
+}

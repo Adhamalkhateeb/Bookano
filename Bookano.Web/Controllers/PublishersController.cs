@@ -1,5 +1,6 @@
 using Bookano.Application.DTOs.Publishers;
 using Bookano.Application.Services.Publishers;
+using Bookano.Web.ViewModels.Publishers;
 
 namespace Bookano.Web.Controllers
 {

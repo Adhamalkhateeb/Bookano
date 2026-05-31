@@ -1,11 +1,10 @@
-﻿using Bookano.Infrastructure.Persistence;
+using Bookano.Infrastructure.Persistence;
 using Bookano.Infrastructure.Settings;
-using Bookano.Web.Core.Mapping;
 using Bookano.Web.Helpers;
-using Bookano.Web.Services.Image;
+using Bookano.Web.Mapping;
 using Bookano.Web.Services.PDF;
+using Bookano.Web.Services.Export;
 using Bookano.Web.Validators;
-using FluentValidation.AspNetCore;
 using HashidsNet;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
@@ -55,6 +54,8 @@ namespace Bookano.Web
 
 
             services.AddScoped<IViewRendererService, ViewRendererService>();
+            services.AddScoped<IExcelService, ExcelService>();
+            services.AddScoped<IPdfService, PdfService>();
 
             services.AddControllersWithViews();
             services.AddMvc(options =>

@@ -1,5 +1,6 @@
 using Bookano.Application.DTOs.Areas;
 using Bookano.Application.Services.Areas;
+using Bookano.Web.ViewModels.Areas;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Bookano.Web.Controllers
@@ -28,7 +29,7 @@ namespace Bookano.Web.Controllers
         [AjaxOnly]
         public async Task<IActionResult> Create(CancellationToken ct)
         {
-            var viewModel = await PopulateGovernoratesAsync();
+            var viewModel = await PopulateGovernoratesAsync(ct:ct);
             return PartialView("_Form", viewModel);
         }
 
@@ -59,7 +60,7 @@ namespace Bookano.Web.Controllers
                 return NotFound();
 
             var vm = _mapper.Map<AreaFormViewModel>(area);
-            vm = await PopulateGovernoratesAsync(vm);
+            vm = await PopulateGovernoratesAsync(vm,ct);
 
             return PartialView("_Form", vm);
         }
@@ -99,10 +100,9 @@ namespace Bookano.Web.Controllers
         }
 
         private async Task<AreaFormViewModel> PopulateGovernoratesAsync(
-            AreaFormViewModel? model = null
-        )
+            AreaFormViewModel? model = null,CancellationToken ct = default)
         {
-            var governorates = await _governorateService.GetAllAsync();
+            var governorates = await _governorateService.GetAllAsync(ct);
 
             var viewModel = model ?? new AreaFormViewModel();
             viewModel.Governorates = _mapper.Map<IEnumerable<SelectListItem>>(governorates);

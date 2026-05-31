@@ -33,7 +33,7 @@
                 }
             },
             {
-                data: 'createdOn',
+                data: 'createdOnUtc',
                 name: 'CreatedOnUtc',
                 render: renderDateTime,
                 createdCell: function (td, cellData, rowData, row, col) {
@@ -41,7 +41,7 @@
                 }
             },
             {
-                data: 'lastUpdatedOn',
+                data: 'lastUpdatedOnUtc',
                 name: 'LastUpdatedOnUtc',
                 className: 'js-updated-on',
                 render: renderDateTime,

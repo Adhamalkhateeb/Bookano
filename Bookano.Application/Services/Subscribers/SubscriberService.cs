@@ -1,5 +1,6 @@
 using Bookano.Application.Common.Interfaces;
 using Bookano.Application.DTOs.Subscribers;
+using Bookano.Domain.Common.Constants;
 using Bookano.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -62,6 +63,15 @@ public sealed class SubscriberService(
                 Address = s.Address,
                 IsBlackListed = s.IsBlackListed,
                 CreatedOnUtc = s.CreatedOnUtc,
+                Status = s.IsBlackListed 
+                    ? SubscriberStatus.Banned 
+                    : (!s.Subscriptions.Any() || s.Subscriptions.Max(sub => sub.EndDate) < today) 
+                        ? SubscriberStatus.Inactive 
+                        : SubscriberStatus.Active,
+                CanAddRental = !s.IsBlackListed
+                    && s.Subscriptions.Any()
+                    && s.Subscriptions.Max(sub => sub.EndDate) >= today.AddDays(RentalConstants.RentalDuration)
+                    && s.Rentals.SelectMany(r => r.RentalCopies).Count(rc => rc.ReturnDate == null) < RentalConstants.MaxAllowedCopies,
                 Subscriptions = s
                     .Subscriptions.OrderByDescending(subscription => subscription.EndDate)
                     .Select(subscription => new SubscriptionDto
@@ -81,25 +91,12 @@ public sealed class SubscriberService(
                         NumberOfCopies = rental.RentalCopies.Count(),
                         ActiveCopies = rental.RentalCopies.Count(copy => copy.ReturnDate == null),
                         TotalDelayInDays = rental.RentalCopies.Sum(copy =>
-
-    copy.ReturnDate.HasValue
-
-        ? (
-            copy.ReturnDate.Value.DayNumber > copy.EndDate.DayNumber
-
-                ? copy.ReturnDate.Value.DayNumber - copy.EndDate.DayNumber
-
-                : 0
-          )
-
-        : (
-            today.DayNumber > copy.EndDate.DayNumber
-
-                ? today.DayNumber - copy.EndDate.DayNumber
-
-                : 0
-          )
-),
+                        copy.ReturnDate.HasValue ? (
+                            copy.ReturnDate.Value.DayNumber > copy.EndDate.DayNumber
+                            ? copy.ReturnDate.Value.DayNumber - copy.EndDate.DayNumber : 0 )
+                            : ( today.DayNumber > copy.EndDate.DayNumber
+                            ? today.DayNumber - copy.EndDate.DayNumber : 0 )
+                            ),
                     }),
             })
             .SingleOrDefaultAsync(ct);

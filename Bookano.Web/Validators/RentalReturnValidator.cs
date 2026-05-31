@@ -1,4 +1,6 @@
-﻿namespace Bookano.Web.Validators
+﻿using Bookano.Web.ViewModels.Rentals;
+
+namespace Bookano.Web.Validators
 {
     public class RentalReturnValidator : AbstractValidator<RentalReturnFormViewModel>
     {

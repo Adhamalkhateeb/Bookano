@@ -1,4 +1,4 @@
-﻿@model RentalReturnFormViewModel
+@model RentalReturnFormViewModel
 @{
     ViewData["Title"] = "Rental Return";
 }
@@ -75,16 +75,16 @@ else
                                         <td data-label="Extend Date">@(copy.ExtendedOn.HasValue ? copy.ExtendedOn.Value.ToString("dd MMM, yyyy") : string.Empty) </td>
                                         <td data-label="Return">
                                             <div class="form-check form-check-custom form-check-success form-check-solid">
-                                                <input class="form-check-input" type="radio" value="true" asp-for="SelectedCopies[i].IsReturned" id="@($"{Model.SelectedCopies[i].Id}_true")" />
-                                                <input type="hidden" asp-for="SelectedCopies[i].Id" id="@($"{Model.SelectedCopies[i].Id}_true_id")" />
+                                                <input class="form-check-input" type="radio" value="true" asp-for="RentalCopies[i].IsReturned" id="@($"{Model.RentalCopies[i].BookCopy!.Id}_true")" />
+                                                <input type="hidden" asp-for="RentalCopies[i].BookCopy.Id" id="@($"{Model.RentalCopies[i].BookCopy!.Id}_true_id")" />
                                             </div>
                                         </td>
                                         <td data-label="Extend">
                                             <div class="form-check form-check-custom form-check-solid">
-                                                <input class="form-check-input" type="radio" value="false" asp-for="SelectedCopies[i].IsReturned" id="@($"{Model.SelectedCopies[i].Id}_false")"
+                                                <input class="form-check-input" type="radio" value="false" asp-for="RentalCopies[i].IsReturned" id="@($"{Model.RentalCopies[i].BookCopy!.Id}_false")"
                                                        disabled="@(Model.AllowExtend ? null : "disabled")" />
-                                                <input type="hidden" asp-for="SelectedCopies[i].Id" id="@($"{Model.SelectedCopies[i].Id}_false_id")" />
-
+                                                <input type="hidden" asp-for="RentalCopies[i].BookCopy.Id" id="@($"{Model.RentalCopies[i].BookCopy!.Id}_false_id")" />
+ 
                                             </div>
                                         </td>
                                     </tr>

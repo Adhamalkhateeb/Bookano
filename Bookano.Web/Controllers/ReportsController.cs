@@ -1,27 +1,34 @@
-﻿using System.Globalization;
 using System.Net.Mime;
-using Bookano.Application.Interfaces;
-using Bookano.Domain.Enums;
+using Bookano.Application.Services.Authors;
+using Bookano.Application.Services.Categories;
+using Bookano.Application.Services.Reports;
 using Bookano.Web.Services.PDF;
-using ClosedXML.Excel;
+using Bookano.Web.ViewModels.Books;
+using Bookano.Web.ViewModels.Reports;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using OpenHtmlToPdf;
 
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class ReportsController(
-        IUnitOfWork unitOfWork,
+        IReportsService reportsService,
+        IAuthorService authorService,
+        ICategoryService categoryService,
         IWebHostEnvironment webHostEnvironment,
         IMapper mapper,
-        IViewRendererService viewRenderer
+        IViewRendererService viewRenderer,
+        IExcelService excelService,
+        IPdfService pdfService
     ) : Controller
     {
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
+        private readonly IReportsService _reportsService = reportsService;
+        private readonly IAuthorService _authorService = authorService;
+        private readonly ICategoryService _categoryService = categoryService;
         private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
         private readonly IMapper _mapper = mapper;
         private readonly IViewRendererService _viewRenderer = viewRenderer;
-        private readonly int excelDataStartRow = 10;
+        private readonly IExcelService _excelService = excelService;
+        private readonly IPdfService _pdfService = pdfService;
 
         public IActionResult Index()
         {
@@ -33,21 +40,12 @@ namespace Bookano.Web.Controllers
         public async Task<IActionResult> Books(
             IList<int> selectedAuthors,
             IList<int> selectedCategories,
-            int? pageNumber
+            int? pageNumber,
+            CancellationToken ct
         )
         {
-            var authors = await _unitOfWork
-                .Authors.GetQueryable()
-                .OrderBy(a => a.Name)
-                .AsNoTracking()
-                .ToListAsync();
-            var categories = await _unitOfWork
-                .Categories.GetQueryable()
-                .OrderBy(c => c.Name)
-                .AsNoTracking()
-                .ToListAsync();
-
-            var booksQuery = GetBooksQuery(selectedAuthors, selectedCategories);
+            var authors = await _authorService.GetAllActiveAsync(ct);
+            var categories = await _categoryService.GetAllActiveAsync(ct);
 
             var viewModel = new BooksReportViewModel
             {
@@ -56,126 +54,50 @@ namespace Bookano.Web.Controllers
             };
 
             var page = pageNumber ?? 1;
-            //viewModel.Books = await PaginatedList<BookViewModel>.CreateAsync(
-            //    booksQuery,
-            //    page,
-            //    (int)ReportsConfigurations.PageSize
-            //);
+
+            var booksData = await _reportsService.GetBooksReportAsync(
+                selectedAuthors,
+                selectedCategories,
+                page,ReportsConfigurations.DefaultPageSize, ct);
+
+            viewModel.Books = _mapper.Map<IEnumerable<BookViewModel>>(booksData.Items);
+            viewModel.PaginatedViewModel = new()
+            {
+                PageNumber = booksData.PageNumber,
+                TotalPages = booksData.TotalPages
+            };
 
             return View(viewModel);
         }
 
-        public async Task<IActionResult> ExportBooksToExcel(string authors, string categories)
+        public async Task<IActionResult> ExportBooksToExcel(string authors, string categories, CancellationToken ct)
         {
             var (selectAuthors, selectCategories) = GetBooksSelectedFilters(authors, categories);
+            var booksData = await _reportsService.GetBooksReportAsync(selectAuthors, selectCategories, ct);
 
-            var books = await GetBooksQuery(selectAuthors, selectCategories).ToListAsync();
+            var fileBytes = _excelService.GenerateExcel(booksData, "Books");
 
-            using var wb = new XLWorkbook();
-            var ws = wb.AddWorksheet("Books");
-
-            var headers = new string[]
-            {
-                "ISBN",
-                "Title",
-                "Authors",
-                "Categories",
-                "Publisher",
-                "Publishing Date",
-                "Hall",
-                "Available For Rental",
-                "Status",
-            };
-
-            ws.SetHeader(_webHostEnvironment, headers);
-
-            for (int i = 0; i < books.Count; i++)
-            {
-                ws.Cell(i + excelDataStartRow, 1).SetValue(books[i].Isbn);
-                ws.Cell(i + excelDataStartRow, 2).SetValue(books[i].Title);
-                ws.Cell(i + excelDataStartRow, 3).SetValue(string.Join(", ", books[i].Authors));
-                ws.Cell(i + excelDataStartRow, 4).SetValue(string.Join(", ", books[i].Categories));
-                ws.Cell(i + excelDataStartRow, 5).SetValue(books[i].Publisher);
-                ws.Cell(i + excelDataStartRow, 6)
-                    .SetValue(books[i].PublishingDate.ToString("d MMM, yyyy"));
-                ws.Cell(i + excelDataStartRow, 7).SetValue(books[i].Hall);
-                ws.Cell(i + excelDataStartRow, 8)
-                    .SetValue(books[i].IsAvailableForRental ? "Yes" : "No");
-                ws.Cell(i + excelDataStartRow, 9)
-                    .SetValue(books[i].IsDeleted ? "Deleted" : "Active");
-            }
-
-            ws.Format();
-            ws.AddTable(books.Count, headers.Length);
-
-            await using var stream = new MemoryStream();
-            wb.SaveAs(stream);
             return File(
-                stream.ToArray(),
+                fileBytes,
                 MediaTypeNames.Application.Octet,
-                $"Books_{Guid.NewGuid()}.xlsx"
+                $"Books_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx"
             );
         }
 
-        public async Task<IActionResult> ExportBooksToPdf(string authors, string categories)
+        public async Task<IActionResult> ExportBooksToPdf(string authors, string categories, CancellationToken ct)
         {
             var (selectAuthors, selectCategories) = GetBooksSelectedFilters(authors, categories);
+            var booksData = await _reportsService.GetBooksReportAsync(selectAuthors, selectCategories, ct);
 
-            var books = await GetBooksQuery(selectAuthors, selectCategories).ToListAsync();
+            var vm = _mapper.Map<IEnumerable<BookViewModel>>(booksData);
 
-            var templatePath = "~/Views/Reports/BooksReport.cshtml";
-            var html = await _viewRenderer.RenderViewToStringAsync(
-                ControllerContext,
-                templatePath,
-                books
+            var fileBytes = await _pdfService.GeneratePdfFromViewAsync(ControllerContext,"~/Views/Reports/BooksReport.cshtml",vm,landscape: true);
+
+            return File(
+                fileBytes,
+                MediaTypeNames.Application.Octet,
+                $"Books_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pdf"
             );
-
-            var pdf = Pdf.From(html)
-                .EncodedWith("Utf-8")
-                .WithMargins(1.Centimeters())
-                .Landscape()
-                .Content();
-
-            return File(pdf, MediaTypeNames.Application.Octet, $"Books_{Guid.NewGuid()}.pdf");
-        }
-
-        private IQueryable<BookViewModel> GetBooksQuery(
-            IEnumerable<int> selectedAuthors,
-            IEnumerable<int> selectedCategories
-        )
-        {
-            var booksQuery = _unitOfWork.Books.GetQueryable();
-
-            if (selectedAuthors.Any())
-            {
-                booksQuery = booksQuery.Where(b =>
-                    b.Authors.Any(a => selectedAuthors.Contains(a.AuthorId))
-                );
-            }
-
-            if (selectedCategories.Any())
-            {
-                booksQuery = booksQuery.Where(b =>
-                    b.Categories.Any(c => selectedCategories.Contains(c.CategoryId))
-                );
-            }
-
-            var books = booksQuery
-                .OrderByDescending(b => b.CreatedOnUtc)
-                .Select(b => new BookViewModel
-                {
-                    Isbn = b.Isbn ?? "N/A",
-                    Title = b.Title,
-                    Authors = b.Authors.Select(a => a.Author!.Name),
-                    Categories = b.Categories.Select(c => c.Category!.Name),
-                    Publisher = b.Publisher!.Name,
-                    PublishingDate = b.PublishingDate.ToDateTime(TimeOnly.MinValue),
-                    Hall = b.Hall,
-                    IsAvailableForRental = b.IsAvailableForRental,
-                    IsDeleted = b.IsDeleted,
-                });
-
-            return books;
         }
 
         private static (
@@ -212,298 +134,114 @@ namespace Bookano.Web.Controllers
 
         #region Rentals
 
-        public async Task<IActionResult> Rentals(string duration, int? pageNumber)
+        public async Task<IActionResult> Rentals(string duration, int? pageNumber, CancellationToken ct)
         {
             var viewModel = new RentalsReportViewModel { Duration = duration };
 
-            var (error, query) = GetRentalsQuery(duration);
+            var page = pageNumber ?? 1;
 
-            if (error is not null)
+            var result = await _reportsService.GetRentalsReportAsync(duration,page, ReportsConfigurations.DefaultPageSize, ct);
+
+            if (result.IsFailure)
             {
-                ModelState.AddModelError("Duration", error);
+                ModelState.AddModelError("Duration", result.ErrorMessage!);
                 return View(viewModel);
             }
 
-            //if (pageNumber.HasValue)
-            //    viewModel.Rentals = await PaginatedList<RentalsReportItemViewModel>.CreateAsync(
-            //        query,
-            //        pageNumber.Value,
-            //        (int)ReportsConfigurations.PageSize
-            //    );
+            viewModel.Rentals = _mapper.Map<IEnumerable<RentalsReportItemViewModel>>(result.Value!.Items);
+            viewModel.PaginatedViewModel = new()
+            {
+                PageNumber = result.Value.PageNumber,
+                TotalPages = result.Value.TotalPages
+            };
 
             ModelState.Clear();
             return View(viewModel);
         }
 
-        public async Task<IActionResult> ExportRentalsToExcel(string duration)
+        public async Task<IActionResult> ExportRentalsToExcel(string duration, CancellationToken ct)
         {
-            var (error, rentalsQuery) = GetRentalsQuery(duration);
+            var result = await _reportsService.GetRentalsReportAsync(duration, ct);
 
-            if (error is not null)
+            if (result.IsFailure)
             {
-                TempData["Error"] = error;
+                TempData["Error"] = result.ErrorMessage;
                 return RedirectToAction(nameof(Rentals), new { duration });
             }
 
-            var rentals = await rentalsQuery.ToListAsync();
+            var rentals = _mapper.Map<List<RentalsReportItemViewModel>>(result.Value);
+            var fileBytes = _excelService.GenerateExcel(rentals, "Rentals");
 
-            using var wb = new XLWorkbook();
-            var ws = wb.AddWorksheet("Rentals");
-
-            var headers = new string[]
-            {
-                "Subscriber Id",
-                "Subscriber Name",
-                "Subscriber Mobile",
-                "Book Title",
-                "Book Authors",
-                "Book Serial",
-                "Rental Date",
-                "End Date",
-                "Return Date",
-                "Extended On",
-            };
-
-            ws.SetHeader(_webHostEnvironment, headers);
-
-            for (int i = 0; i < rentals.Count; i++)
-            {
-                ws.Cell(i + excelDataStartRow, 1).SetValue(rentals[i].SubscriberId);
-                ws.Cell(i + excelDataStartRow, 2).SetValue(rentals[i].SubscriberName);
-                ws.Cell(i + excelDataStartRow, 3).SetValue(rentals[i].SubscriberMobile);
-                ws.Cell(i + excelDataStartRow, 4).SetValue(rentals[i].BookTitle);
-                ws.Cell(i + excelDataStartRow, 5)
-                    .SetValue(string.Join(", ", rentals[i].BookAuthors!));
-                ws.Cell(i + excelDataStartRow, 6).SetValue(rentals[i].BookSerialNumber);
-                ws.Cell(i + excelDataStartRow, 7)
-                    .SetValue(rentals[i].RentalDate.ToString("d MMM, yyyy"));
-                ws.Cell(i + excelDataStartRow, 8)
-                    .SetValue(rentals[i].EndDate.ToString("d MMM, yyyy"));
-                ws.Cell(i + excelDataStartRow, 9)
-                    .SetValue(
-                        rentals[i].ReturnDate.HasValue
-                            ? rentals[i].ReturnDate!.Value.ToString("d MMM, yyyy")
-                            : "-"
-                    );
-                ws.Cell(i + excelDataStartRow, 10)
-                    .SetValue(
-                        rentals[i].ExtendedOn.HasValue
-                            ? rentals[i].ExtendedOn!.Value.ToString("d MMM, yyyy")
-                            : "-"
-                    );
-            }
-
-            ws.Format();
-            ws.AddTable(rentals.Count, headers.Length);
-
-            await using var stream = new MemoryStream();
-            wb.SaveAs(stream);
             return File(
-                stream.ToArray(),
+                fileBytes,
                 MediaTypeNames.Application.Octet,
-                $"Rentals_{Guid.NewGuid()}.xlsx"
+                $"Rentals_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx"
             );
         }
 
-        public async Task<IActionResult> ExportRentalsToPdf(string duration)
+        public async Task<IActionResult> ExportRentalsToPdf(string duration, CancellationToken ct)
         {
-            var (error, rentalsQuery) = GetRentalsQuery(duration);
+            var result = await _reportsService.GetRentalsReportAsync(duration, ct);
 
-            if (error is not null)
+            if (result.IsFailure)
             {
-                TempData["Error"] = error;
+                TempData["Error"] = result.ErrorMessage;
                 return RedirectToAction(nameof(Rentals), new { duration });
             }
 
-            var rentals = await rentalsQuery.ToListAsync();
+            var rentals = _mapper.Map<List<RentalsReportItemViewModel>>(result.Value);
 
-            var templatePath = "~/Views/Reports/RentalsReport.cshtml";
-            var html = await _viewRenderer.RenderViewToStringAsync(
+            var pdf = await _pdfService.GeneratePdfFromViewAsync(
                 ControllerContext,
-                templatePath,
-                rentals
+                "~/Views/Reports/RentalsReport.cshtml",
+                rentals,
+                landscape: true
             );
 
-            var pdf = Pdf.From(html)
-                .EncodedWith("Utf-8")
-                .WithMargins(1.Centimeters())
-                .Landscape()
-                .Content();
-
-            return File(pdf, MediaTypeNames.Application.Octet, $"Rentals_{Guid.NewGuid()}.pdf");
-        }
-
-        private (string? error, IQueryable<RentalsReportItemViewModel>) GetRentalsQuery(
-            string duration
-        )
-        {
-            var query = Enumerable.Empty<RentalsReportItemViewModel>().AsQueryable();
-
-            if (string.IsNullOrEmpty(duration))
-                return (null, query);
-
-            var dateRange = duration.Split(" - ");
-
-            if (dateRange.Length != 2)
-                return (error: Error.InvalidDuration, query);
-
-            if (
-                !DateOnly.TryParse(
-                    dateRange[0].Trim(),
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out var fromDate
-                )
-            )
-                return (error: Error.InvalidStartDate, query);
-
-            if (
-                !DateOnly.TryParse(
-                    dateRange[1].Trim(),
-                    CultureInfo.InvariantCulture,
-                    DateTimeStyles.None,
-                    out var toDate
-                )
-            )
-                return (error: Error.InvalidEndDate, query);
-
-            query = _unitOfWork
-                .RentalCopies.GetQueryable()
-                .Where(rc => rc.RentalDate >= fromDate && rc.RentalDate <= toDate)
-                .OrderByDescending(rc => rc.RentalDate)
-                .AsNoTracking()
-                .Select(rc => new RentalsReportItemViewModel
-                {
-                    SubscriberId = rc.Rental!.SubscriberId,
-                    SubscriberName =
-                        $"{rc.Rental.Subscriber!.FirstName} {rc.Rental.Subscriber.LastName}",
-                    SubscriberMobile = rc.Rental.Subscriber.MobileNumber,
-                    BookTitle = rc.BookCopy!.Book!.Title,
-                    BookSerialNumber = rc.BookCopy.SerialNumber,
-                    BookAuthors = rc.BookCopy.Book.Authors.Select(a => a.Author!.Name),
-                    RentalDate = rc.RentalDate.ToDateTime(TimeOnly.MinValue),
-                    EndDate = rc.EndDate.ToDateTime(TimeOnly.MinValue),
-                    ReturnDate = rc.ReturnDate.HasValue
-                        ? rc.ReturnDate.Value.ToDateTime(TimeOnly.MinValue)
-                        : null,
-                    ExtendedOn = rc.ExtendedOn.HasValue
-                        ? rc.ExtendedOn.Value.ToDateTime(TimeOnly.MinValue)
-                        : null,
-                });
-
-            return (error: null, query);
+            return File(pdf, MediaTypeNames.Application.Octet, $"Rentals_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pdf");
         }
 
         #endregion
 
         #region Delayed Rentals
 
-        public async Task<IActionResult> DelayedRentals()
+        public async Task<IActionResult> DelayedRentals(CancellationToken ct)
         {
-            var viewModel = new DelayedRentalsViewModel { Rentals = await GetDelayedRentals() };
+            var delayedRentalsData = await _reportsService.GetDelayedRentalsReportAsync(ct);
+            var delayedRentals = _mapper.Map<List<DelayedRentalItemViewModel>>(delayedRentalsData);
+
+            var viewModel = new DelayedRentalsViewModel { Rentals = delayedRentals };
 
             return View(viewModel);
         }
 
-        public async Task<IActionResult> ExportDelayedRentalsToExcel()
+        public async Task<IActionResult> ExportDelayedRentalsToExcel(CancellationToken ct)
         {
-            var delayedRentals = await GetDelayedRentals();
+            var delayedRentalsData = await _reportsService.GetDelayedRentalsReportAsync(ct);
+            var delayedRentals = _mapper.Map<List<DelayedRentalItemViewModel>>(delayedRentalsData);
 
-            using var wb = new XLWorkbook();
-            var ws = wb.AddWorksheet("Delayed Rentals");
+            var fileBytes = _excelService.GenerateExcel(delayedRentals, "Delayed Rentals");
 
-            var headers = new string[]
-            {
-                "Subscriber Id",
-                "Subscriber Name",
-                "Subscriber Mobile",
-                "Book Title",
-                "Book Serial",
-                "Rental Date",
-                "End Date",
-                "Extended On",
-                "Delay In Days",
-            };
-
-            ws.SetHeader(_webHostEnvironment, headers);
-
-            for (int i = 0; i < delayedRentals.Count; i++)
-            {
-                ws.Cell(i + excelDataStartRow, 1).SetValue(delayedRentals[i].SubscriberId);
-                ws.Cell(i + excelDataStartRow, 2).SetValue(delayedRentals[i].SubscriberName);
-                ws.Cell(i + excelDataStartRow, 3).SetValue(delayedRentals[i].SubscriberMobile);
-                ws.Cell(i + excelDataStartRow, 4).SetValue(delayedRentals[i].BookTitle);
-                ws.Cell(i + excelDataStartRow, 5).SetValue(delayedRentals[i].BookSerialNumber);
-                ws.Cell(i + excelDataStartRow, 6)
-                    .SetValue(delayedRentals[i].RentalDate.ToString("d MMM, yyyy"));
-                ws.Cell(i + excelDataStartRow, 7)
-                    .SetValue(delayedRentals[i].EndDate.ToString("d MMM, yyyy"));
-                ws.Cell(i + excelDataStartRow, 8)
-                    .SetValue(
-                        delayedRentals[i].ExtendedOn.HasValue
-                            ? delayedRentals[i].ExtendedOn!.Value.ToString("d MMM, yyyy")
-                            : "-"
-                    );
-                ws.Cell(i + excelDataStartRow, 9).SetValue(delayedRentals[i].DelayInDays);
-            }
-
-            ws.Format();
-            ws.AddTable(delayedRentals.Count, headers.Length);
-
-            await using var stream = new MemoryStream();
-            wb.SaveAs(stream);
             return File(
-                stream.ToArray(),
+                fileBytes,
                 MediaTypeNames.Application.Octet,
-                $"Dalyed_Rentals_{Guid.NewGuid()}.xlsx"
+                $"Delayed_Rentals_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx"
             );
         }
 
-        public async Task<IActionResult> ExportDelayedRentalsToPdf()
+        public async Task<IActionResult> ExportDelayedRentalsToPdf(CancellationToken ct)
         {
-            var delayedRentals = await GetDelayedRentals();
+            var delayedRentalsData = await _reportsService.GetDelayedRentalsReportAsync(ct);
+            var delayedRentals = _mapper.Map<List<DelayedRentalItemViewModel>>(delayedRentalsData);
 
-            var templatePath = "~/Views/Reports/DelayedRentalsReport.cshtml";
-            var html = await _viewRenderer.RenderViewToStringAsync(
+            var pdf = await _pdfService.GeneratePdfFromViewAsync(
                 ControllerContext,
-                templatePath,
-                delayedRentals
+                "~/Views/Reports/DelayedRentalsReport.cshtml",
+                delayedRentals,
+                landscape: true
             );
 
-            var pdf = Pdf.From(html)
-                .EncodedWith("Utf-8")
-                .WithMargins(1.Centimeters())
-                .Landscape()
-                .Content();
-
-            return File(pdf, MediaTypeNames.Application.Octet, $"Rentals_{Guid.NewGuid()}.pdf");
-        }
-
-        private async Task<List<DelayedRentalItemViewModel>> GetDelayedRentals()
-        {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-
-            var delayedRentals = await _unitOfWork
-                .RentalCopies.GetQueryable()
-                .AsNoTracking()
-                .Where(rc => !rc.ReturnDate.HasValue && rc.EndDate < today)
-                .Select(rc => new DelayedRentalItemViewModel
-                {
-                    SubscriberId = rc.Rental!.SubscriberId,
-                    SubscriberMobile = rc.Rental.Subscriber!.MobileNumber,
-                    SubscriberName =
-                        $"{rc.Rental.Subscriber.FirstName} {rc.Rental.Subscriber.LastName}",
-                    BookTitle = rc.BookCopy!.Book!.Title,
-                    BookSerialNumber = rc.BookCopy.SerialNumber,
-                    RentalDate = rc.RentalDate.ToDateTime(TimeOnly.MinValue),
-                    EndDate = rc.EndDate.ToDateTime(TimeOnly.MinValue),
-                    ExtendedOn = rc.ExtendedOn.HasValue
-                        ? rc.ExtendedOn.Value.ToDateTime(TimeOnly.MinValue)
-                        : null,
-                })
-                .ToListAsync();
-
-            return delayedRentals;
+            return File(pdf, MediaTypeNames.Application.Octet, $"Rentals_{DateTime.UtcNow:yyyyMMdd_HHmmss}.pdf");
         }
 
         #endregion

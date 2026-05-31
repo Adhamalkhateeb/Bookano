@@ -29,7 +29,10 @@ public interface IGenericRepository<T>
         CancellationToken cancellationToken = default
     );
     Task<int> CountAsync(
-        Expression<Func<T, bool>>? expression = null,
+        Expression<Func<T, bool>> expression,
         CancellationToken cancellationToken = default
     );
+
+    void Attach(T entity);
+
 }

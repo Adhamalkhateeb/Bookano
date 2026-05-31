@@ -6,6 +6,7 @@ using Bookano.Application.Services.Books;
 using Bookano.Application.Services.Categories;
 using Bookano.Application.Services.Publishers;
 using Bookano.Web.Binders;
+using Bookano.Web.ViewModels.Books;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Linq.Dynamic.Core;
 

@@ -1,6 +1,7 @@
 using Bookano.Application.DTOs.Subscribers;
 using Bookano.Application.Services.Areas;
 using Bookano.Application.Services.Subscribers;
+using Bookano.Web.ViewModels.Subscribers;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Rendering;
 

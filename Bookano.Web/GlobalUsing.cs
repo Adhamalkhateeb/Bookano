@@ -7,7 +7,7 @@ global using Bookano.Domain.Common.Constants;
 global using Bookano.Domain.Entities;
 global using Bookano.Domain.Enums;
 global using Bookano.Infrastructure.Constants;
-global using Bookano.Web.Core.ViewModels;
+global using Bookano.Web.ViewModels;
 global using Bookano.Web.Extensions;
 global using Bookano.Web.Filters;
 global using FluentValidation;

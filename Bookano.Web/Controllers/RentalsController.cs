@@ -1,378 +1,233 @@
-﻿using System.Linq.Dynamic.Core;
-using Bookano.Application.Interfaces;
+using Bookano.Application.DTOs.Rentals;
+using Bookano.Application.Services.Rentals;
+using Bookano.Web.ViewModels.BookCopies;
+using Bookano.Web.ViewModels.Rentals;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Bookano.Web.Controllers
 {
+
+
     [Authorize(Roles = AppRoles.Reception)]
     public class RentalsController(
-        IUnitOfWork unitOfWork,
         IMapper mapper,
-        IDataProtectionProvider dataProtector,
-        IValidator<RentalReturnFormViewModel> validator
+        IRentalService rentalService,
+        IDataProtectionProvider dataProtector
     ) : Controller
     {
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
         private readonly IDataProtector _dataProtector = dataProtector.CreateProtector("security");
         private readonly IMapper _mapper = mapper;
-        private readonly IValidator<RentalReturnFormViewModel> _validator = validator;
+        private readonly IRentalService _rentalService = rentalService;
 
-        public async Task<IActionResult> Create(string subscriberKey)
+        public async Task<IActionResult> Create(string subscriberKey, CancellationToken ct)
         {
             var subscriberId = int.Parse(_dataProtector.Unprotect(subscriberKey));
+            var result = await _rentalService.GetAvailableCopiesCountAsync(subscriberId,ct: ct);
 
-            var subscriber = await _unitOfWork
-                .Subscribers.GetQueryable()
-                .Include(s => s.Subscriptions)
-                .Include(s => s.Rentals)
-                    .ThenInclude(r => r.RentalCopies)
-                .SingleOrDefaultAsync(s => s.Id == subscriberId);
+            if (!result.IsSuccess)
+            {
+                if (
+                    result.ErrorMessage == Error.BlackListedSubscriber
+                    || result.ErrorMessage == Error.InactiveSubscriber
+                    || result.ErrorMessage == Error.MaxAllowedCopiesReached
+                )
+                {
+                    return View("NotAllowedRental", result.ErrorMessage);
+                }
 
-            if (subscriber is null)
                 return NotFound();
-
-            var (errorMessage, availableCopiesCount) = ValidateSubscriber(subscriber);
-
-            if (!string.IsNullOrEmpty(errorMessage))
-                return View("NotAllowedRental", errorMessage);
+            }
 
             var viewModel = new RentalFormViewModel
             {
                 SubscriberKey = subscriberKey,
-                MaxAllowedCopies = availableCopiesCount,
+                MaxAllowedCopies = result.Value
             };
+
             return View("Form", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(RentalFormViewModel model)
+        public async Task<IActionResult> Create(RentalFormViewModel model, CancellationToken ct)
         {
-            if (!ModelState.IsValid)
-                return View("Form", model);
-
             var subscriberId = int.Parse(_dataProtector.Unprotect(model.SubscriberKey));
 
-            var subscriber = await _unitOfWork
-                .Subscribers.GetQueryable()
-                .Include(s => s.Subscriptions)
-                .Include(s => s.Rentals)
-                    .ThenInclude(r => r.RentalCopies)
-                        .ThenInclude(r => r.BookCopy)
-                .SingleOrDefaultAsync(s => s.Id == subscriberId);
-
-            if (subscriber is null)
-                return NotFound();
-
-            var (subscriberError, _) = ValidateSubscriber(subscriber);
-
-            if (!string.IsNullOrEmpty(subscriberError))
-                return View("NotAllowedRental", subscriberError);
-
-            var (copiesError, newCopies) = await ValidateCopiesAsync(
-                subscriber,
-                model.SelectedCopies
-            );
-
-            if (!string.IsNullOrEmpty(copiesError))
-                return View("NotAllowedRental", copiesError);
-
-            var rental = new Rental
+            if (!ModelState.IsValid)
             {
-                RentalCopies = newCopies,
-                StartDate = DateOnly.FromDateTime(DateTime.Today),
-            };
+                await PopulateRentalFormAsync(subscriberId,model,ct);
+                return View("Form", model);
+            }
 
-            subscriber.Rentals.Add(rental);
-            await _unitOfWork.SaveChangesAsync();
+            var dto = _mapper.Map<RentalFormDto>(model);
+            dto.SubscriberId = subscriberId;
 
-            return RedirectToAction(nameof(Details), new { id = rental.Id });
+            var result = await _rentalService.CreateAsync(dto, ct);
+
+            if (!result.IsSuccess)
+            {
+                if (result.ErrorMessage is not null)
+                    return View("NotAllowedRental", result.ErrorMessage);
+
+                result.AddToModelState(ModelState);
+
+                await PopulateRentalFormAsync(subscriberId, model, ct);
+                return View("Form", model);
+            }
+
+            return RedirectToAction(nameof(Details), new { id = result.Value });
         }
 
         [HttpGet]
-        public async Task<IActionResult> Edit(int id)
+        public async Task<IActionResult> Edit(int id, CancellationToken ct)
         {
-            var rental = await _unitOfWork
-                .Rentals.GetQueryable()
-                .AsNoTracking()
-                .Include(r => r.RentalCopies)
-                    .ThenInclude(rc => rc.BookCopy)
-                        .ThenInclude(bc => bc!.Book)
-                .SingleOrDefaultAsync(r => r.Id == id);
+            var rental = await _rentalService.GetDetailsAsync(id, ct);
 
             if (rental is null || rental.CreatedOnUtc.Date != DateTime.UtcNow.Date)
                 return NotFound();
 
-            var subscriber = await _unitOfWork
-                .Subscribers.GetQueryable()
-                .AsNoTracking()
-                .Include(s => s.Subscriptions)
-                .Include(s => s.Rentals)
-                    .ThenInclude(r => r.RentalCopies)
-                .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
+            var result = await _rentalService.GetAvailableCopiesCountAsync(rental.SubscriberId,rental.Id, ct);
 
-            var (errorMessage, availableCopiesCount) = ValidateSubscriber(subscriber!, rental.Id);
+            if (!result.IsSuccess)
+            {
+                if (
+                    result.ErrorMessage == Error.BlackListedSubscriber
+                    || result.ErrorMessage == Error.InactiveSubscriber
+                    || result.ErrorMessage == Error.MaxAllowedCopiesReached
+                )
+                {
+                    return View("NotAllowedRental", result.ErrorMessage);
+                }
 
-            if (!string.IsNullOrEmpty(errorMessage))
-                return View("NotAllowedRental", errorMessage);
+                return NotFound();
+            }
 
-            var currentCopies = rental.RentalCopies.Select(rc => rc.BookCopy);
+            var selectedCopies = rental.RentalCopies.Select(rc => rc.BookCopy!.SerialNumber).ToList();
 
             var viewModel = new RentalFormViewModel
             {
                 Id = rental.Id,
-                SubscriberKey = _dataProtector.Protect(subscriber!.Id.ToString()),
-                MaxAllowedCopies = availableCopiesCount,
-                CurrentCopies = _mapper.Map<IEnumerable<BookCopyViewModel>>(currentCopies),
+                SubscriberKey = _dataProtector.Protect(rental.SubscriberId.ToString()),
+                SelectedCopies = selectedCopies,
+                MaxAllowedCopies = result.Value
             };
+
+            viewModel.CurrentCopies = _mapper.Map<IEnumerable<BookCopyViewModel>>(
+                await _rentalService.GetCopiesForDisplayAsync(selectedCopies, ct)
+            );
 
             return View("Form", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(RentalFormViewModel model)
+        public async Task<IActionResult> Edit(RentalFormViewModel model, CancellationToken ct)
         {
+            var subscriberId = int.Parse(_dataProtector.Unprotect(model.SubscriberKey));
+
             if (!ModelState.IsValid)
+            {
+                await PopulateRentalFormAsync(subscriberId, model, ct);
+
                 return View("Form", model);
+            }
 
-            var rental = await _unitOfWork
-                .Rentals.GetQueryable()
-                .Include(r => r.RentalCopies)
-                    .ThenInclude(rc => rc.BookCopy)
-                .SingleOrDefaultAsync(r => r.Id == model.Id);
+            var dto = _mapper.Map<RentalFormDto>(model);
+            dto.SubscriberId = subscriberId;
 
-            if (rental is null || rental.CreatedOnUtc.Date != DateTime.UtcNow.Date)
-                return NotFound();
+            var result = await _rentalService.UpdateAsync(dto, ct);
 
-            var subscriber = await _unitOfWork
-                .Subscribers.GetQueryable()
-                .AsSplitQuery()
-                .Include(s => s.Subscriptions)
-                .Include(s => s.Rentals)
-                    .ThenInclude(r => r.RentalCopies)
-                        .ThenInclude(rc => rc.BookCopy)
-                .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
+            if (!result.IsSuccess)
+            {
+                if (result.ErrorMessage is not null)
+                    return View("NotAllowedRental", result.ErrorMessage);
 
-            var (subscriberError, _) = ValidateSubscriber(subscriber!, rental.Id);
+                result.AddToModelState(ModelState);
 
-            if (!string.IsNullOrEmpty(subscriberError))
-                return View("NotAllowedRental", subscriberError);
+                await PopulateRentalFormAsync(subscriberId, model, ct);
+                return View("Form", model);
+            }
 
-            var (copiesError, editedCopies) = await ValidateCopiesAsync(
-                subscriber!,
-                model.SelectedCopies,
-                rental.Id
-            );
-
-            if (!string.IsNullOrEmpty(copiesError))
-                return View("NotAllowedRental", copiesError);
-
-            rental.RentalCopies = editedCopies;
-            //_unitOfWork.RentalCopies.Entry(rental).State = EntityState.Modified;
-
-            await _unitOfWork.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Details), new { id = rental.Id });
+            return RedirectToAction(nameof(Details), new { id = result.Value });
         }
 
-        public async Task<IActionResult> Return(int id)
+        public async Task<IActionResult> Return(int id, CancellationToken ct)
         {
-            var rental = await _unitOfWork
-                .Rentals.GetQueryable()
-                .AsNoTracking()
-                .Include(r => r.RentalCopies)
-                    .ThenInclude(rc => rc.BookCopy)
-                        .ThenInclude(bc => bc!.Book)
-                .SingleOrDefaultAsync(r => r.Id == id);
+            var result = await _rentalService.GetReturnFormAsync(id, ct);
 
-            if (rental is null || rental.CreatedOnUtc.Date == DateTime.UtcNow.Date)
+            if (!result.IsSuccess)
                 return NotFound();
 
-            var subscriber = await _unitOfWork
-                .Subscribers.GetQueryable()
-                .AsNoTracking()
-                .Include(s => s.Subscriptions)
-                .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
-
-            var subscriptionEndDate = subscriber!.Subscriptions.Max(sb => sb.EndDate);
-            var extendDeadline = rental.StartDate.AddDays(RentalConstants.MaxRentalDuration);
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-            var viewModel = new RentalReturnFormViewModel
-            {
-                Id = rental.Id,
-                RentalCopies = _mapper.Map<IList<RentalCopyViewModel>>(
-                    rental.RentalCopies.Where(rc => !rc.ReturnDate.HasValue)
-                ),
-                SelectedCopies =
-                [
-                    .. rental
-                        .RentalCopies.Where(rc => !rc.ReturnDate.HasValue)
-                        .Select(rc => new ReturnCopyViewModel
-                        {
-                            Id = rc.BookCopyId,
-                            IsReturned = rc.ExtendedOn.HasValue ? false : null,
-                        }),
-                ],
-                AllowExtend =
-                    !subscriber.IsBlackListed
-                    && subscriptionEndDate >= extendDeadline
-                    && today <= rental.StartDate.AddDays(RentalConstants.RentalDuration),
-            };
-
-            return View("Return", viewModel);
+            return View("Return", _mapper.Map<RentalReturnFormViewModel>(result.Value));
         }
 
         [HttpPost]
-        public async Task<IActionResult> Return(RentalReturnFormViewModel model)
+        public async Task<IActionResult> Return(RentalReturnFormViewModel model, CancellationToken ct)
         {
-            var rental = await _unitOfWork
-                .Rentals.GetQueryable()
-                .Include(r => r.RentalCopies)
-                    .ThenInclude(rc => rc.BookCopy)
-                        .ThenInclude(bc => bc!.Book)
-                .SingleOrDefaultAsync(r => r.Id == model.Id);
+            var dto = _mapper.Map<RentalReturnDto>(model);
+            var result = await _rentalService.ReturnAsync(dto, ct);
 
-            if (rental is null || rental.CreatedOnUtc.Date == DateTime.UtcNow.Date)
-                return NotFound();
-
-            var copies = _mapper.Map<IList<RentalCopyViewModel>>(
-                rental.RentalCopies.Where(rc => !rc.ReturnDate.HasValue)
-            );
-
-            var validationResult = _validator.Validate(model);
-            validationResult.AddToModelState(ModelState);
-
-            if (!ModelState.IsValid)
+            if (!result.IsSuccess)
             {
-                model.RentalCopies = copies;
+                if (result.ErrorMessage is not null)
+                    return View("NotAllowedRental", result.ErrorMessage);
+
+                result.AddToModelState(ModelState);
+
+                var formResult = await _rentalService.GetReturnFormAsync(model.Id, ct);
+                if (formResult.IsSuccess)
+                {
+                    formResult.Value!.PenalityPaid = model.PenalityPaid;
+                    
+                    foreach (var modelCopy in model.RentalCopies)
+                    {
+                        var target = formResult.Value.RentalCopies.SingleOrDefault(rc => rc.BookCopy?.Id == modelCopy.BookCopy?.Id);
+                        if (target is not null)
+                            target.IsReturned = modelCopy.IsReturned;
+                    }
+
+                    return View(_mapper.Map<RentalReturnFormViewModel>(formResult.Value));
+                }
+
                 return View(model);
             }
 
-            var subscriber = await _unitOfWork
-                .Subscribers.GetQueryable()
-                .Include(s => s.Subscriptions)
-                .SingleOrDefaultAsync(s => s.Id == rental.SubscriberId);
-
-            var subscriptionEndDate = subscriber!.Subscriptions.Max(sb => sb.EndDate);
-            var extendDeadline = rental.StartDate.AddDays(RentalConstants.MaxRentalDuration);
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-            if (model.SelectedCopies.Any(c => c.IsReturned.HasValue && !c.IsReturned.Value))
-            {
-                string? error = null;
-
-                if (subscriber!.IsBlackListed)
-                    error = Error.ExtendNotAllowedForBlackListed;
-                else if (subscriptionEndDate < extendDeadline)
-                    error = Error.ExtendNotAllowedForInactive;
-                else if (today > rental.StartDate.AddDays(RentalConstants.RentalDuration))
-                    error = Error.ExtendNotAllowed;
-
-                if (!string.IsNullOrEmpty(error))
-                {
-                    model.RentalCopies = copies;
-                    ModelState.AddModelError("", error);
-                    return View(model);
-                }
-            }
-
-            var isUpdated = false;
-
-            foreach (var copy in model.SelectedCopies)
-            {
-                if (!copy.IsReturned.HasValue)
-                    continue;
-
-                var currentCopy = rental.RentalCopies.Single(rc => rc.BookCopyId == copy.Id);
-                if (currentCopy is null)
-                    continue;
-
-                if (copy.IsReturned.HasValue && copy.IsReturned.Value)
-                {
-                    if (currentCopy.ReturnDate.HasValue)
-                        continue;
-
-                    currentCopy.ReturnDate = today;
-                    isUpdated = true;
-                }
-
-                if (copy.IsReturned.HasValue && !copy.IsReturned.Value)
-                {
-                    if (currentCopy.ExtendedOn.HasValue)
-                        continue;
-
-                    currentCopy.ExtendedOn = today;
-                    currentCopy.EndDate = currentCopy.RentalDate.AddDays(
-                        RentalConstants.MaxRentalDuration
-                    );
-                    isUpdated = true;
-                }
-            }
-
-            if (isUpdated)
-            {
-                rental.PenaltyPaid = model.PenalityPaid;
-                await _unitOfWork.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Details), new { id = rental.Id });
+            return RedirectToAction(nameof(Details), new { id = result.Value });
         }
 
         [HttpPost]
-        public async Task<IActionResult> GetCopyDetails(SearchFormViewModel model)
+        public async Task<IActionResult> GetCopyDetails(SearchFormViewModel model, CancellationToken ct)
         {
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var copy = await _unitOfWork
-                .BookCopies.GetQueryable()
-                .Include(c => c.Book)
-                .SingleOrDefaultAsync(c =>
-                    c.SerialNumber.ToString() == model.Value && !c.IsDeleted && !c.Book!.IsDeleted
-                );
+            var result = await _rentalService.GetCopyDetailsAsync(model.Value, ct);
 
-            if (copy is null)
-                return NotFound(Error.InvalidSerialNumber);
+            if (!result.IsSuccess)
+            {
+                if (result.ErrorMessage == Error.InvalidSerialNumber)
+                    return NotFound(Error.InvalidSerialNumber);
 
-            if (!copy.IsAvailableForRental || !copy.Book!.IsAvailableForRental)
-                return BadRequest(Error.NotAvailableForRental);
+                return BadRequest(result.ErrorMessage);
+            }
 
-            var isInOtherRental = await _unitOfWork
-                .RentalCopies.GetQueryable()
-                .AnyAsync(rc => rc.BookCopyId == copy.Id && !rc.ReturnDate.HasValue);
-            if (isInOtherRental)
-                return BadRequest(Error.CopyIsInRental);
+            var viewModel = _mapper.Map<BookCopyViewModel>(result.Value);
 
-            var viewModel = _mapper.Map<BookCopyViewModel>(copy);
             return PartialView("_CopyDetails", viewModel);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Cancel(int id)
+        public async Task<IActionResult> Cancel(int id, CancellationToken ct)
         {
-            var rental = await _unitOfWork
-                .Rentals.GetQueryable()
-                .Include(r => r.RentalCopies)
-                .SingleOrDefaultAsync(r => r.Id == id);
+            var result = await _rentalService.CancelAsync(id, ct);
 
-            if (rental is null || rental.CreatedOnUtc.Date != DateTime.UtcNow.Date)
+            if (!result.IsSuccess)
                 return NotFound();
 
-            rental.IsDeleted = true;
-            await _unitOfWork.SaveChangesAsync();
-
-            return Ok(rental.RentalCopies.Count);
+            return Ok(result.Value);
         }
 
-        public async Task<IActionResult> Details(int id)
+        public async Task<IActionResult> Details(int id, CancellationToken ct)
         {
-            var rental = await _unitOfWork
-                .Rentals.GetQueryable()
-                .AsNoTracking()
-                .Include(r => r.RentalCopies)
-                    .ThenInclude(rc => rc.BookCopy)
-                        .ThenInclude(bc => bc!.Book)
-                .SingleOrDefaultAsync(r => r.Id == id);
+            var rental = await _rentalService.GetDetailsAsync(id, ct);
 
             if (rental is null)
                 return NotFound();
@@ -381,90 +236,18 @@ namespace Bookano.Web.Controllers
             return View(viewModel);
         }
 
-        private static (string? errorMessage, int? maxAllowedCopies) ValidateSubscriber(
-            Subscriber subscriber,
-            int? rentalId = null
-        )
+        private async Task PopulateRentalFormAsync(int subscriberId,RentalFormViewModel model,CancellationToken ct)
         {
-            if (subscriber.IsBlackListed)
-                return (Error.BlackListedSubscriber, null);
+            var result = await _rentalService.GetAvailableCopiesCountAsync(subscriberId,model.Id, ct);
+            if (result.IsSuccess)
+                model.MaxAllowedCopies = result.Value;
 
-            if (
-                subscriber.Subscriptions.Max(s => s.EndDate)
-                < DateOnly.FromDateTime(
-                    DateTime.UtcNow.Date.AddDays((RentalConstants.RentalDuration))
-                )
-            )
-                return (Error.InactiveSubscriber, null);
-
-            var currentRentals = subscriber
-                .Rentals.Where(r => rentalId == null || r.Id != rentalId)
-                .SelectMany(r => r.RentalCopies)
-                .Count(rc => !rc.ReturnDate.HasValue);
-
-            var availableCopiesCount = RentalConstants.MaxAllowedCopies - currentRentals;
-
-            if (availableCopiesCount.Equals(0))
-                return (Error.MaxAllowedCopiesReached, null);
-
-            return (null, availableCopiesCount);
+            model.CurrentCopies = _mapper.Map<IEnumerable<BookCopyViewModel>>(
+                await _rentalService.GetCopiesForDisplayAsync(model.SelectedCopies, ct)
+            );
         }
 
-        private async Task<(
-            string? errorMessage,
-            ICollection<RentalCopy> rentalCopies
-        )> ValidateCopiesAsync(
-            Subscriber subscriber,
-            IEnumerable<int> subscriberSelectedCopies,
-            int? rentalId = null
-        )
-        {
-            var currentSubscriberRentals = subscriber
-                .Rentals.SelectMany(r => r.RentalCopies)
-                .Where(rc =>
-                    !rc.ReturnDate.HasValue && (rentalId == null || rc.RentalId != rentalId)
-                )
-                .Select(rc => rc.BookCopy!.BookId)
-                .ToHashSet();
-
-            var selectedCopies = await _unitOfWork
-                .BookCopies.GetQueryable()
-                .Include(c => c.Book)
-                .Include(c => c.Rentals.Where(r => !r.ReturnDate.HasValue))
-                .Where(c => subscriberSelectedCopies.Contains(c.SerialNumber))
-                .ToListAsync();
-
-            var existingCopyIds = rentalId.HasValue
-                ? await _unitOfWork
-                    .RentalCopies.GetQueryable()
-                    .Where(rc => rc.RentalId == rentalId)
-                    .Select(rc => rc.BookCopyId)
-                    .ToHashSetAsync()
-                : [];
-
-            var copies = new List<RentalCopy>();
-
-            foreach (var copy in selectedCopies)
-            {
-                if (existingCopyIds.Contains(copy.Id))
-                {
-                    copies.Add(new RentalCopy { BookCopyId = copy.Id });
-                    continue;
-                }
-
-                if (!copy.IsAvailableForRental || !copy.Book!.IsAvailableForRental)
-                    return (Error.NotAvailableForRental, copies);
-
-                if (copy.Rentals.Any(r => !r.ReturnDate.HasValue))
-                    return (Error.CopyIsInRental, copies);
-
-                if (currentSubscriberRentals.Contains(copy.BookId))
-                    return ($"This subscriber already has a copy for '{copy.Book.Title}' book", []);
-
-                copies.Add(new RentalCopy { BookCopyId = copy.Id });
-            }
-
-            return (null, copies);
-        }
+      
     }
 }
+

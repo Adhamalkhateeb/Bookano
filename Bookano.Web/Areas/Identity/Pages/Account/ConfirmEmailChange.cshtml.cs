@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 using System.Text;
@@ -37,7 +37,7 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
             }
 
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null)
+            if (user == null || user.IsDeleted)
             {
                 return NotFound($"Unable to load user with ID '{userId}'.");
             }

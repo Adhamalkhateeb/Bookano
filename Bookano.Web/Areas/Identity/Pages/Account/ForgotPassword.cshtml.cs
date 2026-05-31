@@ -1,4 +1,4 @@
-﻿// Licensed to the .NET Foundation under one or more agreements.
+// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 #nullable disable
 
@@ -12,13 +12,11 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
 {
     public class ForgotPasswordModel(
         UserManager<ApplicationUser> userManager,
-        IEmailSender emailSender,
-        IEmailBodyBuilder emailBodyBuilder
+        IUserNotificationService userNotificationService
     ) : PageModel
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
-        private readonly IEmailBodyBuilder _emailBodyBuilder = emailBodyBuilder;
-        private readonly IEmailSender _emailSender = emailSender;
+        private readonly IUserNotificationService _userNotificationService = userNotificationService;
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -37,8 +35,6 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
-            [EmailAddress]
             public string Email { get; set; }
         }
 
@@ -47,9 +43,9 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(Input.Email);
-                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                if (user == null || user.IsDeleted || !(await _userManager.IsEmailConfirmedAsync(user)))
                 {
-                    // Don't reveal that the user does not exist or is not confirmed
+                    // Don't reveal that the user does not exist, is deleted, or is not confirmed
                     return RedirectToPage("./ForgotPasswordConfirmation");
                 }
 
@@ -62,24 +58,11 @@ namespace Bookano.Web.Areas.Identity.Pages.Account
                     protocol: Request.Scheme
                 );
 
-                var placeholders = new Dictionary<string, string>
-                {
-                    {
-                        "imageUrl",
-                        "https://res.cloudinary.com/bookano/image/upload/v1777614932/icon-positive-vote-2_duycd8.svg"
-                    },
-                    { "header", $"Hey {user.FullName}" },
-                    {
-                        "body",
-                        "We received a request to reset your password. You can do so by clicking the button below:"
-                    },
-                    { "url", HtmlEncoder.Default.Encode(callbackUrl!) },
-                    { "linkTitle", "Reset Password!" },
-                };
-
-                var body = _emailBodyBuilder.GetEmailBody(EmailTemplates.Email, placeholders);
-
-                await _emailSender.SendEmailAsync(Input.Email, "Reset Password", body);
+                await _userNotificationService.SendPasswordResetEmailAsync(
+                    Input.Email,
+                    user.FullName,
+                    HtmlEncoder.Default.Encode(callbackUrl!)
+                );
 
                 return RedirectToPage("./ForgotPasswordConfirmation");
             }

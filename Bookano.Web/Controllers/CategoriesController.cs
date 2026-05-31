@@ -1,6 +1,7 @@
 using Bookano.Application.DTOs.Categories;
 using Bookano.Application.Interfaces;
 using Bookano.Application.Services.Categories;
+using Bookano.Web.ViewModels.Categories;
 
 namespace Bookano.Web.Controllers;
 
