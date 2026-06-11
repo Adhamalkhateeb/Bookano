@@ -463,6 +463,22 @@ Bookano/
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+## License
 
 Copyright © 2026 Adham Alkhateeb
+
+This repository is provided for portfolio, educational, and demonstration purposes only.
+
+You are permitted to view, clone, and study the source code for personal learning and evaluation purposes.
+
+You may not:
+
+* Copy substantial portions of this project into another application.
+* Redistribute this project or any modified version of it.
+* Use this project or its source code in commercial products or services.
+* Publish this project under another name.
+* Claim this work, in whole or in part, as your own.
+
+The software is provided "AS IS", without warranty of any kind, express or implied. The author shall not be liable for any claim, damages, or other liability arising from the use of this software.
+
+For permissions beyond those granted above, written authorization from the author is required.
