@@ -1,7 +1,6 @@
-using Bookano.Application.Common.Models;
 using Bookano.Application.DTOs.Books;
-using Bookano.Application.Interfaces;
 using Bookano.Application.Services.Authors;
+using Bookano.Application.Services.BookCopies;
 using Bookano.Application.Services.Books;
 using Bookano.Application.Services.Categories;
 using Bookano.Application.Services.Publishers;
@@ -16,6 +15,7 @@ namespace Bookano.Web.Controllers
     public class BooksController(
         IMapper mapper,
         IBookService bookService,
+        IBookCopiesService bookCopiesService,
         IAuthorService authorService,
         ICategoryService categoryService,
         IPublisherService publisherService
@@ -23,6 +23,7 @@ namespace Bookano.Web.Controllers
     {
         private readonly IMapper _mapper = mapper;
         private readonly IBookService _bookService = bookService;
+        private readonly IBookCopiesService _bookCopiesService = bookCopiesService;
         private readonly IAuthorService _authorService = authorService;
         private readonly ICategoryService _categoryService = categoryService;
         private readonly IPublisherService _publisherService = publisherService;
@@ -34,14 +35,19 @@ namespace Bookano.Web.Controllers
         {
             var request = DataTableRequestBinder.Bind(Request.Form);
 
-            var data = await _bookService.GetPagedAsync(request, ct);
+            var result = await _bookService.GetPagedFilteredAsync<BookListDto>(request, ct);
 
-            return Ok(data);
+            return Ok(new
+            {
+                recordsTotal = result.TotalCount,
+                recordsFiltered = result.FilteredCount,
+                data = result.Data
+            });
         }
 
         public async Task<IActionResult> Details(int id,CancellationToken ct)
         {
-            var book = await _bookService.GetBookDetailsAsync(id);
+            var book = await _bookService.GetDetailsAsync(id, ct);
 
             if (book is null)
                 return NotFound();
@@ -57,7 +63,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(BookFormViewModel model,CancellationToken ct)
         {
-            var dto = _mapper.Map<BookFormDto>(model);
+            var dto = _mapper.Map<BookSaveDto>(model);
 
             if (model.Image is not null)
             {
@@ -82,12 +88,19 @@ namespace Bookano.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id, CancellationToken ct)
         {
-            var book = await _bookService.GetBookFormAsync(id, ct);
+            var book = await _bookService.GetByIdAsync(id, ct);
 
             if (book is null)
                 return NotFound();
 
             var model = _mapper.Map<BookFormViewModel>(book);
+            
+            var categories = await _bookService.GetBookCategoriesAsync(id, ct);
+            var authors = await _bookService.GetBookAuthorsAsync(id, ct);
+
+            model.SelectedCategories = categories.Select(c => c.Id).ToList();
+            model.SelectedAuthors = authors.Select(a => a.Id).ToList();
+
             var viewModel = await PopulateViewModelAsync(model, ct);
 
             return View("Form", viewModel);
@@ -96,7 +109,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(BookFormViewModel model, CancellationToken ct)
         {
-            var dto = _mapper.Map<BookFormDto>(model);
+            var dto = _mapper.Map<BookSaveDto>(model);
 
             if (model.Image is not null)
             {
@@ -108,7 +121,7 @@ namespace Bookano.Web.Controllers
                 };
             }
 
-            var result = await _bookService.UpdateAsync(dto, ct);
+            var result = await _bookService.UpdateAsync(dto.Id,dto, ct);
 
             result.AddToModelState(ModelState);
 
@@ -121,17 +134,17 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
-            var lastUpdatedOnUtc = await _bookService.ToggleAsync(id, ct);
+            var result = await _bookService.ToggleStatusAsync(id, ct);
 
-            if (lastUpdatedOnUtc is null)
+            if (result.IsFailure)
                 return NotFound();
 
-            return Ok(lastUpdatedOnUtc.Value.ToString());
+            return Ok(result.Value!.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(BookFormViewModel model, CancellationToken ct)
         {
-            var isAllowed = await _bookService.IsIsbnUniqueAsync(model.Isbn ?? string.Empty, model.Id, ct);
+            var isAllowed = await _bookService.IsIsbnAvailableAsync(model.Isbn ?? string.Empty, model.Id, ct);
 
             return Json(isAllowed);
         }
@@ -143,11 +156,11 @@ namespace Bookano.Web.Controllers
         {
             var viewModel = model ?? new BookFormViewModel();
 
-            var authors = await _authorService.GetAllActiveAsync(ct);
+            var authors = await _authorService.GetActiveAsync(ct);
 
-            var categories = await _categoryService.GetAllActiveAsync(ct);
+            var categories = await _categoryService.GetActiveAsync(ct);
 
-            var publishers = await _publisherService.GetAllActiveAsync(ct);
+            var publishers = await _publisherService.GetActiveAsync(ct);
 
             viewModel.Authors = _mapper.Map<IEnumerable<SelectListItem>>(authors);
             viewModel.Categories = _mapper.Map<IEnumerable<SelectListItem>>(categories);

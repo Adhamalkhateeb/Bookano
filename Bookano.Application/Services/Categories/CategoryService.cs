@@ -2,11 +2,11 @@ using Bookano.Application.DTOs.Categories;
 
 namespace Bookano.Application.Services.Categories;
 
-internal class CategoryService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<CategoryFormDto> validator) : ICategoryService
+internal class CategoryService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<CategorySaveDto> validator) : ICategoryService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IMapper _mapper = mapper;
-    private readonly IValidator<CategoryFormDto> _validator = validator;
+    private readonly IValidator<CategorySaveDto> _validator = validator;
 
     public async Task<IEnumerable<CategoryDto>> GetAllAsync(CancellationToken ct = default)
     {
@@ -16,7 +16,7 @@ internal class CategoryService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
             .ToListAsync(ct);
     }
 
-    public async Task<IEnumerable<CategoryDto>> GetAllActiveAsync(CancellationToken ct = default)
+    public async Task<IEnumerable<CategoryDto>> GetActiveAsync(CancellationToken ct = default)
     {
         return await _unitOfWork
            .Categories.GetQueryable()
@@ -29,64 +29,75 @@ internal class CategoryService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
     public async Task<CategoryDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
         return await _unitOfWork
-            .Categories.GetQueryable()
+            .Categories.GetQueryable(withTracking: false)
+            .Where(c => c.Id == id)
             .ProjectTo<CategoryDto>(_mapper.ConfigurationProvider)
-            .FirstOrDefaultAsync(c => c.Id == id, ct);
+            .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<Result<CategoryDto>> AddAsync(CategoryFormDto formDto, CancellationToken ct = default)
+    public async Task<Result<CategoryDto>> AddAsync(CategorySaveDto dto, CancellationToken ct = default)
     {
-        var validationResult = await _validator.ValidateAsync(formDto, ct);
-        if (!validationResult.IsValid)
-            return Result<CategoryDto>.Failure(validationResult.ToValidationErrors());
+        var validationResult = await ValidateAsync(0, dto, ct);
+        if (validationResult.IsFailure)
+            return validationResult;
 
-        var category = _mapper.Map<Category>(formDto);
+        var category = _mapper.Map<Category>(dto);
 
         _unitOfWork.Categories.Add(category);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result<CategoryDto>.Success(_mapper.Map<CategoryDto>(category));
+        return _mapper.Map<CategoryDto>(category);
     }
 
-    public async Task<Result<CategoryDto>> UpdateAsync(int id, CategoryFormDto formDto, CancellationToken ct = default)
+    public async Task<Result<CategoryDto>> UpdateAsync(int id, CategorySaveDto dto, CancellationToken ct = default)
     {
-        var validationResult = await _validator.ValidateAsync(formDto, ct);
-        if (!validationResult.IsValid)
-            return Result<CategoryDto>.Failure(validationResult.ToValidationErrors());
+        var validationResult = await ValidateAsync(0, dto, ct);
+        if (validationResult.IsFailure)
+            return validationResult;
 
         var category = await _unitOfWork.Categories.GetByIdAsync(id, ct);
 
         if (category is null)
             return Result<CategoryDto>.Failure("Category not found.");
 
-        _mapper.Map(formDto, category);
+        _mapper.Map(dto, category);
 
-        _unitOfWork.Categories.Update(category);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result<CategoryDto>.Success(_mapper.Map<CategoryDto>(category));
+        return _mapper.Map<CategoryDto>(category);
     }
 
-    public async Task<DateTimeOffset?> ToggleAsync(int id, CancellationToken ct = default)
+    public async Task<Result<ToggleStatusResult>> ToggleStatusAsync(int id, CancellationToken ct = default)
     {
         var category = await _unitOfWork.Categories.GetByIdAsync(id, ct);
 
         if (category is null)
-            return null;
+            return Result<ToggleStatusResult>.Failure("Category not found.");
 
         category.IsDeleted = !category.IsDeleted;
 
-        _unitOfWork.Categories.Update(category);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return category.LastUpdatedOnUtc;
+        return new ToggleStatusResult(category.IsDeleted, category.LastUpdatedOnUtc);
     }
 
-    public async Task<bool> IsCategoryAllowedAsync(CategoryFormDto formDto, CancellationToken ct = default)
+    public async Task<bool> IsNameAvailableAsync(string name, int excludedId, CancellationToken ct = default)
     {
         return !await _unitOfWork
             .Categories.GetQueryable()
-            .AnyAsync(x => x.Name == formDto.Name && x.Id != formDto.Id, ct);
+            .AnyAsync(x => x.Name == name && x.Id != excludedId, ct);
+    }
+
+    private async Task<Result<CategoryDto>> ValidateAsync(int id,CategorySaveDto dto, CancellationToken ct = default)
+    {
+        var validationResult = await _validator.ValidateAsync(dto, ct);
+        if (!validationResult.IsValid)
+            return Result<CategoryDto>.Failure(validationResult.ToValidationErrors());
+
+        if (!await IsNameAvailableAsync(name: dto.Name, excludedId: id, ct))
+            return Result<CategoryDto>.Failure("Category name already exists.");
+
+        return (Result<CategoryDto>)Result.Success();
     }
 
 

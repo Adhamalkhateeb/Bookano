@@ -10,8 +10,5 @@ public class RentalReturnDtoValidator : AbstractValidator<RentalReturnDto>
 
         RuleFor(x => x.RentalCopies).NotEmpty().WithMessage(Error.RequiredField);
 
-        RuleFor(x => x.PenalityPaid)
-            .Must((model, paid) => model.TotalDelayInDays == 0 || paid)
-            .WithMessage(Error.PenalityShouldBePaid);
     }
 }

@@ -1,4 +1,4 @@
-﻿using Bookano.Application.DTOs.Areas;
+using Bookano.Application.DTOs.Areas;
 using Bookano.Web.ViewModels.Areas;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -9,7 +9,7 @@ namespace Bookano.Web.Mapping
         public AreaProfile()
         {
             CreateMap<AreaDto, AreaViewModel>();
-            CreateMap<AreaFormViewModel,AreaFormDto >().ReverseMap();
+            CreateMap<AreaFormViewModel,AreaSaveDto >().ReverseMap();
             CreateMap<AreaDto, AreaFormViewModel>().ReverseMap();
 
 

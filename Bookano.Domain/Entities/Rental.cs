@@ -16,10 +16,6 @@ public sealed class Rental : BaseEntity
 
     public ICollection<RentalCopy> RentalCopies { get; set; } = [];
 
-    public int GetTotalDelayInDays(DateOnly today)
-    {
-        return RentalCopies.Sum(rc => rc.GetDelayInDays(today));
-    }
 
     public static ExtensionEligibility ValidateExtensionEligibility(
         bool isBlackListed,

@@ -24,35 +24,6 @@ public sealed class Subscriber : BaseEntity
     public ICollection<Subscription> Subscriptions { get; set; } = [];
     public ICollection<Rental> Rentals { get; set; } = [];
 
-    public SubscriberStatus GetStatus(DateOnly today)
-    {
-        if (IsBlackListed)
-            return SubscriberStatus.Banned;
-
-        var latestSubscriptionEndDate = Subscriptions.Any()
-            ? Subscriptions.Max(s => s.EndDate)
-            : (DateOnly?)null;
-
-        if (latestSubscriptionEndDate == null || latestSubscriptionEndDate < today)
-            return SubscriberStatus.Inactive;
-
-        return SubscriberStatus.Active;
-    }
-
-    public bool CanRent(DateOnly today)
-    {
-        var unreturnedCopiesCount = Rentals
-            .SelectMany(r => r.RentalCopies)
-            .Count(rc => rc.ReturnDate == null);
-
-        var latestSubscriptionEndDate = Subscriptions.Any()
-            ? Subscriptions.Max(s => s.EndDate)
-            : (DateOnly?)null;
-
-        var eligibility = ValidateRentalEligibility(IsBlackListed, latestSubscriptionEndDate, unreturnedCopiesCount, today);
-        return eligibility == RentalEligibility.Eligible;
-    }
-
     public static RentalEligibility ValidateRentalEligibility(
         bool isBlackListed,
         DateOnly? latestSubscriptionEndDate,

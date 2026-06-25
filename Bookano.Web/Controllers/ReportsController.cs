@@ -44,8 +44,8 @@ namespace Bookano.Web.Controllers
             CancellationToken ct
         )
         {
-            var authors = await _authorService.GetAllActiveAsync(ct);
-            var categories = await _categoryService.GetAllActiveAsync(ct);
+            var authors = await _authorService.GetActiveAsync(ct);
+            var categories = await _categoryService.GetActiveAsync(ct);
 
             var viewModel = new BooksReportViewModel
             {

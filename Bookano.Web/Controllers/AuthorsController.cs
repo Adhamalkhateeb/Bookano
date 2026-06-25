@@ -5,10 +5,7 @@ using Bookano.Web.ViewModels.Authors;
 namespace Bookano.Web.Controllers
 {
     [Authorize(Roles = AppRoles.Archive)]
-    public class AuthorsController(
-        IMapper mapper,
-        IAuthorService authorService
-    ) : Controller
+    public class AuthorsController(IMapper mapper,IAuthorService authorService) : Controller
     {
         private readonly IMapper _mapper = mapper;
         private readonly IAuthorService _authorService = authorService;
@@ -32,7 +29,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(AuthorFormViewModel model, CancellationToken ct)
         {
-            var dto = _mapper.Map<AuthorFormDto>(model);
+            var dto = _mapper.Map<AuthorSaveDto>(model);
 
             var result = await _authorService.AddAsync(dto, ct);
 
@@ -50,7 +47,7 @@ namespace Bookano.Web.Controllers
         [AjaxOnly]
         public async Task<IActionResult> Edit(int id, CancellationToken ct)
         {
-            var author = await _authorService.GetAsync(id, ct);
+            var author = await _authorService.GetByIdAsync(id, ct);
 
             if (author is null)
                 return NotFound();
@@ -63,7 +60,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(AuthorFormViewModel model, CancellationToken ct)
         {
-            var dto = _mapper.Map<AuthorFormDto>(model);
+            var dto = _mapper.Map<AuthorSaveDto>(model);
 
             var result = await _authorService.UpdateAsync(model.Id, dto, ct);
 
@@ -80,17 +77,17 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
-            var lastUpdatedOnUtc = await _authorService.ToggleAsync(id, ct);
+            var result = await _authorService.ToggleStatusAsync(id, ct);
 
-            if (!lastUpdatedOnUtc.HasValue)
+            if (result.IsFailure)
                 return NotFound();
 
-            return Ok(lastUpdatedOnUtc.Value.ToString());
+            return Ok(result.Value!.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(AuthorFormViewModel model, CancellationToken ct)
         {
-            var isAllowed = await _authorService.IsNameAvailableAsync(model.Id, model.Name, ct);
+            var isAllowed = await _authorService.IsNameAvailableAsync(model.Name, model.Id, ct);
 
             return Json(isAllowed);
         }

@@ -3,39 +3,66 @@ using Bookano.Application.DTOs.BookCopies;
 
 namespace Bookano.Application.Services.BookCopies;
 
-public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<BookCopyFormDto> validator) : IBookCopiesService
+public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidator<BookCopySaveDto> validator) : IBookCopiesService
 {
     private readonly IUnitOfWork _unitOfWork = unitOfWork;
     private readonly IMapper _mapper = mapper;
-    private readonly IValidator<BookCopyFormDto> _validator = validator;
+    private readonly IValidator<BookCopySaveDto> _validator = validator;
 
+
+    public async Task<int> GetCountAsync(CancellationToken ct = default)
+    {
+        var copiesCount = await _unitOfWork.BookCopies.GetQueryable().CountAsync(c => !c.IsDeleted, ct);
+        return copiesCount <= 10 ? copiesCount : copiesCount / 10 * 10;
+    }
 
     public async Task<BookCopyDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var copy = await _unitOfWork.BookCopies
-            .GetQueryable()
+       return await _unitOfWork.BookCopies
+            .GetQueryable(withTracking: false)
+            .Where(c => c.Id == id)
             .ProjectTo<BookCopyDto>(_mapper.ConfigurationProvider)
-            .SingleOrDefaultAsync(c => c.Id == id, ct);
-
-        return copy;
-
+            .SingleOrDefaultAsync(ct);
     }
 
-    public async Task<BookDetailsForCopy?> GetBook(int bookId, CancellationToken ct = default)
+    public async Task<BookCopyDto?> GetActiveCopyBySerialNumberAsync(int serialNumber, CancellationToken ct = default)
     {
-        var book = await _unitOfWork.Books.GetQueryable()
-            .Where(b => b.Id == bookId)
-            .Select(b => new BookDetailsForCopy
-            {
-                BookId = b.Id,
-                IsAvailableForRental = b.IsAvailableForRental,
-            }).SingleOrDefaultAsync(ct); ;
-
-        return book;
-
+        return await _unitOfWork.BookCopies
+            .GetQueryable(withTracking: false)
+            .Where(c => c.SerialNumber == serialNumber && !c.IsDeleted && !c.Book!.IsDeleted)
+            .ProjectTo<BookCopyDto>(_mapper.ConfigurationProvider)
+            .SingleOrDefaultAsync(ct);
     }
 
-    public async Task<Result<BookCopyDto?>> AddAsync(BookCopyFormDto dto, CancellationToken ct = default)
+    public async Task<IEnumerable<BookCopyDto>> GetByBookAsync(int bookId,CancellationToken ct = default)
+    {
+        return await _unitOfWork.BookCopies
+            .GetQueryable(withTracking: false)
+            .Where(c => c.BookId == bookId)
+            .ProjectTo<BookCopyDto>(_mapper.ConfigurationProvider)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<BookCopyDto>> GetCopiesBySerialNumbersAsync(IEnumerable<int> serialNumbers, CancellationToken ct = default)
+    {
+        var selectedSerials = serialNumbers.Distinct().ToList();
+
+        if (selectedSerials.Count == 0)
+            return [];
+
+        var copies = await _unitOfWork.BookCopies
+            .GetQueryable(withTracking: false)
+            .Where(c => selectedSerials.Contains(c.SerialNumber))
+            .ProjectTo<BookCopyDto>(_mapper.ConfigurationProvider)
+            .ToDictionaryAsync(c => c.SerialNumber, ct);
+
+        return selectedSerials
+            .Where(copies.ContainsKey)
+            .Select(s => copies[s])
+            .ToList();
+    }
+
+    public async Task<Result<BookCopyDto?>> AddAsync(BookCopySaveDto dto, CancellationToken ct = default)
     {
         var validationResult = await _validator.ValidateAsync(dto, ct);
         if (!validationResult.IsValid)
@@ -56,19 +83,19 @@ public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
         book.Copies.Add(copy);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result<BookCopyDto?>.Success(_mapper.Map<BookCopyDto>(copy));
+        return _mapper.Map<BookCopyDto>(copy);
     }
 
-    public async Task<Result<BookCopyDto?>> UpdateAsync(BookCopyFormDto dto, CancellationToken ct = default)
+    public async Task<Result<BookCopyDto?>> UpdateAsync(BookCopySaveDto dto, CancellationToken ct = default)
     {
         var validationResult = await _validator.ValidateAsync(dto, ct);
         if (!validationResult.IsValid)
             return Result<BookCopyDto?>.Failure(validationResult.ToValidationErrors());
 
         var copy = await _unitOfWork
-            .BookCopies.GetQueryable(true)
+            .BookCopies.GetQueryable(withTracking: true)
             .Include(c => c.Book)
-            .SingleOrDefaultAsync(c => c.Id == dto.Id, ct);
+            .FirstOrDefaultAsync(c => c.Id == dto.Id, ct);
 
         if (copy is null)
             return Result<BookCopyDto?>.Failure("Book copy not found.");
@@ -78,37 +105,21 @@ public class BookCopiesService(IUnitOfWork unitOfWork, IMapper mapper, IValidato
 
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return Result<BookCopyDto?>.Success(_mapper.Map<BookCopyDto>(copy));
+        return _mapper.Map<BookCopyDto>(copy);
     }
 
 
-    public async Task<DateTimeOffset?> ToggleAsync(int id, CancellationToken ct = default)
+    public async Task<Result<ToggleStatusResult>> ToggleStatusAsync(int id, CancellationToken ct = default)
     {
         var copy = await _unitOfWork.BookCopies.GetByIdAsync(id, ct);
 
         if (copy is null)
-            return null;
+            return Result<ToggleStatusResult>.Failure("Book copy not found.");
 
         copy.IsDeleted = !copy.IsDeleted;
         await _unitOfWork.SaveChangesAsync(ct);
 
-        return copy.LastUpdatedOnUtc;
-    }
-    public async Task<IEnumerable<BookCopyRentalHistoryDto>?> GetRentalHistoryAsync(int id, CancellationToken ct = default)
-    {
-        
-        var copyExists = await _unitOfWork.BookCopies.IsExistsAsync(c => c.Id == id,ct);
-        if (!copyExists)
-            return null;
-
-        var history = await _unitOfWork
-            .RentalCopies.GetQueryable()
-            .Where(rc => rc.BookCopy!.Id == id)
-            .ProjectTo<BookCopyRentalHistoryDto>(_mapper.ConfigurationProvider)
-            .OrderByDescending(c => c.StartDate)
-            .ToListAsync(ct);
-
-        return history;
+        return new ToggleStatusResult(copy.IsDeleted, copy.LastUpdatedOnUtc);
     }
 
 

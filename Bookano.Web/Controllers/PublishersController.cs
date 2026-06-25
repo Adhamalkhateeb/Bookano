@@ -32,7 +32,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(PublisherFormViewModel model, CancellationToken ct = default)
         {
-            var dto = _mapper.Map<PublisherFormDto>(model);
+            var dto = _mapper.Map<PublisherSaveDto>(model);
             var result = await _publisherService.AddAsync(dto, ct);
 
             result.AddToModelState(ModelState);
@@ -62,7 +62,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(PublisherFormViewModel model, CancellationToken ct = default)
         {
-            var dto = _mapper.Map<PublisherFormDto>(model);
+            var dto = _mapper.Map<PublisherSaveDto>(model);
             var result = await _publisherService.UpdateAsync(model.Id, dto, ct);
 
             result.AddToModelState(ModelState);
@@ -78,18 +78,17 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct = default)
         {
-            var lastUpdatedOnUtc = await _publisherService.ToggleAsync(id, ct);
+            var result = await _publisherService.ToggleStatusAsync(id, ct);
 
-            if (!lastUpdatedOnUtc.HasValue)
+            if (result.IsFailure)
                 return NotFound();
 
-            return Ok(lastUpdatedOnUtc.Value.ToString());
+            return Ok(result.Value!.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(PublisherFormViewModel model, CancellationToken ct = default)
         {
-            var dto = _mapper.Map<PublisherFormDto>(model);
-            var isAllowed = await _publisherService.IsPublisherAllowedAsync(dto, ct);
+            var isAllowed = await _publisherService.IsNameAvailableAsync(model.Name, model.Id, ct);
 
             return Json(isAllowed);
         }

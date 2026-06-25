@@ -1,4 +1,4 @@
-﻿@model DashboardViewModel
+@model DashboardViewModel
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -23,15 +23,15 @@
                     <!--begin::Items-->
                     <div class="d-flex flex-wrap align-items-center gap-4">
                         <!--begin::Item-->
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center" title="Active Rentals">
                             <i class="fa-solid fa-book-open-reader text-white fs-3 fs-md-2 me-2"></i>
-                            <span class="fw-semibold text-white fs-7 fs-md-6">@Model.NumberOfCopies+ books</span>
+                            <span class="fw-semibold text-white fs-7 fs-md-6">@Model.NumberOfCopies active rentals</span>
                         </div>
                         <!--end::Item-->
                         <!--begin::Item-->
-                        <div class="d-flex align-items-center">
+                        <div class="d-flex align-items-center" title="Active Members">
                             <i class="fa-solid fa-address-card text-white fs-3 fs-md-2 me-2"></i>
-                            <span class="fw-semibold text-white fs-7 fs-md-6">@Model.NumberOfSubscribers members</span>
+                            <span class="fw-semibold text-white fs-7 fs-md-6">@Model.NumberOfSubscribers active members</span>
                         </div>
                         <!--end::Item-->
                     </div>

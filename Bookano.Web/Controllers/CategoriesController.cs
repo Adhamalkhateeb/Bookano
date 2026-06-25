@@ -1,5 +1,4 @@
 using Bookano.Application.DTOs.Categories;
-using Bookano.Application.Interfaces;
 using Bookano.Application.Services.Categories;
 using Bookano.Web.ViewModels.Categories;
 
@@ -34,7 +33,7 @@ public class CategoriesController(
     [HttpPost]
     public async Task<IActionResult> Create(CategoryFormViewModel model, CancellationToken ct = default)
     {
-        var dto = _mapper.Map<CategoryFormDto>(model);
+        var dto = _mapper.Map<CategorySaveDto>(model);
         var result = await _categoryService.AddAsync(dto, ct);
 
         result.AddToModelState(ModelState);
@@ -64,7 +63,7 @@ public class CategoriesController(
     [HttpPost]
     public async Task<IActionResult> Edit(CategoryFormViewModel model, CancellationToken ct = default)
     {
-        var dto = _mapper.Map<CategoryFormDto>(model);
+        var dto = _mapper.Map<CategorySaveDto>(model);
         var result = await _categoryService.UpdateAsync(model.Id, dto, ct);
 
         result.AddToModelState(ModelState);
@@ -80,18 +79,17 @@ public class CategoriesController(
     [HttpPost]
     public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct = default)
     {
-        var lastUpdatedOnUtc = await _categoryService.ToggleAsync(id, ct);
+        var result = await _categoryService.ToggleStatusAsync(id, ct);
 
-        if (!lastUpdatedOnUtc.HasValue)
+        if (result.IsFailure)
             return NotFound();
 
-        return Ok(lastUpdatedOnUtc.Value.ToString());
+        return Ok(result.Value!.LastUpdatedOnUtc.ToString());
     }
 
     public async Task<IActionResult> AllowItem(CategoryFormViewModel model, CancellationToken ct = default)
     {
-        var dto = _mapper.Map<CategoryFormDto>(model);
-        var isAllowed = await _categoryService.IsCategoryAllowedAsync(dto, ct);
+        var isAllowed = await _categoryService.IsNameAvailableAsync(model.Name, model.Id, ct);
 
         return Json(isAllowed);
     }

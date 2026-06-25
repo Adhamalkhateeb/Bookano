@@ -7,16 +7,12 @@ public class SubscriberProfile : Profile
     public SubscriberProfile()
     {
 
-        CreateMap<Subscriber, SubscriberSearchResultDto>()
-           .ForMember(
-               dest => dest.FullName,
-               opt => opt.MapFrom(src => $"{src.FirstName} {src.LastName}")
-           );       
 
-        CreateMap<Subscriber, SubscriberFormDto>()
+
+        CreateMap<Subscriber, SubscriberSaveDto>()
             .ForMember(dest => dest.GovernorateId, opt => opt.MapFrom(src => src.Area!.GovernorateId));
 
-        CreateMap<SubscriberFormDto, Subscriber>()
+        CreateMap<SubscriberSaveDto, Subscriber>()
             .ForMember(dest => dest.ImageUrl, opt => opt.Ignore())
             .ForMember(dest => dest.ImageThumbnailUrl, opt => opt.Ignore())
             .ForMember(dest => dest.ImagePublicId, opt => opt.Ignore())
@@ -25,5 +21,10 @@ public class SubscriberProfile : Profile
             .ForMember(dest => dest.Rentals, opt => opt.Ignore());
 
         CreateMap<Subscription, SubscriptionDto>();
+
+        CreateMap<Subscriber, SubscriberDto>()
+            .ForMember(dest => dest.GovernorateId, opt => opt.MapFrom(src => src.Area!.GovernorateId))
+            .ForMember(dest => dest.Area, opt => opt.MapFrom(src => src.Area!.Name))
+            .ForMember(dest => dest.Governorate, opt => opt.MapFrom(src => src.Area!.Governorate!.Name));
     }
 }

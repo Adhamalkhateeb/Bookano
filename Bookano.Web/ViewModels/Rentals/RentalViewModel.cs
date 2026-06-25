@@ -1,4 +1,4 @@
-﻿namespace Bookano.Web.ViewModels.Rentals
+namespace Bookano.Web.ViewModels.Rentals
 {
     public class RentalViewModel
     {
@@ -12,8 +12,8 @@
 
         public IEnumerable<RentalCopyViewModel> RentalCopies { get; set; } = [];
 
-        public int TotalDelayInDays { get; set; }
-        public int NumberOfCopies { get; set; }
-        public int ActiveCopies { get; set; }
+        public int TotalDelayInDays => RentalCopies.Sum(c => c.DelayInDays);
+        public int NumberOfCopies => RentalCopies.Count();
+        public int ActiveCopies => RentalCopies.Count(c => c.ReturnDate == null);
     }
 }

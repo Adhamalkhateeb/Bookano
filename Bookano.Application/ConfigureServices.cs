@@ -8,11 +8,9 @@ using Bookano.Application.Services.Publishers;
 using Bookano.Application.Services.Rentals;
 using Bookano.Application.Services.Subscribers;
 using Bookano.Application.Services.Users;
-using Bookano.Application.Services.Dashboard;
-using Bookano.Application.Services.Home;
-using Bookano.Application.Services.Search;
 using Bookano.Application.Services.Reports;
 using Microsoft.Extensions.DependencyInjection;
+using Bookano.Application.Services.Governorates;
 
 namespace Bookano.Application
 {
@@ -22,22 +20,21 @@ namespace Bookano.Application
         {
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddAutoMapper(_ => { }, Assembly.GetExecutingAssembly());
-            services.AddTransient(typeof(DataTableQueryBuilder<>));
+            services.AddTransient(typeof(PaginationQueryBuilder<>));
 
             services.AddScoped<IAreaService, AreaService>();
             services.AddScoped<IAuthorService, AuthorService>();
             services.AddScoped<IBookService, BookService>();
             services.AddScoped<IBookCopiesService, BookCopiesService>();
             services.AddScoped<ICategoryService, CategoryService>();
+            services.AddScoped<IRentalValidationService, RentalValidationService>();
             services.AddScoped<IRentalService, RentalService>();
             services.AddScoped<IPublisherService, PublisherService>();
             services.AddScoped<IGovernorateService, GovernorateService>();
             services.AddScoped<ISubscriberService, SubscriberService>();
             services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IDashboardService, DashboardService>();
-            services.AddScoped<IHomeService, HomeService>();
-            services.AddScoped<ISearchService, SearchService>();
             services.AddScoped<IReportsService, ReportsService>();
+            services.AddScoped<Bookano.Application.Services.Subscriptions.ISubscriptionService, Bookano.Application.Services.Subscriptions.SubscriptionService>();
             return services;
         }
     }

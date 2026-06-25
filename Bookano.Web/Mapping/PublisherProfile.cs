@@ -10,7 +10,7 @@ public class PublisherProfile : Profile
     {
         CreateMap<PublisherDto, PublisherViewModel>();
         CreateMap<PublisherDto, PublisherFormViewModel>().ReverseMap();
-        CreateMap<PublisherFormViewModel, PublisherFormDto>().ReverseMap();
+        CreateMap<PublisherFormViewModel, PublisherSaveDto>().ReverseMap();
 
 
         CreateMap<PublisherDto, SelectListItem>()

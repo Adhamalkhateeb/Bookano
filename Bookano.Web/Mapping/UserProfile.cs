@@ -9,7 +9,7 @@ namespace Bookano.Web.Mapping
         {
             CreateMap<UserDto, UserViewModel>();
 
-            CreateMap<UserFormViewModel, UserFormDto>().ReverseMap();
+            CreateMap<UserFormViewModel, UserSaveDto>().ReverseMap();
 
             CreateMap<ResetPasswordFormViewModel, UserResetPasswordDto>();
         }

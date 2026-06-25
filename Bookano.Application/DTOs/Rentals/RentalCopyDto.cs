@@ -1,8 +1,12 @@
+using Bookano.Application.DTOs.BookCopies;
+using Bookano.Application.DTOs.Subscribers;
+
 namespace Bookano.Application.DTOs.Rentals;
 
 public class RentalCopyDto
 {
-    public RentalBookCopyDto? BookCopy { get; set; }
+    public BookCopyDto? BookCopy { get; set; }
+    public SubscriberDto? Subscriber { get; set; }
 
     public DateOnly RentalDate { get; set; }
 
@@ -13,20 +17,4 @@ public class RentalCopyDto
     public DateOnly? ExtendedOn { get; set; }
 
     public bool? IsReturned { get; set; }
-
-    public int DelayInDays
-    {
-        get
-        {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-
-            if (ReturnDate.HasValue && ReturnDate.Value > EndDate)
-                return ReturnDate.Value.DayNumber - EndDate.DayNumber;
-
-            if (!ReturnDate.HasValue && today > EndDate)
-                return today.DayNumber - EndDate.DayNumber;
-
-            return 0;
-        }
-    }
 }

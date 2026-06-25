@@ -1,4 +1,5 @@
-﻿using Bookano.Application.DTOs.BookCopies;
+using Bookano.Application.DTOs.BookCopies;
+using Bookano.Application.DTOs.Rentals;
 using Bookano.Web.ViewModels.BookCopies;
 
 namespace Bookano.Web.Mapping
@@ -8,23 +9,14 @@ namespace Bookano.Web.Mapping
         public BookCopyProfile()
         {
             CreateMap<BookCopyDto, BookCopyRowViewModel>();
-
-            //CreateMap<BookCopy, BookCopyViewModel>()
-            //    .ForMember(dest => dest.BookTitle, opt => opt.MapFrom(bc => bc.Book!.Title))
-            //    .ForMember(dest => dest.BookImageUrl, opt => opt.MapFrom(bc => bc.Book!.ImageUrl))
-            //    .ForMember(
-            //        dest => dest.BookThumbnailUrl,
-            //        opt => opt.MapFrom(bc => bc.Book!.ImageThumbnailUrl)
-            //    )
-            //    .ForMember(dest => dest.BookId, opt => opt.MapFrom(bc => bc.Book!.Id));
-
-            CreateMap<BookCopy, BookCopyFormViewModel>();
-
-            CreateMap<BookCopyFormViewModel, BookCopyFormDto>();
-
             CreateMap<BookCopyDto, BookCopyFormViewModel>();
-            CreateMap<BookCopyRentalHistoryDto, CopyHistoyViewModel>();
 
-        }
+
+            CreateMap<BookCopyFormViewModel, BookCopySaveDto>();
+
+            CreateMap<RentalCopyDto, CopyHistoyViewModel>()
+                .ForMember(dest => dest.SubscriberName, opt => opt.MapFrom(src => $"{src.Subscriber!.FirstName} {src.Subscriber!.LastName}"))
+                .ForMember(dest => dest.SubscriberMobile, opt => opt.MapFrom(src => src.Subscriber!.MobileNumber))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => src.RentalDate));        }
     }
 }

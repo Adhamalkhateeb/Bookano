@@ -1,6 +1,6 @@
 using Bookano.Application.Common.Interfaces;
+using Bookano.Application.DTOs.Dashboard;
 using Bookano.Application.DTOs.Subscribers;
-using Bookano.Domain.Common.Constants;
 using Bookano.Domain.Enums;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,7 +12,7 @@ public sealed class SubscriberService(
     IMapper mapper,
     [FromKeyedServices("local")] IImageService imageService,
     ISubscriberNotificationService subscriberNotificationService,
-    IValidator<SubscriberFormDto> validator,
+    IValidator<SubscriberSaveDto> validator,
     ILogger<SubscriberService> logger
 ) : ISubscriberService
 {
@@ -21,154 +21,135 @@ public sealed class SubscriberService(
     private readonly IImageService _imageService = imageService;
     private readonly ISubscriberNotificationService _subscriberNotificationService =
         subscriberNotificationService;
-    private readonly IValidator<SubscriberFormDto> _validator = validator;
+    private readonly IValidator<SubscriberSaveDto> _validator = validator;
     private readonly ILogger<SubscriberService> _logger = logger;
 
-    public async Task<SubscriberSearchResultDto?> SearchAsync(
-        string value,
-        CancellationToken ct = default
-    )
+
+    public async Task<int> GetActiveSubscribersCountAsync(CancellationToken ct = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        return await _unitOfWork.Subscribers.CountAsync(
+            s => !s.IsDeleted && !s.IsBlackListed && s.Subscriptions.Any(sub => sub.EndDate >= today), ct);
+    }
+
+    public async Task<SubscriberDto?> SearchAsync(string value,CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(value))
             return null;
 
         return await _unitOfWork
-            .Subscribers.GetQueryable()
-            .AsNoTracking()
+            .Subscribers.GetQueryable(withTracking:false)
             .Where(s => s.MobileNumber == value || s.NationalId == value || s.Email == value)
-            .ProjectTo<SubscriberSearchResultDto>(_mapper.ConfigurationProvider)
+            .ProjectTo<SubscriberDto>(_mapper.ConfigurationProvider)
             .SingleOrDefaultAsync(ct);
     }
 
-    public async Task<SubscriberDto?> GetDetails(int id, CancellationToken ct = default)
+    public async Task<SubscriberDto?> GetByIdAsync(int id, CancellationToken ct = default)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
         return await _unitOfWork
-            .Subscribers.GetQueryable()
-            .AsSplitQuery()
+            .Subscribers.GetQueryable(withTracking: false)
             .Where(s => s.Id == id)
-            .Select(s => new SubscriberDto
-            {
-                Id = s.Id,
-                FullName = $"{s.FirstName} {s.LastName}",
-                DateOfBirth = s.DateOfBirth,
-                NationalId = s.NationalId,
-                MobileNumber = s.MobileNumber,
-                Email = s.Email,
-                ImageUrl = s.ImageUrl,
-                ImageThumbnailUrl = s.ImageThumbnailUrl,
-                Area = s.Area!.Name,
-                Governorate = s.Area.Governorate!.Name,
-                Address = s.Address,
-                IsBlackListed = s.IsBlackListed,
-                CreatedOnUtc = s.CreatedOnUtc,
-                Status = s.IsBlackListed 
-                    ? SubscriberStatus.Banned 
-                    : (!s.Subscriptions.Any() || s.Subscriptions.Max(sub => sub.EndDate) < today) 
-                        ? SubscriberStatus.Inactive 
-                        : SubscriberStatus.Active,
-                CanAddRental = !s.IsBlackListed
-                    && s.Subscriptions.Any()
-                    && s.Subscriptions.Max(sub => sub.EndDate) >= today.AddDays(RentalConstants.RentalDuration)
-                    && s.Rentals.SelectMany(r => r.RentalCopies).Count(rc => rc.ReturnDate == null) < RentalConstants.MaxAllowedCopies,
-                Subscriptions = s
-                    .Subscriptions.OrderByDescending(subscription => subscription.EndDate)
-                    .Select(subscription => new SubscriptionDto
-                    {
-                        Id = subscription.Id,
-                        StartDate = subscription.StartDate,
-                        EndDate = subscription.EndDate,
-                        CreatedOnUtc = subscription.CreatedOnUtc,
-                    }),
-                Rentals = s
-                    .Rentals.OrderByDescending(rental => rental.CreatedOnUtc)
-                    .Select(rental => new SubscriberRentalDto
-                    {
-                        Id = rental.Id,
-                        StartDate = rental.StartDate,
-                        CreatedOnUtc = rental.CreatedOnUtc,
-                        NumberOfCopies = rental.RentalCopies.Count(),
-                        ActiveCopies = rental.RentalCopies.Count(copy => copy.ReturnDate == null),
-                        TotalDelayInDays = rental.RentalCopies.Sum(copy =>
-                        copy.ReturnDate.HasValue ? (
-                            copy.ReturnDate.Value.DayNumber > copy.EndDate.DayNumber
-                            ? copy.ReturnDate.Value.DayNumber - copy.EndDate.DayNumber : 0 )
-                            : ( today.DayNumber > copy.EndDate.DayNumber
-                            ? today.DayNumber - copy.EndDate.DayNumber : 0 )
-                            ),
-                    }),
-            })
+            .ProjectTo<SubscriberDto>(_mapper.ConfigurationProvider)
             .SingleOrDefaultAsync(ct);
     }
 
-    public Task<SubscriberFormDto?> GetFormAsync(int id, CancellationToken ct = default)
+    public async Task<Result<int>> CreateAsync(SubscriberSaveDto dto,CancellationToken ct = default)
     {
-        return _unitOfWork
-            .Subscribers.GetQueryable()
-            .Where(s => s.Id == id)
-            .ProjectTo<SubscriberFormDto>(_mapper.ConfigurationProvider)
-            .SingleOrDefaultAsync(ct);
-    }
-
-    public async Task<Result<int>> CreateAsync(
-        SubscriberFormDto dto,
-        CancellationToken ct = default
-    )
-    {
-        var validationResult = await _validator.ValidateAsync(dto, ct);
-        if (!validationResult.IsValid)
-            return Result<int>.Failure(validationResult.ToValidationErrors());
-
-        var uniquenessErrors = await ValidateUniquenessAsync(0, dto, ct);
-        if (uniquenessErrors.Count > 0)
-            return Result<int>.Failure(uniquenessErrors);
+        var validationError = await ValidateSubscriberSaveDtoAsync(dto, ct);
+        if (validationError is not null) return Result<int>.Failure(validationError);
 
         var subscriber = _mapper.Map<Subscriber>(dto);
 
-        string? uploadedImageId = null;
+        if (dto.Image is null)
+            return Result<int>.Failure(new List<ValidationError> { new(nameof(dto.Image), Error.RequiredField) });
 
-        if (dto.Image is not null)
+        var (uploadResult, oldImagePublicId) = await ProcessImageUploadAsync(subscriber, dto, ct);
+        if (uploadResult?.IsSuccess == false)
+            return Result<int>.Failure(new List<ValidationError> { new(nameof(dto.Image), uploadResult.ErrorMessage!) });
+
+        subscriber.Subscriptions.Add(new Subscription
         {
-            await using var stream = dto.Image.Stream;
-            var uploadResult = await _imageService.UploadAsync(
-                stream,
-                dto.Image.FileName,
-                "subscribers",
-                null,
-                ct
-            );
+            StartDate = DateOnly.FromDateTime(DateTime.Today),
+            EndDate = DateOnly.FromDateTime(DateTime.Today.AddDays((int)SubscriptionType.Yearly)),
+        });
 
-            if (!uploadResult.IsSuccess)
-                return Result<int>.Failure(
-                    new List<ValidationError>
-                    {
-                        new ValidationError(nameof(dto.Image), uploadResult.ErrorMessage!),
-                    }
-                );
+        return await PersistCreateAsync(subscriber, uploadResult?.PublicId, ct);
+    }
 
-            uploadedImageId = uploadResult.PublicId;
+    public async Task<Result<int>> UpdateAsync(SubscriberSaveDto dto,CancellationToken ct = default)
+    {
+        var validationError = await ValidateSubscriberSaveDtoAsync(dto, ct);
+        if (validationError is not null) return Result<int>.Failure(validationError);
+
+        var subscriber = await _unitOfWork.Subscribers.GetByIdAsync(dto.Id, ct);
+        if (subscriber is null) return Result<int>.Failure("Subscriber not found.");
+
+        _mapper.Map(dto, subscriber);
+
+        var (uploadResult, oldImagePublicId) = await ProcessImageUploadAsync(subscriber, dto, ct);
+        if (uploadResult?.IsSuccess == false)
+            return Result<int>.Failure(new List<ValidationError> { new(nameof(dto.Image), uploadResult.ErrorMessage!) });
+
+        return await PersistUpdateAsync(subscriber, uploadResult?.PublicId, oldImagePublicId, ct);
+    }
+
+    public async Task<bool> CanRentAsync(int subscriberId, CancellationToken ct = default)
+    {
+        var subscriberInfo = await _unitOfWork.Subscribers.GetQueryable(withTracking: false)
+            .Where(s => s.Id == subscriberId && !s.IsDeleted)
+            .Select(s => new {
+                s.IsBlackListed,
+                LatestSubscriptionEndDate = s.Subscriptions.Max(sb => sb.EndDate),
+                UnreturnedCopiesCount = s.Rentals.SelectMany(r => r.RentalCopies).Count(rc => rc.ReturnDate == null)
+            })
+            .SingleOrDefaultAsync(ct);
+
+        if (subscriberInfo == null) return false;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var eligibility = Subscriber.ValidateRentalEligibility(
+            subscriberInfo.IsBlackListed,
+            subscriberInfo.LatestSubscriptionEndDate,
+            subscriberInfo.UnreturnedCopiesCount,
+            today
+        );
+
+        return eligibility == RentalEligibility.Eligible;
+    }
+
+    private async Task<IEnumerable<ValidationError>?> ValidateSubscriberSaveDtoAsync(SubscriberSaveDto dto, CancellationToken ct)
+    {
+        var validationResult = await _validator.ValidateAsync(dto, ct);
+        if (!validationResult.IsValid) return validationResult.ToValidationErrors();
+
+        var uniquenessErrors = await ValidateUniquenessAsync(dto.Id, dto, ct);
+        if (uniquenessErrors.Count > 0) return uniquenessErrors;
+
+        return null;
+    }
+
+    private async Task<(ImageUploadResult? UploadResult, string? OldImagePublicId)> ProcessImageUploadAsync(
+        Subscriber subscriber, SubscriberSaveDto dto, CancellationToken ct)
+    {
+        if (dto.Image is null) return (null, null);
+
+        var oldImagePublicId = subscriber.ImagePublicId;
+
+        await using var stream = dto.Image.Stream;
+        var uploadResult = await _imageService.UploadAsync(stream, dto.Image.FileName, "subscribers", null, ct);
+
+        if (uploadResult.IsSuccess)
+        {
             subscriber.ImageUrl = uploadResult.Url!;
             subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
             subscriber.ImagePublicId = uploadResult.PublicId!;
         }
-        else
-        {
-            return Result<int>.Failure(
-                new List<ValidationError> { new(nameof(dto.Image), Error.RequiredField) }
-            );
-        }
 
-        subscriber.Subscriptions.Add(
-            new Subscription
-            {
-                StartDate = DateOnly.FromDateTime(DateTime.Today),
-                EndDate = DateOnly.FromDateTime(
-                    DateTime.Today.AddDays((int)SubscriptionType.Yearly)
-                ),
-            }
-        );
+        return (uploadResult, oldImagePublicId);
+    }
 
+    private async Task<Result<int>> PersistCreateAsync(Subscriber subscriber, string? uploadedImageId, CancellationToken ct)
+    {
         _unitOfWork.Subscribers.Add(subscriber);
 
         try
@@ -192,178 +173,56 @@ public sealed class SubscriberService(
             _logger.LogError(ex, "Failed to send welcome notification.");
         }
 
-        return Result<int>.Success(subscriber.Id);
+        return subscriber.Id;
     }
 
-    public async Task<Result<int>> UpdateAsync(
-        SubscriberFormDto dto,
-        CancellationToken ct = default
-    )
+    private async Task<Result<int>> PersistUpdateAsync(Subscriber subscriber, string? newUploadedPublicId, string? oldImagePublicId, CancellationToken ct)
     {
-        var validationResult = await _validator.ValidateAsync(dto, ct);
-        if (!validationResult.IsValid)
-            return Result<int>.Failure(validationResult.ToValidationErrors());
-
-        var subscriber = await _unitOfWork.Subscribers.GetByIdAsync(dto.Id, ct);
-
-        if (subscriber is null)
-            return Result<int>.Failure("Subscriber not found.");
-
-        var uniquenessErrors = await ValidateUniquenessAsync(dto.Id, dto, ct);
-        if (uniquenessErrors.Count > 0)
-            return Result<int>.Failure(uniquenessErrors);
-
-        var oldImagePublicId = subscriber.ImagePublicId;
-        ImageUploadResult? uploadResult = null;
-
-        if (dto.Image is not null)
-        {
-            await using var stream = dto.Image.Stream;
-            uploadResult = await _imageService.UploadAsync(
-                stream,
-                dto.Image.FileName,
-                "subscribers",
-                null,
-                ct
-            );
-
-            if (!uploadResult.IsSuccess)
-                return Result<int>.Failure(
-                    new List<ValidationError>
-                    {
-                        new ValidationError(nameof(dto.Image), uploadResult.ErrorMessage!),
-                    }
-                );
-        }
-
-        _mapper.Map(dto, subscriber);
-
-        if (uploadResult?.IsSuccess == true)
-        {
-            subscriber.ImageUrl = uploadResult.Url!;
-            subscriber.ImageThumbnailUrl = _imageService.GetThumbnail(uploadResult.PublicId!);
-            subscriber.ImagePublicId = uploadResult.PublicId!;
-        }
-
         try
         {
             await _unitOfWork.SaveChangesAsync(ct);
         }
         catch (DbUpdateException)
         {
-            if (uploadResult?.IsSuccess == true && !string.IsNullOrEmpty(uploadResult.PublicId))
-                await _imageService.DeleteAsync(uploadResult.PublicId, ct);
+            if (!string.IsNullOrEmpty(newUploadedPublicId))
+                await _imageService.DeleteAsync(newUploadedPublicId, ct);
 
             return Result<int>.Failure("Could not update subscriber.");
         }
 
-        if (uploadResult?.IsSuccess == true && !string.IsNullOrEmpty(oldImagePublicId))
+        if (!string.IsNullOrEmpty(newUploadedPublicId) && !string.IsNullOrEmpty(oldImagePublicId))
             await _imageService.DeleteAsync(oldImagePublicId, ct);
 
-        return Result<int>.Success(subscriber.Id);
+        return subscriber.Id;
     }
 
-    public async Task<Result<SubscriptionDto>> RenewSubscriptionAsync(
-        int id,
-        CancellationToken ct = default
-    )
+    public async Task<bool> IsEmailAvailableAsync(string email,int excludId,CancellationToken ct = default)
     {
-        var data = await _unitOfWork
-            .Subscribers.GetQueryable(true)
-            .Where(s => s.Id == id)
-            .Select(s => new
-            {
-                subscriber = s,
-                s.IsBlackListed,
-                LastEndDate = (DateOnly?)s.Subscriptions.Max(x => x.EndDate),
-            })
-            .SingleOrDefaultAsync(ct);
-
-        if (data is null)
-            return Result<SubscriptionDto>.Failure("Subscriber not found.");
-
-        if (data.IsBlackListed)
-            return Result<SubscriptionDto>.Failure(Error.BlackListedSubscriber);
-
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
-        var startDate =
-            data.LastEndDate is null || today > data.LastEndDate
-                ? today
-                : data.LastEndDate.Value.AddDays(1);
-
-        var newSubscription = new Subscription
-        {
-            Subscriber = data.subscriber,
-            StartDate = startDate,
-            EndDate = startDate.AddYears(1),
-        };
-
-        _unitOfWork.Subscriptions.Add(newSubscription);
-        await _unitOfWork.SaveChangesAsync(ct);
-
-        try
-        {
-            await _subscriberNotificationService.SendSubscriptionRenewalAsync(newSubscription);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send renewal notification.");
-        }
-
-        return Result<SubscriptionDto>.Success(_mapper.Map<SubscriptionDto>(newSubscription));
+        return !await _unitOfWork.Subscribers.IsExistsAsync(x => x.Email == email && x.Id != excludId, ct);
     }
 
-    public async Task<bool> IsEmailAvailableAsync(
-        int id,
-        string email,
-        CancellationToken ct = default
-    )
+    public async Task<bool> IsMobileNumberAvailableAsync(string mobileNumber, int excludId, CancellationToken ct = default)
     {
-        return !await _unitOfWork.Subscribers.IsExistsAsync(
-            x => x.Email == email && x.Id != id,
-            ct
-        );
+        return !await _unitOfWork.Subscribers.IsExistsAsync(x => x.MobileNumber == mobileNumber && x.Id != excludId, ct);
     }
 
-    public async Task<bool> IsMobileNumberAvailableAsync(
-        int id,
-        string mobileNumber,
-        CancellationToken ct = default
-    )
+    public async Task<bool> IsNationalIdAvailableAsync( string nationalId,int excludId, CancellationToken ct = default)
     {
-        return !await _unitOfWork.Subscribers.IsExistsAsync(
-            x => x.MobileNumber == mobileNumber && x.Id != id,
-            ct
-        );
-    }
-
-    public async Task<bool> IsNationalIdAvailableAsync(
-        int id,
-        string nationalId,
-        CancellationToken ct = default
-    )
-    {
-        return !await _unitOfWork.Subscribers.IsExistsAsync(
-            x => x.NationalId == nationalId && x.Id != id,
-            ct
-        );
+        return !await _unitOfWork.Subscribers.IsExistsAsync(x => x.NationalId == nationalId && x.Id != excludId,ct);
     }
 
     private async Task<List<ValidationError>> ValidateUniquenessAsync(
         int id,
-        SubscriberFormDto dto,
+        SubscriberSaveDto dto,
         CancellationToken ct
     )
     {
         var errors = new List<ValidationError>();
 
-        if (!await IsEmailAvailableAsync(id, dto.Email, ct))
-            errors.Add(
-                new ValidationError(nameof(dto.Email), string.Format(Error.Duplicated, "Email"))
-            );
+        if (!await IsEmailAvailableAsync(dto.Email,id, ct))
+            errors.Add(new ValidationError(nameof(dto.Email), string.Format(Error.Duplicated, "Email")));
 
-        if (!await IsMobileNumberAvailableAsync(id, dto.MobileNumber, ct))
+        if (!await IsMobileNumberAvailableAsync(dto.MobileNumber,id, ct))
             errors.Add(
                 new ValidationError(
                     nameof(dto.MobileNumber),
@@ -371,7 +230,7 @@ public sealed class SubscriberService(
                 )
             );
 
-        if (!await IsNationalIdAvailableAsync(id, dto.NationalId, ct))
+        if (!await IsNationalIdAvailableAsync(dto.NationalId,id, ct))
             errors.Add(
                 new ValidationError(
                     nameof(dto.NationalId),
@@ -381,4 +240,39 @@ public sealed class SubscriberService(
 
         return errors;
     }
+
+    public async Task<IEnumerable<SubscriberDto>> GetSubscribersWithRentalsAsync(CancellationToken ct = default)
+    {
+        return await _unitOfWork.Subscribers.GetQueryable()
+            .Where(s => !s.IsDeleted && s.Rentals.Any(r => r.RentalCopies.Any(rc => !rc.ReturnDate.HasValue)))
+            .ProjectTo<SubscriberDto>(_mapper.ConfigurationProvider)
+            .ToListAsync(ct);
+    }
+
+
+
+    public async Task<IEnumerable<SubscriberDto>> GetSubscribersWithOverdueRentalsAsync(CancellationToken ct = default)
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        return await _unitOfWork.Subscribers.GetQueryable(withTracking: false)
+            .Where(s => !s.IsDeleted && s.Rentals.Any(r => r.RentalCopies.Any(rc => !rc.ReturnDate.HasValue && rc.EndDate < today)))
+            .ProjectTo<SubscriberDto>(_mapper.ConfigurationProvider)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IEnumerable<ChartItemDto>> GetSubscribersPerGovernorateAsync(CancellationToken ct = default)
+    {
+        return await _unitOfWork
+            .Subscribers.GetQueryable()
+            .Where(s => !s.IsDeleted)
+            .GroupBy(s => new { GovernorateName = s.Area!.Governorate!.Name })
+            .Select(g => new ChartItemDto
+            {
+                Label = g.Key.GovernorateName,
+                Value = g.Count().ToString(),
+            })
+            .ToListAsync(ct);
+    }
+
 }
+

@@ -10,8 +10,8 @@ public sealed class UserService(
     RoleManager<IdentityRole> roleManager,
     IUserNotificationService userNotificationService,
     IMapper mapper,
-    DataTableQueryBuilder<ApplicationUser> builder,
-    IValidator<UserFormDto> validator,
+    PaginationQueryBuilder<ApplicationUser> builder,
+    IValidator<UserSaveDto> validator,
     IValidator<UserResetPasswordDto> resetPasswordValidator
 ) : IUserService
 {
@@ -19,8 +19,8 @@ public sealed class UserService(
     private readonly RoleManager<IdentityRole> _roleManager = roleManager;
     private readonly IUserNotificationService _userNotificationService = userNotificationService;
     private readonly IMapper _mapper = mapper;
-    private readonly DataTableQueryBuilder<ApplicationUser> _builder = builder;
-    private readonly IValidator<UserFormDto> _validator = validator;
+    private readonly PaginationQueryBuilder<ApplicationUser> _builder = builder;
+    private readonly IValidator<UserSaveDto> _validator = validator;
     private readonly IValidator<UserResetPasswordDto> _resetPasswordValidator = resetPasswordValidator;
 
     private static readonly List<string> AllowedSortColumns =
@@ -28,8 +28,8 @@ public sealed class UserService(
             "Id", "FullName", "UserName", "Email", "IsDeleted", "CreatedOnUtc", "LastUpdatedOnUtc"
         ];
 
-    public async Task<DataTableResult<UserDto>> GetPagedAsync(
-        DataTableRequest request,
+    public async Task<DataGridResult<UserDto>> GetPagedAsync(
+        PaginationFilterQuery request,
         CancellationToken ct = default)
     {
         var query = _userManager.Users.AsQueryable();
@@ -47,19 +47,19 @@ public sealed class UserService(
             .ExecuteAsync<UserDto>(ct);
     }
 
-    public async Task<UserFormDto?> GetUserFormAsync(string id, CancellationToken ct = default)
+    public async Task<UserSaveDto?> GetUserForEditAsync(string id, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(id);
         if (user is null)
             return null;
 
-        var dto = _mapper.Map<UserFormDto>(user);
+        var dto = _mapper.Map<UserSaveDto>(user);
         dto.SelectedRoles = await _userManager.GetRolesAsync(user);
         return dto;
     }
 
     public async Task<Result<string>> CreateAsync(
-        UserFormDto dto,
+        UserSaveDto dto,
         Func<string, string, string> callbackUrlProvider,
         CancellationToken ct = default)
     {
@@ -92,7 +92,7 @@ public sealed class UserService(
         return Result<string>.Failure(string.Join(", ", result.Errors.Select(e => e.Description)));
     }
 
-    public async Task<Result<string>> UpdateAsync(UserFormDto dto, CancellationToken ct = default)
+    public async Task<Result<string>> UpdateAsync(UserSaveDto dto, CancellationToken ct = default)
     {
         var validationResult = await _validator.ValidateAsync(dto, ct);
         if (!validationResult.IsValid)

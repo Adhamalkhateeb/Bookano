@@ -9,7 +9,7 @@ public class CategoryProfile : Profile
     {
         CreateMap<CategoryDto, CategoryViewModel>();
         CreateMap<CategoryDto, CategoryFormViewModel>().ReverseMap();
-        CreateMap<CategoryFormViewModel, CategoryFormDto>().ReverseMap();
+        CreateMap<CategoryFormViewModel, CategorySaveDto>().ReverseMap();
 
 
         CreateMap<CategoryDto, SelectListItem>()

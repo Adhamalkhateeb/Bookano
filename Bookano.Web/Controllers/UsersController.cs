@@ -25,15 +25,15 @@ namespace Bookano.Web.Controllers
         {
             var request = DataTableRequestBinder.Bind(Request.Form);
 
-            var data = await _userService.GetPagedAsync(request, ct);
+            var result = await _userService.GetPagedAsync(request, ct);
 
-            var mappedData = _mapper.Map<IEnumerable<UserViewModel>>(data.Data);
+            var mappedData = _mapper.Map<IEnumerable<UserViewModel>>(result.Data);
 
             return Ok(
                 new
                 {
-                    recordsTotal = data.RecordsTotal,
-                    recordsFiltered = data.RecordsFiltered,
+                    recordsTotal = result.TotalCount,
+                    recordsFiltered = result.FilteredCount,
                     data = mappedData,
                 }
             );
@@ -56,7 +56,7 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var dto = _mapper.Map<UserFormDto>(model);
+            var dto = _mapper.Map<UserSaveDto>(model);
 
             var result = await _userService.CreateAsync(
                 dto,
@@ -81,12 +81,12 @@ namespace Bookano.Web.Controllers
         [AjaxOnly]
         public async Task<IActionResult> Edit(string id, CancellationToken ct)
         {
-            var userFormDto = await _userService.GetUserFormAsync(id, ct);
+            var userSaveDto = await _userService.GetUserForEditAsync(id, ct);
 
-            if (userFormDto is null)
+            if (userSaveDto is null)
                 return NotFound();
 
-            var viewModel = _mapper.Map<UserFormViewModel>(userFormDto);
+            var viewModel = _mapper.Map<UserFormViewModel>(userSaveDto);
             viewModel.Roles = await GetRolesSelectItemsAsync(ct);
 
             return PartialView("_Form", viewModel);
@@ -98,7 +98,7 @@ namespace Bookano.Web.Controllers
             if (!ModelState.IsValid)
                 return BadRequest();
 
-            var dto = _mapper.Map<UserFormDto>(model);
+            var dto = _mapper.Map<UserSaveDto>(model);
 
             var result = await _userService.UpdateAsync(dto, ct);
 
@@ -125,12 +125,12 @@ namespace Bookano.Web.Controllers
         [AjaxOnly]
         public async Task<IActionResult> ResetPassword(string id, CancellationToken ct)
         {
-            var userFormDto = await _userService.GetUserFormAsync(id, ct);
+            var userSaveDto = await _userService.GetUserForEditAsync(id, ct);
 
-            if (userFormDto is null)
+            if (userSaveDto is null)
                 return NotFound();
 
-            var viewModel = new ResetPasswordFormViewModel { Id = userFormDto.Id! };
+            var viewModel = new ResetPasswordFormViewModel { Id = userSaveDto.Id! };
 
             return PartialView("_ResetPassword", viewModel);
         }

@@ -1,5 +1,7 @@
-﻿using Bookano.Application.DTOs.BookCopies;
+using Bookano.Application.DTOs.BookCopies;
 using Bookano.Application.Services.BookCopies;
+using Bookano.Application.Services.Books;
+using Bookano.Application.Services.Rentals;
 using Bookano.Web.ViewModels.BookCopies;
 
 namespace Bookano.Web.Controllers
@@ -7,22 +9,22 @@ namespace Bookano.Web.Controllers
     [Authorize(Roles = AppRoles.Archive)]
     public class BookCopiesController(
         IBookCopiesService bookCopiesService,
+        IBookService bookService,
+        IRentalService rentalService,
         IMapper mapper
     ) : Controller
     {
         private readonly IBookCopiesService _bookCopiesService = bookCopiesService;
+        private readonly IBookService _bookService = bookService;
+        private readonly IRentalService _rentalService = rentalService;
         private readonly IMapper _mapper = mapper;
-
-        public IActionResult Index()
-        {
-            return View();
-        }
 
         [HttpGet]
         [AjaxOnly]
         public async Task<IActionResult> Create(int bookId)
         {
-            var book = await _bookCopiesService.GetBook(bookId);
+            var book = await _bookService.GetByIdAsync(bookId);
+
             if (book is null)
                 return NotFound();
 
@@ -38,7 +40,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(BookCopyFormViewModel model,CancellationToken ct)
         {
-            var dto = _mapper.Map<BookCopyFormDto>(model);
+            var dto = _mapper.Map<BookCopySaveDto>(model);
             
             var result = await _bookCopiesService.AddAsync(dto,ct);
             if (result.IsFailure)
@@ -71,7 +73,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(BookCopyFormViewModel model,CancellationToken ct)
         {
-            var dto = _mapper.Map<BookCopyFormDto>(model);
+            var dto = _mapper.Map<BookCopySaveDto>(model);
 
             var result = await _bookCopiesService.UpdateAsync(dto,ct);
             if (result.IsFailure)
@@ -88,20 +90,21 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id)
         {
-            var lastUpdatedOnUtc = await _bookCopiesService.ToggleAsync(id);
-            if (lastUpdatedOnUtc is null)
+            var result = await _bookCopiesService.ToggleStatusAsync(id);
+            if (result.IsFailure)
                 return NotFound();
 
-            return Ok(lastUpdatedOnUtc.Value.ToString());
+            return Ok(result.Value!.LastUpdatedOnUtc.ToString());
         }
 
-        public async Task<IActionResult> RentalHistory(int id,CancellationToken ct)
+        public async Task<IActionResult> RentalHistory(int id, CancellationToken ct)
         {
-            var histroy = await _bookCopiesService.GetRentalHistoryAsync(id);
+            var history = await _rentalService.GetCopyRentalHistoryAsync(id, ct);
 
-            var viewModel = _mapper.Map<IEnumerable<CopyHistoyViewModel>>(histroy);
-            if (viewModel is null)
+            if (history is null)
                 return NotFound();
+
+            var viewModel = _mapper.Map<IEnumerable<CopyHistoyViewModel>>(history);
 
             return View(viewModel);
 

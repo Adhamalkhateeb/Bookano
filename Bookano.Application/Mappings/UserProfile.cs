@@ -8,7 +8,7 @@ public class UserProfile : Profile
     {
         CreateMap<ApplicationUser, UserDto>();
 
-        CreateMap<UserFormDto, ApplicationUser>()
+        CreateMap<UserSaveDto, ApplicationUser>()
             .ForMember(dest => dest.NormalizedEmail, opt => opt.MapFrom(src => src.Email.ToUpper()))
             .ForMember(dest => dest.NormalizedUserName, opt => opt.MapFrom(src => src.UserName.ToUpper()))
             .ReverseMap();

@@ -1,4 +1,4 @@
-﻿using Bookano.Application.DTOs.Authors;
+using Bookano.Application.DTOs.Authors;
 using Bookano.Web.ViewModels.Authors;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -10,7 +10,7 @@ namespace Bookano.Web.Mapping
         {
             CreateMap<AuthorDto, AuthorViewModel>();
             CreateMap<AuthorDto, AuthorFormViewModel>().ReverseMap();
-            CreateMap<AuthorFormViewModel, AuthorFormDto>().ReverseMap();
+            CreateMap<AuthorFormViewModel, AuthorSaveDto>().ReverseMap();
 
             CreateMap<AuthorDto, SelectListItem>()
                 .ForMember(dest => dest.Value, opt => opt.MapFrom(c => c.Id))

@@ -7,6 +7,6 @@ public class PublisherProfile : Profile
     public PublisherProfile()
     {
         CreateMap<Publisher, PublisherDto>();
-        CreateMap<PublisherFormDto, Publisher>();
+        CreateMap<PublisherSaveDto, Publisher>();
     }
 }

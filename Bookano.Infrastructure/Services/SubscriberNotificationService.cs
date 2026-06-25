@@ -1,5 +1,4 @@
-﻿using Bookano.Application.Common.Models;
-using Hangfire;
+﻿using Hangfire;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using WhatsAppCloudApi;

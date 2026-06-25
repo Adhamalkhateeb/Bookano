@@ -1,35 +1,21 @@
-﻿
+
 using Bookano.Application.Common.Models;
 
 namespace Bookano.Web.Binders
 {
     public class DataTableRequestBinder
     {
-        public static DataTableRequest Bind(IFormCollection form)
+        public static PaginationFilterQuery Bind(IFormCollection form)
         {
-            int skip = int.TryParse(form["start"], out var s) ? s : 0;
+            var sortIndex = int.Parse(form["order[0][column]"]!);
 
-            int pageSize =
-                int.TryParse(form["length"], out var l) && l > 0 ? l : 10;
-
-            var search = form["search[value]"].ToString();
-
-            var sortIndex = int.TryParse(form["order[0][column]"], out var i) ? i : 0;
-
-            var requestedColumn = form[$"columns[{sortIndex}][name]"].ToString();
-
-            var isDesc = string.Equals(
-                form["order[0][dir]"],
-                "desc",
-                StringComparison.OrdinalIgnoreCase);
-
-            return new DataTableRequest
+            return new PaginationFilterQuery
             {
-                Skip = skip,
-                PageSize = pageSize,
-                Search = search,
-                SortColumn = requestedColumn,
-                SortDirection = isDesc ? "desc" : "asc"
+                Skip = int.Parse(form["start"]!),
+                PageSize = int.Parse(form["length"]!),
+                Search = form["search[value]"],
+                SortColumn = form[$"columns[{sortIndex}][name]"]!,
+                SortDirection = form["order[0][dir]"]!
             };
         }
     }

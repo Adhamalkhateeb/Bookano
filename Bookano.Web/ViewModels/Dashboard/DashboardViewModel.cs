@@ -1,4 +1,4 @@
-﻿using Bookano.Web.ViewModels.Books;
+using Bookano.Web.ViewModels.Books;
 
 namespace Bookano.Web.ViewModels.Dashboard
 {
@@ -9,5 +9,6 @@ namespace Bookano.Web.ViewModels.Dashboard
 
         public IEnumerable<BookViewModel> RecentlyAddedBooks { get; set; } = [];
         public IEnumerable<BookViewModel> TopRentedBooks { get; set; } = [];
+
     }
 }

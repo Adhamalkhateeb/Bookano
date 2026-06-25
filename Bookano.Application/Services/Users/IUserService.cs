@@ -5,10 +5,10 @@ namespace Bookano.Application.Services.Users;
 
 public interface IUserService
 {
-    Task<DataTableResult<UserDto>> GetPagedAsync(DataTableRequest request, CancellationToken ct = default);
-    Task<UserFormDto?> GetUserFormAsync(string id, CancellationToken ct = default);
-    Task<Result<string>> CreateAsync(UserFormDto dto, Func<string, string, string> callbackUrlProvider, CancellationToken ct = default);
-    Task<Result<string>> UpdateAsync(UserFormDto dto, CancellationToken ct = default);
+    Task<DataGridResult<UserDto>> GetPagedAsync(PaginationFilterQuery request, CancellationToken ct = default);
+    Task<UserSaveDto?> GetUserForEditAsync(string id, CancellationToken ct = default);
+    Task<Result<string>> CreateAsync(UserSaveDto dto, Func<string, string, string> callbackUrlProvider, CancellationToken ct = default);
+    Task<Result<string>> UpdateAsync(UserSaveDto dto, CancellationToken ct = default);
     Task<Result<string>> ToggleStatusAsync(string id, CancellationToken ct = default);
     Task<Result> ResetPasswordAsync(UserResetPasswordDto dto, CancellationToken ct = default);
     Task<Result> UnlockAsync(string id, CancellationToken ct = default);

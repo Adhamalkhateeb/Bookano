@@ -1,16 +1,13 @@
+using AutoMapper;
 using Bookano.Application.DTOs.Dashboard;
-using Bookano.Web.ViewModels.Books;
 using Bookano.Web.ViewModels.Dashboard;
 
-namespace Bookano.Web.Mapping
+namespace Bookano.Web.Mapping;
+
+public class DashboardProfile : Profile
 {
-    public class DashboardProfile : Profile
+    public DashboardProfile()
     {
-        public DashboardProfile()
-        {
-            CreateMap<DashboardBookDto, BookViewModel>();
-            CreateMap<DashboardDto, DashboardViewModel>();
-            CreateMap<ChartItemDto, ChartItemViewModel>();
-        }
+        CreateMap<ChartItemDto, ChartItemViewModel>();
     }
 }

@@ -1,5 +1,6 @@
 using Bookano.Application.DTOs.Areas;
 using Bookano.Application.Services.Areas;
+using Bookano.Application.Services.Governorates;
 using Bookano.Web.ViewModels.Areas;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
@@ -36,7 +37,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(AreaFormViewModel model,CancellationToken ct)
         {
-            var dto = _mapper.Map<AreaFormDto>(model);
+            var dto = _mapper.Map<AreaSaveDto>(model);
 
             var result = await _areaService.AddAsync(dto,ct); 
 
@@ -54,7 +55,7 @@ namespace Bookano.Web.Controllers
         [AjaxOnly]
         public async Task<IActionResult> Edit(int id,CancellationToken ct)
         {
-            var area = await _areaService.GetAsync(id, ct);
+            var area = await _areaService.GetByIdAsync(id, ct);
 
             if (area is null)
                 return NotFound();
@@ -68,7 +69,7 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(AreaFormViewModel model,CancellationToken ct)
         {
-            var dto = _mapper.Map<AreaFormDto>(model);
+            var dto = _mapper.Map<AreaSaveDto>(model);
             
             var result = await _areaService.UpdateAsync(model.Id,dto,ct);
 
@@ -84,17 +85,17 @@ namespace Bookano.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleStatus(int id, CancellationToken ct)
         {
-            var lastUpdatedOnUtc = await _areaService.ToggleAsync(id,ct);
+            var result = await _areaService.ToggleStatusAsync(id,ct);
 
-            if (!lastUpdatedOnUtc.HasValue)
+            if (result.IsFailure)
                 return NotFound();
 
-            return Ok(lastUpdatedOnUtc.Value.ToString());
+            return Ok(result.Value!.LastUpdatedOnUtc.ToString());
         }
 
         public async Task<IActionResult> AllowItem(AreaFormViewModel model,CancellationToken ct)
         {
-            var isAllowed = await _areaService.IsAreaAvailableAsync(model.Id,model.GovernorateId, model.Name,ct);
+            var isAllowed = await _areaService.IsAreaAvailableAsync(model.Name,model.GovernorateId, model.Id,ct);
 
             return Json(isAllowed);
         }
@@ -102,7 +103,7 @@ namespace Bookano.Web.Controllers
         private async Task<AreaFormViewModel> PopulateGovernoratesAsync(
             AreaFormViewModel? model = null,CancellationToken ct = default)
         {
-            var governorates = await _governorateService.GetAllAsync(ct);
+            var governorates = await _governorateService.GetActiveAsync(ct);
 
             var viewModel = model ?? new AreaFormViewModel();
             viewModel.Governorates = _mapper.Map<IEnumerable<SelectListItem>>(governorates);

@@ -1,6 +1,6 @@
 ﻿namespace Bookano.Application.DTOs.Books;
 
-public class BookListDto
+public sealed class BookListDto
 {
     public int Id { get; set; }
     public string? Isbn { get; set; }
